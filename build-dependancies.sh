@@ -139,6 +139,14 @@ EOF
                 sudo systemctl restart apache2
 
 
+            echo "--> Installing: NodeJS"
+                sudo apt update
+                sudo apt -y install nodejs npm -y
+                sudo apt -y install build-essential -y
+
+                nodejs --version
+                npm --version
+
 
     ## ---- mySQL Database ---- ##
 
@@ -174,6 +182,27 @@ EOF
         cp -Rfup $TCCORE/CCORE/CitizenFX.Core.sym $MAIN/alpine/opt/cfx-server/citizen/clr2/lib/mono/4.5/CitizenFX.Core.sym
         cp -Rfup $TCCORE/CCORE/CitizenFX.Core.Server.dll $MAIN/alpine/opt/cfx-server/citizen/clr2/lib/mono/4.5/CitizenFX.Core.Server.dll
         cp -Rfup $TCCORE/CCORE/CitizenFX.Core.Server.sym $MAIN/alpine/opt/cfx-server/citizen/clr2/lib/mono/4.5/CitizenFX.Core.Server.sym
+
+    ## ---- FiveM ---- ##
+
+    ## ---- txAdmin ---- ##
+
+    echo "--> Installing: txAdmin"
+        # Download txAdmin, Enter folder and Install dependencies
+        git clone https://github.com/tabarra/txAdmin $MAIN/txAdmin
+        cd $MAIN/txAdmin
+        npm i
+
+        # Add admin
+        node src/scripts/admin-add.js
+
+        # Setup default server profile
+        node src/scripts/setup.js default
+
+    ## ---- txAdmin ---- ##
+
+
+
 else
     echo "This script must be executed by the deployment script"
 fi

@@ -4,21 +4,21 @@
 #====#
 #}===# Beyond Earth Roleplay Server
 #====# FiveM: Grand Theft Auto V
-#====# Deployment Script
-#====#
+#=\==# Deployment Script
+#=/==#
 #]
 #}
 #
 #
 # Sudo Check
-###############################
+##
 if [ $EUID != 0 ]; then
     sudo "$0" "$@"
     exit $?
 fi
-###############################
-###############################
-###############################
+##
+#
+#
 # CONFIGURATION:
 # fill in appropriately
 #
@@ -72,6 +72,10 @@ SCRIPT_FULLPATH=$SCRIPT_ROOT/$SCRIPT
 cd ~
 SOURCE_ROOT=`pwd`
     SOURCE=$SOURCE_ROOT/REPO
+        DB_BKUP_PATH=$SOURCE/mysql-backups
+            DB=$(ls -Art $DB_BKUP_PATH/ | tail -n 1)
+        PATH_TO_DB=$DB_BKUP_PATH/$DB
+
 
 SOFTWARE=/var/software
     TFIVEM=$SOFTWARE/fivem
@@ -95,12 +99,13 @@ MAIN=/home/$srvAcct
             VEHICLES=$RESOURCES/\[vehicles\]
 set +a
 
-$SCRIPT_ROOT/fetch-source.sh EXECUTE
 $SCRIPT_ROOT/build-dependancies.sh EXECUTE
+$SCRIPT_ROOT/fetch-source.sh EXECUTE
 $SCRIPT_ROOT/build-config.sh EXECUTE
 $SCRIPT_ROOT/build-resources.sh EXECUTE
 $SCRIPT_ROOT/build-vmenu.sh EXECUTE
 
+mysql essentialmode -e "SOURCE $PATH_TO_DB"
 
 ## ---- sESX ---- ##
 #this is working, but I'm writing my own base runtime deployment instead

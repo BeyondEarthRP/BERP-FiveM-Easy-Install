@@ -8,7 +8,6 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
     cp -rfup $SOURCE/__\[LOADING-SCREENS\]__/cyberload $GAME/resources/
     #########################################################
 	#    cp -rfup $SOURCE/cfx-server-data/* $GAME/  #--> already doing this in the deploy script
-    cp -rfup $SOURCE/GcphoneForESX/resources $GAME/
     cp -rfup $SOURCE/[esx] $GAME/resources/
     cp -rfup $SOURCE/[essential] $GAME/resources/
     cp -rfup $SOURCE/[vehicles-civ] $GAME/resources/
@@ -20,6 +19,8 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
     cp -rfup $SOURCE/[posters] $GAME/resources/
     cp -rfup $SOURCE/[weapons] $GAME/resources/
     cp -rfup $SOURCE/[rendertarget] $GAME/resources/
+    cp -rfup $SOURCE/GcPhoneForESX/resources/esx_addons_gcphone $GAME/resources/
+    cp -rfup $SOURCE/GcPhoneForESX/resources/gcphone $GAME/resources/
     cp -rfup $SOURCE/es_ui $GAME/resources/
     cp -rfup $SOURCE/essentialmode $GAME/resources/
     cp -rfup $SOURCE/mysql-async $GAME/resources/

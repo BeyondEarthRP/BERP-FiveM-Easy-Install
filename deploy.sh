@@ -98,7 +98,7 @@ MAIN=/home/$srvAcct
             VEHICLES=$RESOURCES/\[vehicles\]
 set +a
 
-#$SCRIPT_ROOT/fetch-source.sh EXECUTE
+$SCRIPT_ROOT/fetch-source.sh EXECUTE
 $SCRIPT_ROOT/build-dependancies.sh EXECUTE
 $SCRIPT_ROOT/build-config.sh EXECUTE
 $SCRIPT_ROOT/build-resources.sh EXECUTE
@@ -147,7 +147,7 @@ echo "Accepting original configuration; Injecting RCON configuration..."
 
 #-mySql Configuration
 echo "Accepting RCON config handoff; Injecting MySQL Connection String..."
-    db_conn_placeholder="set mysql_connection_string \"server=localhost;database=sesx;userid=username;password=YourPassword\""
+    db_conn_placeholder="set mysql_connection_string \"server=localhost;database=essentialmode;userid=username;password=YourPassword\""
     db_conn_actual="set mysql_connection_string \"server=localhost;database=essentialmode;userid=$mysql_user;password=$mysql_password\""
     sed "s/$db_conn_placeholder/$db_conn_actual/" $GAME/server.cfg.rconCfg > $GAME/server.cfg.dbCfg
     rm -f $GAME/server.cfg.rconCfg #--> cleaning up; handing off a .dbCfg

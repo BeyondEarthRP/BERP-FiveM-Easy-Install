@@ -100,12 +100,25 @@ MAIN=/home/$srvAcct
 set +a
 
 $SCRIPT_ROOT/build-dependancies.sh EXECUTE
+echo "DEPENDANCIES BUILT!"
+echo ""
 $SCRIPT_ROOT/fetch-source.sh EXECUTE
+echo "SOURCE FETCHED!"
+echo ""
 $SCRIPT_ROOT/build-config.sh EXECUTE
+echo "CONFIG BUILT!"
+echo ""
 $SCRIPT_ROOT/build-resources.sh EXECUTE
+echo "RESOURCES BUILT!"
+echo ""
 $SCRIPT_ROOT/build-vmenu.sh EXECUTE
+echo "VMENU BUILT!"
+echo ""
 
+echo "Importing last database backup"
 mysql essentialmode -e "SOURCE $PATH_TO_DB"
+echo "backup imported."
+echo ""
 
 ## ---- sESX ---- ##
 #this is working, but I'm writing my own base runtime deployment instead

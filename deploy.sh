@@ -1,12 +1,15 @@
 #!/bin/bash
-##############################################################
-#####
-#####  Beyond Earth Roleplay Server
-#####   FiveM: Grand Theft Auto V
-#####         Deploy Script
-#####
-##############################################################
-###############################
+#
+#]
+#====#
+#}===# Beyond Earth Roleplay Server
+#====# FiveM: Grand Theft Auto V
+#====# Deployment Script
+#====#
+#]
+#}
+#
+#
 # Sudo Check
 ###############################
 if [ $EUID != 0 ]; then
@@ -15,11 +18,10 @@ if [ $EUID != 0 ]; then
 fi
 ###############################
 ###############################
-
 ###############################
 # CONFIGURATION:
 # fill in appropriately
-#------------------------------
+#
 #- Steam Key Goes Below:
 steam_webApiKey="D5E22AE91C9735328F8C397ACAA77389"
 export steam_webApiKey
@@ -48,11 +50,6 @@ srvAcct="fivem"
 srvPassword="lOI8cDDjwUC9O0VQhiihnudWT1VosP5Y4NvSNN"
 export srvAcct
 export srvPassword
-
-#- .ssh Bundle
-sshKeyBundle=https://www.dropbox.com/s/uwxjyomdhh539zm/sshKey.tar.gz
-export sshKeyBundle
-
 
 ########################
 # Account Creation

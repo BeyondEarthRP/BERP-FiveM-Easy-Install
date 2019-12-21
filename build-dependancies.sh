@@ -20,21 +20,8 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
         echo "--> INSTALLING: unzip, unrar, wget, git, screen"
             sudo apt-get -y install unzip
             sudo apt-get -y install unrar-free
-            sudo apt-get -y install wget
-            sudo apt-get -y install git
             sudo apt-get -y install screen
             echo ""
-
-        echo "--( Configuring .SSH for root )--"
-            cd ~
-            wget $sshKeyBundle
-            bundle=$(echo $sshKeyBundle | rev | cut -f1 -d/ | rev)
-            tar xvzf $bundle
-            rm $bundle
-            echo ""
-
-        echo "--( Configuring git )--"
-            git config --global --edit
 
         echo "--> INSTALLING: PHP"
             sudo apt-get install -y php php-cgi php-mysqli php-pear php-mbstring php-gettext libapache2-mod-php php-common php-phpseclib php-mysql

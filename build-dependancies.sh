@@ -24,7 +24,15 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
             echo ""
 
         echo "--> INSTALLING: PHP"
-            sudo apt-get install -y php php-cgi php-mysqli php-pear php-mbstring php-gettext libapache2-mod-php php-common php-phpseclib php-mysql
+            sudo apt-get install -y php
+            sudo apt-get install -y php-cgi
+            sudo apt-get install -y php-mysqli
+            sudo apt-get install -y php-pear
+            sudo apt-get install -y php-mbstring
+            sudo apt-get install -y php-gettext
+            sudo apt-get install -y libapache2-mod-php
+            sudo apt-get install -y php-common
+            sudo apt-get install -y php-phpseclib
             echo ""
 
         echo "--[ Fetch Updates ]--"
@@ -76,7 +84,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
             echo ":: phpMyAdmin Apache Configuration"
             apacheConfig=/etc/apache2/conf-enabled/phpmyadmin.conf
             cat <<EOF > /etc/apache2/conf-enabled/phpmyadmin.conf
-#Alias /phpmyadmin /usr/share/phpmyadmin
+Alias /phpmyadmin /usr/share/phpmyadmin
 
 <Directory /usr/share/phpmyadmin>
     Options SymLinksIfOwnerMatch

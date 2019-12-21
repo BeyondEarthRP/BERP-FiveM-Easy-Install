@@ -89,7 +89,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
             echo ":: phpMyAdmin Apache Configuration"
             apacheConfig=/etc/apache2/conf-enabled/phpmyadmin.conf
             cat <<EOF > /etc/apache2/conf-enabled/phpmyadmin.conf
-Alias /phpmyadmin /usr/share/phpmyadmin
+#Alias /phpmyadmin /usr/share/phpmyadmin
 
 <Directory /usr/share/phpmyadmin>
     Options SymLinksIfOwnerMatch

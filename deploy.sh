@@ -57,7 +57,7 @@ export sshKeyBundle
 ########################
 # Account Creation
 ########################
-    account=$(id -u ${srvAcct}}
+    account=$(id -u ${srvAcct})
     if [ -z $account ]; then
         adduser $srvAcct --gecos "FiveM Server, , , " --disabled-password
         echo "$srvAcct:$srvPassword" | chpasswd
@@ -98,9 +98,11 @@ MAIN=/home/$srvAcct
             VEHICLES=$RESOURCES/\[vehicles\]
 set +a
 
+#$SCRIPT_ROOT/fetch-source.sh EXECUTE
 $SCRIPT_ROOT/build-dependancies.sh EXECUTE
-$SCRIPT_ROOT/build-source.sh EXECUTE
+$SCRIPT_ROOT/build-config.sh EXECUTE
 $SCRIPT_ROOT/build-resources.sh EXECUTE
+$SCRIPT_ROOT/build-vmenu.sh EXECUTE
 
 
 ## ---- sESX ---- ##

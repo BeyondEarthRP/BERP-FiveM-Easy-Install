@@ -118,9 +118,10 @@ echo ""
 #
 # ACCOUNT CREATION
 ##
+echo "creating server account..."
 account=$(id -u ${srvAcct}) > /dev/null
 if [ -z $account ]; then
-	adduser --gecos "FiveM Server, , , , " --disabled-password $srvAcct
+	adduser --system --gecos "FiveM Server, , , , , " --disabled-password "$srvAcct"
 	echo "${srvAcct}:${srvPassword}" | chpasswd
 fi
 
@@ -128,6 +129,7 @@ fi
 #
 # DEFINE VARIABLES TO EXPORT
 ##
+echo "defining vars..."
 set -a
 SOURCE_ROOT="$(cd ~ && pwd)"
 	SOURCE="$SOURCE_ROOT/REPO"
@@ -165,7 +167,7 @@ set +a
 #### THE DATABASE STUFF BELOW CAME FROM THIS GUY! TY! VERY GOOD WORK!!
 #### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
 #### A non-interactive replacement for mysql_secure_installation
-
+echo "defining functions..."
 ####
 # Predicate that returns exit status 0 if the database root password
 # is set, a nonzero exit status otherwise.
@@ -186,7 +188,7 @@ stopScreen () {
 	echo "Quiting screen session for FiveM (if applicable)"
 	su $srvAcct -c "screen -XS \"fivem\" quit"
 }
-
+echo "I got to 3"
 #####################################################################
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?

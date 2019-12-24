@@ -6,6 +6,9 @@ generate () {
 }
 
 deploy () {
+	if [ -d "$SOURCE/configs" ]; then
+		cp -RfT "$SOURCE/configs" "$GAME/configs"
+	fi
 	cp -RfT "$SOURCE/server.cfg" "$GAME/server.cfg"
 	echo "Config deployed."
 

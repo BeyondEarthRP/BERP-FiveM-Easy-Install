@@ -201,8 +201,8 @@ is_mysql_command_available() {
 ####
 # OKAY, THESE MINE!
 stopScreen () {
-	echo "Quiting screen session for FiveM (if applicable)"
-	su $srvAcct -c "screen -XS 'fivem' quit"
+  echo "Quiting screen session for FiveM (if applicable)"
+  su $srvAcct -c "screen -XS 'fivem' quit"
 }
 #####################################################################
 #
@@ -232,10 +232,7 @@ if [ -z $1 ]; then
 	$SCRIPT_ROOT/build-dependancies.sh EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
-	#####################################################################
-	# 
 	# CHECK FOR MYSQL
-	##
 	if [ ! is_mysql_command_available ]; then
 	  echo "The MySQL/MariaDB client mysql(1) is not installed."
 	  exit 1
@@ -289,6 +286,12 @@ elif [ ! -z $1 ]; then
 		##### if you've done this on your own. sorry...
 		##### Use my script to tear down, next time.
 		###
+		# CHECK FOR MYSQL
+                if [ ! is_mysql_command_available ]; then
+                  echo "The MySQL/MariaDB client mysql(1) is not installed."
+	          exit 1
+                fi
+
 		stopScreen # STOP THE SCREEN SESSION
 		$SCRIPT_ROOT/build/build-fivem.sh EXECUTE
 		echo "FIVEM REBUILT!"
@@ -335,7 +338,7 @@ elif [ ! -z $1 ]; then
 		echo ""
 		$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
-		echo ""	
+		echo ""
 	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
 		#\> RESTORE
 		echo "                                                          ";

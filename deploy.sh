@@ -123,7 +123,7 @@ echo "checking for local account: $srvAcct"
 account=$(id -u ${srvAcct})
 if [ -z $account ]; then
 	echo "creating server account..."
-	adduser --home "/home/$srvAcct" --shell /bin/bash --group "$srvAcct" --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
+	adduser --home "/home/$srvAcct" --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
 	echo "$srvAcct:$srvPassword" | chpasswd
 
 	account=$(id -u ${srvAcct})

@@ -82,7 +82,7 @@ do
 		CONFIG="$SCRIPT_ROOT/config.json"
 	else
 		echo "No config found... "
-		$SCRIPT_ROOT/quick-config.sh	
+		$SCRIPT_ROOT/quick-config.sh
 	fi
 done
 echo ""
@@ -99,10 +99,10 @@ do
 	if [ -z ${!_fig} ];
 	then
 		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
-		
+
 		#echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
 		echo " ... " # DO NOT DISPLAY ON SCREEN
-		
+
 	fi
 	export ${_fig}
 	if [ ! -z ${!_fig} ];
@@ -125,7 +125,7 @@ if [ -z $account ]; then
 	echo "creating server account..."
 	adduser --home /home/$srvAcct --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
 	echo "$srvAcct:$srvPassword" | chpasswd
-	
+
 	account=$(id -u ${srvAcct})
 	if [ ! -z $account ]; then
 		echo "$srvAcct found. Good. Let's continue..."
@@ -206,8 +206,8 @@ stopScreen () {
 ##
 if [ -z $1 ]; then
 	#\> NEW INSTALLATION
-	echo "                                                                                      ";	
-	echo "                                                                                      ";	
+	echo "                                                                                      ";
+	echo "                                                                                      ";
 	echo "███╗   ██╗███████╗██╗    ██╗    ██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     ";
 	echo "████╗  ██║██╔════╝██║    ██║    ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     ";
 	echo "██╔██╗ ██║█████╗  ██║ █╗ ██║    ██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     ";
@@ -224,7 +224,7 @@ if [ -z $1 ]; then
 	#	echo "Database root password already set"
 	#	exit 0
 	#fi
-	
+
 	$SCRIPT_ROOT/build-dependancies.sh EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
@@ -313,7 +313,7 @@ elif [ ! -z $1 ]; then
 		echo "██╔══██╗██╔══╝  ██╔══██╗██║   ██║██║██║     ██║  ██║";
 		echo "██║  ██║███████╗██████╔╝╚██████╔╝██║███████╗██████╔╝";
 		echo "╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝ ╚═╝╚══════╝╚═════╝ ";
-		echo "                                                    ";		
+		echo "                                                    ";
 		echo " you've got about 10 seconds to cancel this script  ";
 		echo "           (hit control-c two times!)               ";
 		echo "                                                    ";
@@ -344,7 +344,7 @@ elif [ ! -z $1 ]; then
 		echo "                                                          ";
 		echo "    you've got about 10 seconds to cancel this script     ";
 		echo "              (hit control-c two times!)                  ";
-		echo "                                                          ";		
+		echo "                                                          ";
 		echo "                                                          ";
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
@@ -368,17 +368,17 @@ elif [ ! -z $1 ]; then
 		#echo ""
 	else
 	   echo "Valid options are:
-	   
+
 	           redeploy = ./${0} --redeploy | -r
 			    rebuild = ./${0} --rebuild  | -b
 			    restore = ./${0} --restore  | -oof
-				
+
 			example:
-			
+
 		      ./${0} -r
 			     ^--this will redeploy.
 
-		"				
+		"
 		exit 1
 	fi
 fi

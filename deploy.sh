@@ -1,5 +1,5 @@
 #!/bin/bash
-#       ______________________________________________________
+#       ____________________________________________________________
 #]     /
 #====% |
 #}===% |  Beyond Earth Roleplay (BERP) Server Builder
@@ -9,20 +9,45 @@
 #==%   |  By: Jay aka Beyond Earth <djBeyondEarth@gmail.com>
 #=\==% |  Tested on Debian 10.2 (Buster) -- cfx artifact 1868
 #=/=%  |
-#}     \______________________________________________________
+#}     \____________________________________________________________
 #
 #]     IF YOU ARE HAVING PROBLEMS, I GOT A PLAN FOR YOU SON...
 #} (Figure it Out!!) I'VE GOT 99 PROBLEMS BUT YOURS AINT ONE!!
 #                          --ps. send me the answer. thx <3
 #
-##############################################################
+####################################################################
 # BASIC DETAILS --- do not touch (unless you know how.)
 #  CFX ARTIFACT BUILD:
 
 cfx_build=1868
 artifact_build="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
 
-###############################################################
+#####################################################################
+#
+# JUST A BANNER
+##
+echo "                                                            ";
+echo "                                                            ";
+echo " ▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄ ";
+echo "▐░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌";
+echo "▐░█▀▀▀▀▀▀▀█░▌  ▐░█▀▀▀▀▀▀▀▀▀    ▐░█▀▀▀▀▀▀▀█░▌   ▐░█▀▀▀▀▀▀▀█░▌";
+echo "▐░▌       ▐░▌  ▐░▌             ▐░▌       ▐░▌   ▐░▌       ▐░▌";
+echo "▐░█▄▄▄▄▄▄▄█░▌  ▐░█▄▄▄▄▄▄▄▄▄    ▐░█▄▄▄▄▄▄▄█░▌   ▐░█▄▄▄▄▄▄▄█░▌";
+echo "▐░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌";
+echo "▐░█▀▀▀▀▀▀▀█░▌  ▐░█▀▀▀▀▀▀▀▀▀    ▐░█▀▀▀▀█░█▀▀    ▐░█▀▀▀▀▀▀▀▀▀ ";
+echo "▐░▌       ▐░▌  ▐░▌             ▐░▌     ▐░▌     ▐░▌          ";
+echo "▐░█▄▄▄▄▄▄▄█░▌▄ ▐░█▄▄▄▄▄▄▄▄▄  ▄ ▐░▌      ▐░▌  ▄ ▐░▌          ";
+echo "▐░░░░░░░░░░▌▐░▌▐░░░░░░░░░░░▌▐░▌▐░▌       ▐░▌▐░▌▐░▌          ";
+echo " ▀▀▀▀▀▀▀▀▀▀  ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀  ▀         ▀  ▀  ▀           ";
+echo "     __                 __             __                   ";
+echo "    |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _       ";
+echo "    |__)(-\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\/    ";
+echo "          /                                    |      /     ";
+echo "                                                            ";
+echo "         EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT            ";
+echo "                                                            ";
+echo "                                                            ";
+#####################################################################
 #
 # SUDO CHECK
 ##
@@ -34,7 +59,7 @@ export cfx_build
 export artifact_build
 
 
-###############################################################
+#####################################################################
 #
 # THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
 ##
@@ -45,7 +70,7 @@ set -a  # exporting these variables for other scripts
 		SCRIPT_FULLPATH=$SCRIPT_ROOT/$SCRIPT
 set +a
 
-###############################################################
+#####################################################################
 #
 # CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 ##
@@ -60,8 +85,9 @@ do
 		$SCRIPT_ROOT/quick-config.sh	
 	fi
 done
+echo ""
 
-###############################################################
+#####################################################################
 #
 # IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
 ##
@@ -88,52 +114,51 @@ do
 done
 echo ""
 
-###############################################################
+#####################################################################
 #
 # ACCOUNT CREATION
 ##
 account=$(id -u ${srvAcct}) > /dev/null
 if [ -z $account ]; then
-	adduser $srvAcct --gecos "FiveM Server, , , " --disabled-password
-	echo "$srvAcct:$srvPassword" | chpasswd
+	adduser --gecos "FiveM Server, , , , " --disabled-password $srvAcct
+	echo "${srvAcct}:${srvPassword}" | chpasswd
 fi
 
-###############################################################
+#####################################################################
 #
 # DEFINE VARIABLES TO EXPORT
 ##
 set -a
-	cd ~
-	SOURCE_ROOT=`pwd`
-		SOURCE=$SOURCE_ROOT/REPO
-			DB_BKUP_PATH=$SOURCE/mysql-backups
-				DB=$(ls -Art $DB_BKUP_PATH/ | tail -n 1)
-			PATH_TO_DB=$DB_BKUP_PATH/$DB
+SOURCE_ROOT="$(cd ~ && pwd)"
+	SOURCE="$SOURCE_ROOT/REPO"
+		DB_BKUP_PATH="$SOURCE/mysql-backups"
+			DB="$(ls -Art $DB_BKUP_PATH/ | tail -n 1)"
+		PATH_TO_DB="$DB_BKUP_PATH/$DB"
 
 
-	SOFTWARE=/var/software
-		TFIVEM=$SOFTWARE/fivem
-			TCCORE=$TFIVEM/citizenfx.core.server
+SOFTWARE="/var/software"
+	TFIVEM="$SOFTWARE/fivem"
+		TCCORE="$TFIVEM/citizenfx.core.server"
 
-	MAIN=/home/$srvAcct
-		GAME=$MAIN/server-data
-			RESOURCES=$GAME/resources
+MAIN="/home/$srvAcct"
+	GAME="$MAIN/server-data"
+		RESOURCES="$GAME/resources"
 
-				GAMEMODES=$RESOURCES/\[gamemodes\]
-					MAPS=$GAMEMODES/\[maps\]
+			GAMEMODES="$RESOURCES/[gamemodes]"
+				MAPS="$GAMEMODES/[maps]"
 
-				ESX=$RESOURCES/\[esx\]
-					ESEXT=$ESX/es_extended
-					ESUI=$ESX/\[ui\]
+			ESX="$RESOURCES/[esx]"
+				ESEXT="$ESX/es_extended"
+				ESUI="$ESX/[ui]"
 
-				ESSENTIAL=$RESOURCES/\[essential\]
-					ESMOD=$ESSENTIAL/essentialmode
+			ESSENTIAL="$RESOURCES/[essential]"
+				ESMOD="$ESSENTIAL/essentialmode"
 
-				MODS=$RESOURCES/\[mods\]
-				VEHICLES=$RESOURCES/\[vehicles\]
+			MODS="$RESOURCES/[mods]"
+			VEHICLES="$RESOURCES/[vehicles]"
 set +a
 
-###############################################################
+#####################################################################
 #
 # A BIT OF FUNCTION
 ##
@@ -162,13 +187,25 @@ stopScreen () {
 	su $srvAcct -c "screen -XS \"fivem\" quit"
 }
 
-###############################################################
+#####################################################################
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?
 ##
 if [ -z $1 ]; then
 	#\> NEW INSTALLATION
-	
+	echo "                                                                                      ";	
+	echo "                                                                                      ";	
+	echo "███╗   ██╗███████╗██╗    ██╗    ██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     ";
+	echo "████╗  ██║██╔════╝██║    ██║    ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     ";
+	echo "██╔██╗ ██║█████╗  ██║ █╗ ██║    ██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     ";
+	echo "██║╚██╗██║██╔══╝  ██║███╗██║    ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     ";
+	echo "██║ ╚████║███████╗╚███╔███╔╝    ██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗";
+	echo "╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝";
+	echo "                                                                                      ";
+	echo "      you've got about 10 seconds to cancel this script (hit control-c two times!)    ";
+	echo "                                                                                      ";
+	echo "                                                                                      ";
+	ping -c 15 127.0.0.1 > /dev/null
 	### SAVING THIS BIT FOR ANOTHER SCRIPT ######
 	#if is_mysql_root_password_set; then
 	#	echo "Database root password already set"
@@ -178,11 +215,11 @@ if [ -z $1 ]; then
 	$SCRIPT_ROOT/build-dependancies.sh EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
-	###############################################################
+	#####################################################################
 	# 
 	# CHECK FOR MYSQL
 	##
-	if ! is_mysql_command_available; then
+	if [ ! is_mysql_command_available ]; then
 	  echo "The MySQL/MariaDB client mysql(1) is not installed."
 	  exit 1
 	fi
@@ -208,16 +245,28 @@ if [ -z $1 ]; then
 	echo "VMENU BUILT!"
 	echo ""
 elif [ ! -z $1 ]; then
-	###############################################################
+	#####################################################################
 	# 
 	# CHECK FOR MYSQL
 	##
-	if ! is_mysql_command_available; then
+	if [ ! is_mysql_command_available ]; then
 	  echo "The MySQL/MariaDB client mysql(1) is not installed."
 	  exit 1
 	fi
 	if [ "$1"=="--redeploy" ] || [ "$1"=="-r" ]; then
 		#\> REDEPLOY
+		echo "                                                                  ";
+		echo "██████╗ ███████╗██████╗ ███████╗██████╗ ██╗      ██████╗ ██╗   ██╗";
+		echo "██╔══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗██║     ██╔═══██╗╚██╗ ██╔╝";
+		echo "██████╔╝█████╗  ██║  ██║█████╗  ██████╔╝██║     ██║   ██║ ╚████╔╝ ";
+		echo "██╔══██╗██╔══╝  ██║  ██║██╔══╝  ██╔═══╝ ██║     ██║   ██║  ╚██╔╝  ";
+		echo "██║  ██║███████╗██████╔╝███████╗██║     ███████╗╚██████╔╝   ██║   ";
+		echo "╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝   ";
+		echo "                                                                  ";
+		echo "        you've got about 10 seconds to cancel this script         ";
+		echo "                  (hit control-c two times!)                      ";
+		echo "                                                                  ";
+		echo "                                                                  ";
 		###
 		##### this assumes you've used my teardown script.
 		##### if you've done this on your own. sorry...
@@ -243,7 +292,19 @@ elif [ ! -z $1 ]; then
 		echo "VMENU REBUILT!"
 		echo ""	
 	if [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
-		#\> REBUILD	
+		#\> REBUILD
+		echo "                                                    ";
+		echo "██████╗ ███████╗██████╗ ██╗   ██╗██╗██╗     ██████╗ ";
+		echo "██╔══██╗██╔════╝██╔══██╗██║   ██║██║██║     ██╔══██╗";
+		echo "██████╔╝█████╗  ██████╔╝██║   ██║██║██║     ██║  ██║";
+		echo "██╔══██╗██╔══╝  ██╔══██╗██║   ██║██║██║     ██║  ██║";
+		echo "██║  ██║███████╗██████╔╝╚██████╔╝██║███████╗██████╔╝";
+		echo "╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝ ╚═╝╚══════╝╚═════╝ ";
+		echo "                                                    ";		
+		echo " you've got about 10 seconds to cancel this script  ";
+		echo "           (hit control-c two times!)               ";
+		echo "                                                    ";
+		echo "                                                    ";
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.
@@ -260,6 +321,18 @@ elif [ ! -z $1 ]; then
 		echo ""	
 	if [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
 		#\> RESTORE
+		echo "                                                          ";
+		echo "██████╗ ███████╗███████╗████████╗ ██████╗ ██████╗ ███████╗";
+		echo "██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝";
+		echo "██████╔╝█████╗  ███████╗   ██║   ██║   ██║██████╔╝█████╗  ";
+		echo "██╔══██╗██╔══╝  ╚════██║   ██║   ██║   ██║██╔══██╗██╔══╝  ";
+		echo "██║  ██║███████╗███████║   ██║   ╚██████╔╝██║  ██║███████╗";
+		echo "╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝";
+		echo "                                                          ";
+		echo "    you've got about 10 seconds to cancel this script     ";
+		echo "              (hit control-c two times!)                  ";
+		echo "                                                          ";		
+		echo "                                                          ";
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.
@@ -297,9 +370,9 @@ elif [ ! -z $1 ]; then
 	fi
 fi
 
-###############################################################
-############ THIS SHOULD BE AT THE END STAGES #################
-###############################################################
+#####################################################################
+############ THIS SHOULD BE AT THE END STAGES #######################
+#####################################################################
 #
 # INJECT PERSONAL CREDENTIALS INTO THE CONFIGURATION FILE
 ##
@@ -319,28 +392,28 @@ echo "Generating RCON Password."
     rcon_placeholder="#rcon_password changeme"
     rcon_actual="rcon_password \"${rcon_password}\""
 echo "Accepting original configuration; Injecting RCON configuration..."
-    sed "s/${rcon_placeholder}/${rcon_actual}/" $GAME/server.cfg.orig > $GAME/server.cfg.rconCfg
+    sed "s/${rcon_placeholder}/${rcon_actual}/" "$GAME/server.cfg.orig" > "$GAME/server.cfg.rconCfg"
     rm -f $GAME/server.cfg.orig  #--> cleaning up; handing off a .rconCfg
 
 #-mySql Configuration
 echo "Accepting RCON config handoff; Injecting MySQL Connection String..."
     db_conn_placeholder="set mysql_connection_string \"server=localhost;database=essentialmode;userid=username;password=YourPassword\""
     db_conn_actual="set mysql_connection_string \"server=localhost;database=essentialmode;userid=$mysql_user;password=$mysql_password\""
-    sed "s/$db_conn_placeholder/$db_conn_actual/" $GAME/server.cfg.rconCfg > $GAME/server.cfg.dbCfg
+    sed "s/$db_conn_placeholder/$db_conn_actual/" "$GAME/server.cfg.rconCfg" > "$GAME/server.cfg.dbCfg"
     rm -f $GAME/server.cfg.rconCfg #--> cleaning up; handing off a .dbCfg
 
 #-Steam Key Injection into Config
 echo "Accepted MySql config handoff; Injecting Steam Key into config..."
     steamKey_placeholder="set steam_webApiKey \"SteamKeyGoesHere\""
     steamKey_actual="steam_webApiKey  \"${steam_webApiKey}\""
-    sed "s/${steamKey_placeholder}/${steamKey_actual}/" $GAME/server.cfg.dbCfg > $GAME/server.cfg.steamCfg
+    sed "s/${steamKey_placeholder}/${steamKey_actual}/" "$GAME/server.cfg.dbCfg" > "$GAME/server.cfg.steamCfg"
     rm -f $GAME/server.cfg.dbCfg #--> cleaning up; handing off a .steamCfg
 
 #-FiveM License Key Injection into Config
 echo "Accepting Steam config handoff; Injecting FiveM License into config..."
     sv_licenseKey_placeholder="sv_licenseKey LicenseKeyGoesHere"
     sv_licenseKey_actual="sv_licenseKey ${sv_licenseKey}"
-    sed "s/${sv_licenseKey_placeholder}/${sv_licenseKey_actual}/" $GAME/server.cfg.steamCfg > $GAME/server.cfg
+    sed "s/${sv_licenseKey_placeholder}/${sv_licenseKey_actual}/" "$GAME/server.cfg.steamCfg" > "$GAME/server.cfg"
     rm -f $GAME/server.cfg.steamCfg #--> cleaning up; handing off a server.cfg
 
 if [ -f $GAME/server.cfg ]; then
@@ -349,7 +422,7 @@ else
     echo "ERROR: Something went wrong during the configuration personalization..."
 fi
 
-###############################################################
+#####################################################################
 #
 # GENERATE THE START SCRIPT
 ##
@@ -362,13 +435,13 @@ screen -dmS "fivem" bash -c "trap 'echo gotsigint' INT; cd ${MAIN}/txAdmin; /usr
 EOF
 chmod +x $STARTUP_SCRIPT
 
-################################################################
+######################################################################
 #
 # THIS NEEDS TO BE (PRETTY MUCH) LAST -- OWNING!
 ##
 chown -R $srvAcct:$srvAcct $MAIN
 
-###############################################################
+#####################################################################
 #
 # STARTING THE SERVER
 ##

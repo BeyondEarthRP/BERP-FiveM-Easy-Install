@@ -202,7 +202,7 @@ if [ -z $1 ]; then
 	echo "██║ ╚████║███████╗╚███╔███╔╝    ██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗";
 	echo "╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝";
 	echo "                                                                                      ";
-	echo "      you've got about 10 seconds to cancel this script (hit control-c two times!)    ";
+	echo "    you've got about 10 seconds to cancel this script (hit control-c two times!)      ";
 	echo "                                                                                      ";
 	echo "                                                                                      ";
 	ping -c 15 127.0.0.1 > /dev/null
@@ -223,25 +223,25 @@ if [ -z $1 ]; then
 	  echo "The MySQL/MariaDB client mysql(1) is not installed."
 	  exit 1
 	fi
-	$SCRIPT_ROOT/build-fivem.sh EXECUTE
+	$SCRIPT_ROOT/build/build-fivem.sh EXECUTE
 	echo "FIVEM BUILT!"
 	echo ""
-	$SCRIPT_ROOT/build-txadmin.sh EXECUTE
+	$SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
 	echo "TXADMIN BUILT!"
 	echo ""
-	$SCRIPT_ROOT/fetch-source.sh EXECUTE
+	$SCRIPT_ROOT/build/fetch-source.sh EXECUTE
 	echo "SOURCES FETCHED!"
 	echo ""
-	$SCRIPT_ROOT/create-database.sh EXECUTE
+	$SCRIPT_ROOT/build/create-database.sh EXECUTE
 	echo "DATABASE CREATED!"
 	echo ""
-	$SCRIPT_ROOT/build-config.sh EXECUTE
+	$SCRIPT_ROOT/build/build-config.sh EXECUTE
 	echo "CONFIG BUILT AND DEPLOYED!"
 	echo ""
-	$SCRIPT_ROOT/build-resources.sh EXECUTE
+	$SCRIPT_ROOT/build/build-resources.sh EXECUTE
 	echo "RESOURCES BUILT!"
 	echo ""
-	$SCRIPT_ROOT/build-vmenu.sh EXECUTE
+	$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 	echo "VMENU BUILT!"
 	echo ""
 elif [ ! -z $1 ]; then
@@ -273,22 +273,22 @@ elif [ ! -z $1 ]; then
 		##### Use my script to tear down, next time.
 		###
 		stopScreen # STOP THE SCREEN SESSION
-		$SCRIPT_ROOT/build-fivem.sh EXECUTE
+		$SCRIPT_ROOT/build/build-fivem.sh EXECUTE
 		echo "FIVEM REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build-txadmin.sh EXECUTE
+		$SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
 		echo "TXADMIN REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/create-database.sh EXECUTE
+		$SCRIPT_ROOT/build/create-database.sh EXECUTE
 		echo "FRESH DATABASE RECREATED!"
 		echo ""
-		$SCRIPT_ROOT/build-config.sh EXECUTE
+		$SCRIPT_ROOT/build/build-config.sh EXECUTE
 		echo "CONFIG BUILT AND DEPLOYED!"
 		echo ""
-		$SCRIPT_ROOT/build-resources.sh EXECUTE
+		$SCRIPT_ROOT/build/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build-vmenu.sh EXECUTE
+		$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""	
 	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
@@ -310,13 +310,13 @@ elif [ ! -z $1 ]; then
 		##### YOU'VE BEEN (KIND OF) WARNED.
 		###
 		stopScreen #STOP THE SCREEN SESSION
-		$SCRIPT_ROOT/build-config.sh DEPLOY
+		$SCRIPT_ROOT/build/build-config.sh DEPLOY
 		echo "CONFIG REDEPLOYED!"
 		echo ""
-		$SCRIPT_ROOT/build-resources.sh EXECUTE
+		$SCRIPT_ROOT/build/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build-vmenu.sh EXECUTE
+		$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""	
 	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
@@ -340,13 +340,13 @@ elif [ ! -z $1 ]; then
 		echo "THIS IS NOT YET IMPLEMENTED. -sry!"
 		exit 1
 		#stopScreen
-		#$SCRIPT_ROOT/build-config.sh DEPLOY
+		#$SCRIPT_ROOT/build/build-config.sh DEPLOY
 		#echo "CONFIG REDEPLOYED!"
 		#echo ""
-		#$SCRIPT_ROOT/build-resources.sh EXECUTE
+		#$SCRIPT_ROOT/build/build-resources.sh EXECUTE
 		#echo "RESOURCES REBUILT!"
 		#echo ""
-		#$SCRIPT_ROOT/build-vmenu.sh EXECUTE
+		#$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		#echo "VMENU REBUILT!"
 		#echo ""
 		#echo "Importing last database backup"

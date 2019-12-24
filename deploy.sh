@@ -94,7 +94,7 @@ echo ""
 ##
 account=$(id -u ${srvAcct}) > /dev/null
 if [ -z $account ]; then
-	adduser $srvAcct --gecos "FiveM Server, , , " --group --disabled-password
+	adduser $srvAcct --gecos "FiveM Server, , , " --disabled-password
 	echo "$srvAcct:$srvPassword" | chpasswd
 fi
 

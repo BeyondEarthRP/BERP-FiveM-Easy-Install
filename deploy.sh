@@ -129,7 +129,6 @@ fi
 #
 # DEFINE VARIABLES TO EXPORT
 ##
-echo "defining vars..."
 set -a
 SOURCE_ROOT="$(cd ~ && pwd)"
 	SOURCE="$SOURCE_ROOT/REPO"
@@ -167,7 +166,6 @@ set +a
 #### THE DATABASE STUFF BELOW CAME FROM THIS GUY! TY! VERY GOOD WORK!!
 #### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
 #### A non-interactive replacement for mysql_secure_installation
-echo "defining functions..."
 ####
 # Predicate that returns exit status 0 if the database root password
 # is set, a nonzero exit status otherwise.
@@ -186,13 +184,13 @@ is_mysql_command_available() {
 # OKAY, THESE MINE!
 stopScreen () {
 	echo "Quiting screen session for FiveM (if applicable)"
-	su $srvAcct -c "screen -XS \"fivem\" quit"
+	su $srvAcct -c "screen -XS 'fivem' quit"
 }
-echo "I got to 3"
 #####################################################################
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?
 ##
+echo "I'm right here"
 if [ -z $1 ]; then
 	#\> NEW INSTALLATION
 	echo "                                                                                      ";	
@@ -293,7 +291,7 @@ elif [ ! -z $1 ]; then
 		$SCRIPT_ROOT/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""	
-	if [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
+	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
 		#\> REBUILD
 		echo "                                                    ";
 		echo "██████╗ ███████╗██████╗ ██╗   ██╗██╗██╗     ██████╗ ";
@@ -321,7 +319,7 @@ elif [ ! -z $1 ]; then
 		$SCRIPT_ROOT/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""	
-	if [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
+	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
 		#\> RESTORE
 		echo "                                                          ";
 		echo "██████╗ ███████╗███████╗████████╗ ██████╗ ██████╗ ███████╗";

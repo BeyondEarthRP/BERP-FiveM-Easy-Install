@@ -101,7 +101,7 @@ do
 		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
 
 		#echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
-		echo " ... " # DO NOT DISPLAY ON SCREEN
+		echo -n "... " # DO NOT DISPLAY ON SCREEN
 
 	fi
 	export ${_fig}

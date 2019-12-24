@@ -1,7 +1,7 @@
 # berp-server-default
 =====[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]=====
 
-The 10 Minute Deployment Script created for Beyond Earth Roleplay (BERP)
+The 10 Minute Deployment Script created for Beyond Earth Roleplay (BERP). 
 Join us on FiveM! Look us up in the directory... the server is free reign rp!
 
 This script will deploy cFX FiveM, txAdmin, & MariaDB(MySQL) w/ phpMyAdmin...  

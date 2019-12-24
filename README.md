@@ -1,25 +1,16 @@
 # berp-server-default
+=====[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]=====
 
-8 888888888o   8 8888888888   8 888888888o.   8 888888888o   
-8 8888    `88. 8 8888         8 8888    `88.  8 8888    `88. 
-8 8888     `88 8 8888         8 8888     `88  8 8888     `88 
-8 8888     ,88 8 8888         8 8888     ,88  8 8888     ,88 
-8 8888.   ,88' 8 888888888888 8 8888.   ,88'  8 8888.   ,88' 
-8 8888888888   8 8888         8 888888888P'   8 888888888P'  
-8 8888    `88. 8 8888         8 8888`8b       8 8888         
-8 8888      88 8 8888         8 8888 `8b.     8 8888         
-8 8888    ,88' 8 8888         8 8888   `8b.   8 8888         
-8 888888888P   8 888888888888 8 8888     `88. 8 8888         
-BEYOND         EARTH            ROLE            PLAY
-=====[ BERP EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]=====
+The 10 Minute Deployment Script created for Beyond Earth Roleplay (BERP)
+Join us on FiveM! Look us up in the directory... the server is free reign rp!
 
 This script will deploy cFX FiveM, txAdmin, & MariaDB(MySQL) w/ phpMyAdmin...  
-FiveM deploys with EssentialMode and ESX with over 100 working modules.  
+FiveM deploys with EssentialMode and ESX with over 150 working modules.  
 
-The whole thing takes about 15 minutes to deploy everything; mostly automated with
+The whole thing takes about 10-15 minutes to deploy everything; mostly automated with
 some input required the first time you deploy it to gen the config file. This is
 the script that handles my runtime deployment.  I build the full server from scratch, 
-each time I bounce my VPS... so this works amazing!  It has too... cause otherwise 
+each time I bounce my VPS... so this works amazing!  It has to... cause otherwise 
 the server is offline. hahah.
 
 You will need to deploy an image of Debian 10 (Buster) for this to work flawless.

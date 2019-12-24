@@ -73,7 +73,10 @@ do
 	if [ -z ${!_fig} ];
 	then
 		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
-		echo -n " => $_fig = ${!_fig} => "
+		
+		#echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
+		echo " ... " # DO NOT DISPLAY ON SCREEN
+		
 	fi
 	export ${_fig}
 	if [ ! -z ${!_fig} ];

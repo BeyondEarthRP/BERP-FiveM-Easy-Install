@@ -38,8 +38,8 @@ The FXServer tab of the config should be like:
 Build Path: /home/fivem/
  Base Path: /home/fivem/server-data/
   CFG Path: server.cfg
-  enable autostart
-  enable quiet mode
+ autostart: enable
+quiet mode: enable
 ```
 
 Once you've doen this... don't start the server yet.  Go into your shell and run,

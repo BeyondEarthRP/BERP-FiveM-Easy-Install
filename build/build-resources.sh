@@ -15,7 +15,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 	if [ ! -d $ESSENTIAL ]; then
 		mkdir $ESSENTIAL
 	fi
-    cp -RfT "$SOURCE/__\[LOADING-SCREENS\]__/cyberload" "$GAME/resources/"
+    cp -RfT "$SOURCE/__[LOADING-SCREENS]__/cyberload" "$GAME/resources/"
     cp -RfT "$SOURCE/[esx]" "$GAME/resources/"
     cp -RfT "$SOURCE/[essential]" "$GAME/resources/"
     cp -RfT "$SOURCE/[vehicles-civ]" "$GAME/resources/"

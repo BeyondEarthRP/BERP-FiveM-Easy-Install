@@ -465,5 +465,4 @@ chown -R $srvAcct:$srvAcct $MAIN
 #
 # STARTING THE SERVER
 ##
-echo "Starting FiveM..."
 su $srvAcct -c "${STARTUP_SCRIPT}"

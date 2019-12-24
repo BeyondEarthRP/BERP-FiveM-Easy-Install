@@ -8,9 +8,9 @@ generate () {
 deploy () {
 	cp -RfT "$SOURCE/server.cfg" "$GAME/server.cfg"
 	echo "Config deployed."
-	
+
 	LOGO="SplatEarth.png"
-	cp -RfT "$SOURCE/__\[LOGOS\]__/$LOGO" "$GAME/BERP-Logo.png"
+	cp -RfT "$SOURCE/__[LOGOS]__/$LOGO" "$GAME/BERP-Logo.png"
 	echo "Logo deployed."
 }
 
@@ -21,22 +21,22 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 	if [ ! -z $GAME ] && [ ! -z $SOURCE ]; then
 
 		## ---- Generate and Deploy Server Config ---- ##
-		
+
 		generate;
 		deploy;
-		
+
 		## ---- Generate and Deploy Server Config ---- ##
 
 	else
 		echo "ERROR: Exports not found. I'VE FAILED!"
 	fi
-	
+
 elif [ ! -z $1 ] && [ $1 == "GENERATE" ]; then
 
 	if [ ! -z $SOURCE ]; then
 
 		## ---- Only Generate Server Config ---- ##
-		
+
 		generate;
 
 		## ---- Only Generate Server Config ---- ##
@@ -50,9 +50,9 @@ elif [ ! -z $1 ] && [ $1 == "DEPLOY" ]; then
 	if [ ! -z $GAME ] && [ ! -z $SOURCE ]; then
 
 		## ---- Only Deploy Server Config ---- ##
-			
+
 		deploy;
-			
+
 		## ---- Only Deploy Server Config ---- ##
 
 	else

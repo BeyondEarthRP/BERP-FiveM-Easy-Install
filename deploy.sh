@@ -69,14 +69,19 @@ echo "Reading config..."
 ALLFIGS=( srvAcct srvPassword mysql_user mysql_password steam_webApiKey sv_licenseKey blowfish_secret DBPSWD )
 for _fig in "${ALLFIGS[@]}";
 do
-    echo -n "Importing ${_fig} configuration... "
+    echo -n "Importing ${_fig} configuration"
 	if [ -z ${!_fig} ];
 	then
 		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
-
+		echo -n " => $_fig = ${!_fig} => "
 	fi
 	export ${_fig}
-	echo "Done."
+	if [ ! -z ${!_fig} ];
+	then
+		echo "Done."
+	else
+		echo "Failed."
+	fi
 done
 echo ""
 
@@ -84,7 +89,7 @@ echo ""
 #
 # ACCOUNT CREATION
 ##
-account=$(id -u ${srvAcct})
+account=$(id -u ${srvAcct}) > /dev/null
 if [ -z $account ]; then
 	adduser $srvAcct --gecos "FiveM Server, , , " --group --disabled-password
 	echo "$srvAcct:$srvPassword" | chpasswd

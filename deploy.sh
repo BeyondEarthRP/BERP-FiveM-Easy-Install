@@ -109,7 +109,8 @@ do
 	then
 		echo "Done."
 	else
-		echo "Failed."
+		echo "FAILED!."
+		exit 1
 	fi
 done
 echo ""
@@ -118,11 +119,24 @@ echo ""
 #
 # ACCOUNT CREATION
 ##
-echo "creating server account..."
-account=$(id -u ${srvAcct}) > /dev/null
+echo "checking for local account: $srvAcct"
+account=$(id -u ${srvAcct})
 if [ -z $account ]; then
-	adduser --system --gecos "FiveM Server, , , , , " --disabled-password "$srvAcct"
-	echo "${srvAcct}:${srvPassword}" | chpasswd
+	echo "creating server account..."
+	adduser --home /home/$srvAcct --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
+	echo "$srvAcct:$srvPassword" | chpasswd
+	
+	account=$(id -u ${srvAcct})
+	if [ ! -z $account ]; then
+		echo "$srvAcct found. Good. Let's continue..."
+	else
+		echo "FAILED to create account: $srvAcct!"
+		exit 1
+	fi
+else
+	echo ""
+	echo "Account already exists! Skipping account creation (this is probably bad)..."
+	echo ""
 fi
 
 #####################################################################
@@ -190,7 +204,6 @@ stopScreen () {
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?
 ##
-echo "I'm right here"
 if [ -z $1 ]; then
 	#\> NEW INSTALLATION
 	echo "                                                                                      ";	

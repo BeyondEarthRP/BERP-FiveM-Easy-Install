@@ -1,7 +1,19 @@
 # berp-server-default
-=====[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]=====
-
-The 10 Minute Deployment Script created for Beyond Earth Roleplay (BERP). 
+```
+8 888888888o   8 8888888888   8 888888888o.   8 888888888o   
+8 8888    `88. 8 8888         8 8888    `88.  8 8888    `88. 
+8 8888     `88 8 8888         8 8888     `88  8 8888     `88 
+8 8888     ,88 8 8888         8 8888     ,88  8 8888     ,88 
+8 8888.   ,88' 8 888888888888 8 8888.   ,88'  8 8888.   ,88' 
+8 8888888888   8 8888         8 888888888P'   8 888888888P'  
+8 8888    `88. 8 8888         8 8888`8b       8 8888         
+8 8888      88 8 8888         8 8888 `8b.     8 8888         
+8 8888    ,88' 8 8888         8 8888   `8b.   8 8888         
+8 888888888P   8 888888888888 8 8888     `88. 8 8888
+  Beyond         Earth          Role            Play
+===[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]===
+```
+The 10 Minute From-Scratch Deployment Script, created for Beyond Earth Roleplay (BERP). 
 Join us on FiveM! Look us up in the directory... the server is free reign rp!
 
 This script will deploy cFX FiveM, txAdmin, & MariaDB(MySQL) w/ phpMyAdmin...  
@@ -21,13 +33,15 @@ Debian 10 image. That is what I've used for all my testing.  It works great!
 Once you've deployed the server, connect to txAdmin and configure it... shouldn't
 be too hard.  
 
+```
 The FXServer tab of the config should be like:
 Build Path: /home/fivem/
  Base Path: /home/fivem/server-data/
   CFG Path: server.cfg
   enable autostart
   enable quiet mode
-  
+```
+
 Once you've doen this... don't start the server yet.  Go into your shell and run,
 backup-txadmin.sh.  This will store the config file with the deployment scripts...
 don't worry, there is a .gitignore for this folder and the config.json file.

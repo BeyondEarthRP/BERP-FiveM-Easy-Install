@@ -101,7 +101,7 @@ do
 		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
 		
 		#echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
-		echo " ... " # DO NOT DISPLAY ON SCREEN
+		echo -n "..." # DO NOT DISPLAY ON SCREEN
 		
 	fi
 	export ${_fig}
@@ -123,20 +123,24 @@ echo "checking for local account: $srvAcct"
 account=$(id -u ${srvAcct})
 if [ -z $account ]; then
 	echo "creating server account..."
-	adduser --home /home/$srvAcct --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
+	adduser --home "/home/$srvAcct" --shell /bin/bash --group "$srvAcct" --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
 	echo "$srvAcct:$srvPassword" | chpasswd
 	
 	account=$(id -u ${srvAcct})
 	if [ ! -z $account ]; then
-		echo "$srvAcct found. Good. Let's continue..."
+		echo ""
+		echo "'$srvAcct' account found. Good. Let's continue..."
+		echo ""
 	else
-		echo "FAILED to create account: $srvAcct!"
+		echo ""
+		echo "FAILED to create account '$srvAcct!'"
 		exit 1
 	fi
 else
 	echo ""
 	echo "Account already exists! Skipping account creation (this is probably bad)..."
 	echo ""
+	ping -c 5 127.0.0.1 > /dev/null  # giving some time to see this.
 fi
 
 #####################################################################

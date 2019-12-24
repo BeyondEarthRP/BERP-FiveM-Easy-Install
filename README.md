@@ -42,10 +42,7 @@ Build Path: /home/fivem/
 quiet mode: enable
 ```
 
-Once you've doen this... don't start the server yet.  Go into your shell and run,
-backup-txadmin.sh.  This will store the config file with the deployment scripts...
-don't worry, there is a .gitignore for this folder and the config.json file.
-If you want to store these on github, you'll have to put them somewhere private.
+Once you've doen this... don't start the server yet.  Go into your shell and run,  backup-txadmin.sh.  This will store the config data from txAdmin with the deployment scripts...  don't worry, there is a .gitignore for this folder and the config.json file.  If you want to store these on github, you'll have to put them somewhere private.
 
 For those that are not using Zap-Hosting, you should still be okay as long as you
 use the same build version they are using.  This script is not dependant on anything

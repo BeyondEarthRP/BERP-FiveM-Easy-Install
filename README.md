@@ -15,7 +15,7 @@ BERP-FiveM-Easy-Install
   Beyond         Earth          Role            Play
 ===[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]===
 ````
-The 10 Minute From-Scratch Deployment Script, created for Beyond Earth Roleplay (BERP). Join us on FiveM! Look us up in the directory... the server is free reign rp!
+The 15 Minute From-Scratch Deployment Script, created for Beyond Earth Roleplay (BERP). Join us on FiveM! Look us up in the directory... the server is free reign rp!
 
 This script will deploy cFX FiveM, txAdmin, & MariaDB(MySQL) w/ phpMyAdmin...
 FiveM deploys with EssentialMode and ESX with over 150 working modules.

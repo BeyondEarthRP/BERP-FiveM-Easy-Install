@@ -12,7 +12,7 @@ then
 	while [ -z $srvAcct ];
 	do
 		_prompt="";_prompt="Enter the linux account to be used for FiveM (fivem):"
-		
+
 		_return="";read -p "$_prompt " _return
 		if [ -z $_return ]; then _return="admin"; fi
 		echo ""
@@ -25,7 +25,7 @@ then
 	while [ -z $srvPassword ];
 	do
 		_prompt="";_prompt="Enter a password for ${srvAcct}:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
@@ -37,7 +37,7 @@ then
 	while [ -z $mysql_user ];
 	do
 		_prompt="";_prompt="Enter MySql username for the essentialmode database (admin):"
-		
+
 		_return="";read -p "$_prompt " _return
 		if [ -z $_return ]; then _return="admin"; fi
 		echo ""
@@ -50,7 +50,7 @@ then
 	while [ -z $mysql_password ];
 	do
 		_prompt="";_prompt="Enter MySQL password for ${mysql_user}:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
@@ -58,11 +58,11 @@ then
 		then
 			mysql_password=$_return
 		fi
-	done		
+	done
 	while [ -z $steam_webApiKey ];
 	do
 		_prompt="";_prompt="Enter your Steam Web API Key:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
@@ -70,11 +70,11 @@ then
 		then
 			steam_webApiKey=$_return
 		fi
-	done	
+	done
 	while [ -z $sv_licenseKey ];
 	do
 		_prompt="";_prompt="Enter your Cfx FiveM License:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
@@ -82,11 +82,11 @@ then
 		then
 			sv_licenseKey=$_return
 		fi
-	done		
+	done
 	while [ -z $blowfish_secret ];
 	do
 		_prompt="";_prompt="Enter Blowfish Secret for PHP:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
@@ -94,11 +94,11 @@ then
 		then
 			blowfish_secret=$_return
 		fi
-	done	
+	done
 	while [ -z $DBPSWD ];
 	do
 		_prompt="";_prompt="Enter root account password for MySQL:"
-		
+
 		_return="";read -p "$_prompt " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm

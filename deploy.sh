@@ -11,16 +11,36 @@
 #=/=%  |
 #}     \____________________________________________________________
 #
-#]     IF YOU ARE HAVING PROBLEMS, I GOT A PLAN FOR YOU SON...
-#} (Figure it Out!!) I'VE GOT 99 PROBLEMS BUT YOURS AINT ONE!!
-#                          --ps. send me the answer. thx <3
-#
-####################################################################
-# BASIC DETAILS --- do not touch (unless you know how.)
-#  CFX ARTIFACT BUILD:
+#]         IF YOU ARE HAVING PROBLEMS, I GOT A PLAN FOR YOU SON...
+#}     (Figure it Out!!) I'VE GOT 99 PROBLEMS BUT YOURS AINT ONE!!
+#                              --ps. send me the answer. thx <3
+#|
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+# BASIC DETAILS --- Customize for your server  |||||||||||||||||||||
+#///////////////////////////////////////////////////////////////////
+SERVER_NAME="Beyond Earth Roleplay (BERP)"
 
-cfx_build=1868
-artifact_build="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
+####################################################################
+# OPERATIONAL DETAILS --- do not touch (unless you know how.)
+##
+PRIVLY_NAME="BERP-Privly"
+CONFIG_NAME="config.json"
+REPO_NAME="BERP-Source"
+ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
+
+#####################################################################
+# WHO THE HECK AM I?!
+##
+SCRIPT=$(echo $0 | rev | cut -f1 -d/ | rev)
+SCRIPT_ROOT=`dirname "$(readlink -f "$0")"`
+	SCRIPT_FULLPATH="$SCRIPT_ROOT/$SCRIPT"
+	BUILD="$SCRIPT_ROOT/build"
+
+#####################################################################
+#
+# DEFINE VARIABLES TO EXPORT
+##
+. $SCRIPT_ROOT/build/build-env.sh
 
 #####################################################################
 #
@@ -47,6 +67,7 @@ echo "                                                            ";
 echo "         EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT            ";
 echo "                                                            ";
 echo "                                                            ";
+
 #####################################################################
 #
 # SUDO CHECK
@@ -55,34 +76,27 @@ if [ $EUID != 0 ]; then
     sudo "$0" "$@"
     exit $?
 fi
-export cfx_build
-export artifact_build
-
 
 #####################################################################
 #
 # THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
 ##
 apt update && apt -y upgrade && apt -y install jq
-set -a  # exporting these variables for other scripts
-	SCRIPT=$(echo $0 | rev | cut -f1 -d/ | rev)
-	SCRIPT_ROOT=`dirname "$(readlink -f "$0")"`
-		SCRIPT_FULLPATH=$SCRIPT_ROOT/$SCRIPT
-set +a
 
 #####################################################################
 #
 # CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 ##
-echo "Looking for a config file..."
+									echo "Looking for a config file..."
 while [ -z $CONFIG ];
 do
-	if [ -f "$SCRIPT_ROOT/config.json" ]; then
-		echo "Config found!"
-		CONFIG="$SCRIPT_ROOT/config.json"
+	_CONFIG="$PRIVATE/$CONFIG_NAME"
+	if [ -f "$_CONFIG" ]; then
+									echo "Config found @ ${_CONFIG}"
+		CONFIG="$_CONFIG"
 	else
-		echo "No config found... "
-		$SCRIPT_ROOT/quick-config.sh
+									echo "No config found... Let's create one."
+		$SCRIPT_ROOT/build/quick-config.sh
 	fi
 done
 echo ""
@@ -92,7 +106,12 @@ echo ""
 # IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
 ##
 echo "Reading config..."
-ALLFIGS=( srvAcct srvPassword mysql_user mysql_password steam_webApiKey sv_licenseKey blowfish_secret DBPSWD )
+
+ALLFIGS=( \
+srvAcct srvPassword mysql_user mysql_password \
+steam_webApiKey sv_licenseKey blowfish_secret DBPSWD \
+)
+
 for _fig in "${ALLFIGS[@]}";
 do
     echo -n "Importing ${_fig} configuration"
@@ -143,39 +162,6 @@ else
 	ping -c 5 127.0.0.1 > /dev/null  # giving some time to see this.
 fi
 
-#####################################################################
-#
-# DEFINE VARIABLES TO EXPORT
-##
-set -a
-SOURCE_ROOT="$(cd ~ && pwd)"
-	SOURCE="$SOURCE_ROOT/REPO"
-		DB_BKUP_PATH="$SOURCE/mysql-backups"
-			DB="$(ls -Art $DB_BKUP_PATH/ | tail -n 1)"
-		PATH_TO_DB="$DB_BKUP_PATH/$DB"
-
-
-SOFTWARE="/var/software"
-	TFIVEM="$SOFTWARE/fivem"
-		TCCORE="$TFIVEM/citizenfx.core.server"
-
-MAIN="/home/$srvAcct"
-	GAME="$MAIN/server-data"
-		RESOURCES="$GAME/resources"
-
-			GAMEMODES="$RESOURCES/[gamemodes]"
-				MAPS="$GAMEMODES/[maps]"
-
-			ESX="$RESOURCES/[esx]"
-				ESEXT="$ESX/es_extended"
-				ESUI="$ESX/[ui]"
-
-			ESSENTIAL="$RESOURCES/[essential]"
-				ESMOD="$ESSENTIAL/essentialmode"
-
-			MODS="$RESOURCES/[mods]"
-			VEHICLES="$RESOURCES/[vehicles]"
-set +a
 
 #####################################################################
 #
@@ -229,7 +215,7 @@ if [ -z $1 ]; then
 	#	exit 0
 	#fi
 
-	$SCRIPT_ROOT/build-dependancies.sh EXECUTE
+	. $SCRIPT_ROOT/build-dependancies.sh EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
 	# CHECK FOR MYSQL
@@ -237,25 +223,25 @@ if [ -z $1 ]; then
 	  echo "The MySQL/MariaDB client mysql(1) is not installed."
 	  exit 1
 	fi
-	$SCRIPT_ROOT/build/build-fivem.sh EXECUTE
+	. $SCRIPT_ROOT/build/build-fivem.sh EXECUTE
 	echo "FIVEM BUILT!"
 	echo ""
-	$SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
+	. $SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
 	echo "TXADMIN BUILT!"
 	echo ""
-	$SCRIPT_ROOT/build/fetch-source.sh EXECUTE
+	. $SCRIPT_ROOT/build/fetch-source.sh EXECUTE
 	echo "SOURCES FETCHED!"
 	echo ""
-	$SCRIPT_ROOT/build/create-database.sh EXECUTE
+	. $SCRIPT_ROOT/build/create-database.sh EXECUTE
 	echo "DATABASE CREATED!"
 	echo ""
-	$SCRIPT_ROOT/build/build-config.sh EXECUTE
+	. $SCRIPT_ROOT/build/build-config.sh EXECUTE
 	echo "CONFIG BUILT AND DEPLOYED!"
 	echo ""
-	$SCRIPT_ROOT/build/build-resources.sh EXECUTE
+	. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
 	echo "RESOURCES BUILT!"
 	echo ""
-	$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+	. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 	echo "VMENU BUILT!"
 	echo ""
 elif [ ! -z $1 ]; then
@@ -293,22 +279,22 @@ elif [ ! -z $1 ]; then
                 fi
 
 		stopScreen # STOP THE SCREEN SESSION
-		$SCRIPT_ROOT/build/build-fivem.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-fivem.sh EXECUTE
 		echo "FIVEM REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
 		echo "TXADMIN REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build/create-database.sh EXECUTE
+		. $SCRIPT_ROOT/build/create-database.sh EXECUTE
 		echo "FRESH DATABASE RECREATED!"
 		echo ""
-		$SCRIPT_ROOT/build/build-config.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-config.sh EXECUTE
 		echo "CONFIG BUILT AND DEPLOYED!"
 		echo ""
-		$SCRIPT_ROOT/build/build-resources.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
@@ -330,13 +316,13 @@ elif [ ! -z $1 ]; then
 		##### YOU'VE BEEN (KIND OF) WARNED.
 		###
 		stopScreen #STOP THE SCREEN SESSION
-		$SCRIPT_ROOT/build/build-config.sh DEPLOY
+		. $SCRIPT_ROOT/build/build-config.sh DEPLOY
 		echo "CONFIG REDEPLOYED!"
 		echo ""
-		$SCRIPT_ROOT/build/build-resources.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+		. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then

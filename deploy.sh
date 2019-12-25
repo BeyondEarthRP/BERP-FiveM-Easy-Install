@@ -15,59 +15,6 @@
 #}     (Figure it Out!!) I'VE GOT 99 PROBLEMS BUT YOURS AINT ONE!!
 #                              --ps. send me the answer. thx <3
 #|
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-# BASIC DETAILS --- Customize for your server  |||||||||||||||||||||
-#///////////////////////////////////////////////////////////////////
-SERVER_NAME="Beyond Earth Roleplay (BERP)"
-
-####################################################################
-# OPERATIONAL DETAILS --- do not touch (unless you know how.)
-##
-PRIVLY_NAME="BERP-Privly"
-CONFIG_NAME="config.json"
-REPO_NAME="BERP-Source"
-ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
-
-#####################################################################
-# WHO THE HECK AM I?!
-##
-SCRIPT=$(echo $0 | rev | cut -f1 -d/ | rev)
-SCRIPT_ROOT=`dirname "$(readlink -f "$0")"`
-	SCRIPT_FULLPATH="$SCRIPT_ROOT/$SCRIPT"
-	BUILD="$SCRIPT_ROOT/build"
-
-#####################################################################
-#
-# DEFINE VARIABLES TO EXPORT
-##
-. $SCRIPT_ROOT/build/build-env.sh
-
-#####################################################################
-#
-# JUST A BANNER
-##
-echo "                                                            ";
-echo "                                                            ";
-echo " ▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄     ▄▄▄▄▄▄▄▄▄▄▄ ";
-echo "▐░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌";
-echo "▐░█▀▀▀▀▀▀▀█░▌  ▐░█▀▀▀▀▀▀▀▀▀    ▐░█▀▀▀▀▀▀▀█░▌   ▐░█▀▀▀▀▀▀▀█░▌";
-echo "▐░▌       ▐░▌  ▐░▌             ▐░▌       ▐░▌   ▐░▌       ▐░▌";
-echo "▐░█▄▄▄▄▄▄▄█░▌  ▐░█▄▄▄▄▄▄▄▄▄    ▐░█▄▄▄▄▄▄▄█░▌   ▐░█▄▄▄▄▄▄▄█░▌";
-echo "▐░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌   ▐░░░░░░░░░░░▌";
-echo "▐░█▀▀▀▀▀▀▀█░▌  ▐░█▀▀▀▀▀▀▀▀▀    ▐░█▀▀▀▀█░█▀▀    ▐░█▀▀▀▀▀▀▀▀▀ ";
-echo "▐░▌       ▐░▌  ▐░▌             ▐░▌     ▐░▌     ▐░▌          ";
-echo "▐░█▄▄▄▄▄▄▄█░▌▄ ▐░█▄▄▄▄▄▄▄▄▄  ▄ ▐░▌      ▐░▌  ▄ ▐░▌          ";
-echo "▐░░░░░░░░░░▌▐░▌▐░░░░░░░░░░░▌▐░▌▐░▌       ▐░▌▐░▌▐░▌          ";
-echo " ▀▀▀▀▀▀▀▀▀▀  ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀  ▀         ▀  ▀  ▀           ";
-echo "     __                 __             __                   ";
-echo "    |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _       ";
-echo "    |__)(-\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\/    ";
-echo "          /                                    |      /     ";
-echo "                                                            ";
-echo "         EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT            ";
-echo "                                                            ";
-echo "                                                            ";
-
 #####################################################################
 #
 # SUDO CHECK
@@ -96,7 +43,7 @@ do
 		CONFIG="$_CONFIG"
 	else
 									echo "No config found... Let's create one."
-		$SCRIPT_ROOT/build/quick-config.sh
+		. $SCRIPT_ROOT/build/quick-config.sh
 	fi
 done
 echo ""
@@ -108,7 +55,7 @@ echo ""
 echo "Reading config..."
 
 ALLFIGS=( \
-srvAcct srvPassword mysql_user mysql_password \
+SERVICE_ACCOUNT srvPassword mysql_user mysql_password \
 steam_webApiKey sv_licenseKey blowfish_secret DBPSWD \
 )
 
@@ -136,23 +83,35 @@ echo ""
 
 #####################################################################
 #
+# DEFINE VARIABLES TO EXPORT
+##
+. build/build-env.sh
+
+#####################################################################
+#
+# JUST A BANNER
+##
+. build/just-a-banner.sh
+
+#####################################################################
+#
 # ACCOUNT CREATION
 ##
-echo "checking for local account: $srvAcct"
-account=$(id -u ${srvAcct})
+echo "checking for local account: $SERVICE_ACCOUNT"
+account=$(id -u ${SERVICE_ACCOUNT})
 if [ -z $account ]; then
 	echo "creating server account..."
-	adduser --home "/home/$srvAcct" --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$srvAcct"
-	echo "$srvAcct:$srvPassword" | chpasswd
+	adduser --home "/home/$SERVICE_ACCOUNT" --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$SERVICE_ACCOUNT"
+	echo "$SERVICE_ACCOUNT:$srvPassword" | chpasswd
 
-	account=$(id -u ${srvAcct})
+	account=$(id -u ${SERVICE_ACCOUNT})
 	if [ ! -z $account ]; then
 		echo ""
-		echo "'$srvAcct' account found. Good. Let's continue..."
+		echo "'$SERVICE_ACCOUNT' account found. Good. Let's continue..."
 		echo ""
 	else
 		echo ""
-		echo "FAILED to create account '$srvAcct!'"
+		echo "FAILED to create account '$SERVICE_ACCOUNT!'"
 		exit 1
 	fi
 else
@@ -161,7 +120,6 @@ else
 	echo ""
 	ping -c 5 127.0.0.1 > /dev/null  # giving some time to see this.
 fi
-
 
 #####################################################################
 #
@@ -188,8 +146,9 @@ is_mysql_command_available() {
 # OKAY, THESE MINE!
 stopScreen () {
   echo "Quiting screen session for FiveM (if applicable)"
-  su $srvAcct -c "screen -XS 'fivem' quit"
+  su $SERVICE_ACCOUNT -c "screen -XS 'fivem' quit"
 }
+
 #####################################################################
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?
@@ -445,10 +404,10 @@ chmod +x $STARTUP_SCRIPT
 #
 # THIS NEEDS TO BE (PRETTY MUCH) LAST -- OWNING!
 ##
-chown -R $srvAcct:$srvAcct $MAIN
+chown -R $SERVICE_ACCOUNT:$SERVICE_ACCOUNT $MAIN
 
 #####################################################################
 #
 # STARTING THE SERVER
 ##
-su $srvAcct -c "${STARTUP_SCRIPT}"
+su $SERVICE_ACCOUNT -c "${STARTUP_SCRIPT}"

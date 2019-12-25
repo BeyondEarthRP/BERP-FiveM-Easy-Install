@@ -1,5 +1,12 @@
 #!/bin/bash
 #-ex
+
+get_me_going () {
+	# THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
+	##
+	apt update && apt -y upgrade && apt -y install jq
+}
+
 define_runtime_env () {
 	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
 	#  PRIVLY_NAME  ::  CONFIG_NAME  ::  REPO_NAME  #
@@ -52,6 +59,77 @@ define_runtime_env () {
 		PATH_TO_DB="null"
 	fi
 	# END DATABASE BACKUP DISCOVERY
+}
+
+check_for_config () {
+	#####################################################################
+	#
+	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
+	##
+	                                                                        echo "Looking for a BERP ingest config file..."
+	while [ -z $CONFIG ];
+	do
+	        _CONFIG="$PRIVATE/$CONFIG_NAME"
+	        if [ -f "$_CONFIG" ]; then
+	                                                                        echo "BERP injest config found @ ${_CONFIG}"
+										echo "Preparing to deploy BERP..."
+	                CONFIG="$_CONFIG"
+	        else
+        	                                                                echo "No BERP ingest config found..."
+	                . $BUILD/quick-config.sh
+	        fi
+		done
+	echo ""
+}
+
+quick_config () {
+	echo ""
+	echo "Welcome to the BERP deployer!"
+	echo "Let's create a new BERP injest config..."
+	. $BUILD/quick-config.sh
+}
+
+import_system_config () {
+	#####################################################################
+	#
+	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
+	##
+	echo "Reading config..."
+
+	ALLFIGS=( \
+	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD \
+	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD \
+	)
+
+	for _fig in "${ALLFIGS[@]}";
+	do
+	    echo -n "Importing ${_fig} configuration"
+	        if [ -z ${!_fig} ];
+	        then
+	                eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
+
+	                #echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
+	                echo -n "... " # DO NOT DISPLAY ON SCREEN
+
+	        fi
+	        export ${_fig}
+	        if [ ! -z ${!_fig} ];
+	        then
+	                echo "Done."
+	        else
+	                echo "FAILED!."
+	                exit 1
+	        fi
+	done
+	echo ""
+	srvAcct=SERVICE_ACCOUNT # TEMPORARY FOR COMPATABIBLITY (CONVERTING THESE TO UPPERS)
+	srvPassword=SERVICE_PASSWORD # ditto.
+	mysql_user=MYSQL_USER # i'm not going to continue typing ditto.
+	mysql_password=MYSQL_PASSWORD
+	steam_webApiKey=STEAM_WEBAPIKEY
+	sv_licenseKey=SV_LICENSEKEY
+	blowfish_secret=BLOWFISH_SECRET
+	DBPSWD=DB_ROOT_PASSWORD # this one just needs to be more litteral
 }
 
 import_env_config () {
@@ -120,8 +198,6 @@ import_env_config () {
 	ESMOD=$( jq '.env.install.esmod' $CONFIG )
 	VEHICLES=$( jq '.env.install.vehicles' $CONFIG )
 }
-
-
 
 define_configures () {
 	_new_=0
@@ -324,6 +400,7 @@ then
 	## ---- BUILD ENVIRONMENT ---- ##
 
 	define_runtime_env;
+	check_for_config
 
 	if [ -d "${CONFIG%/*}" ];
 	then

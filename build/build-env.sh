@@ -1,10 +1,12 @@
-#!/bin/bash
-#-ex
+#!/bin/bash -ex
 
-get_me_going () {
-	# THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
-	##
-	apt update && apt -y upgrade && apt -y install jq
+initialize () {
+  ####
+  # THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
+  jqGreet=$( dpkg-query -W -f='${Version}\n' jq ) # check for jq
+  if [ -z $jqGreet ]; then # if not found
+    apt update && apt -y upgrade && apt -y install jq # install it!
+  fi
 }
 
 define_runtime_env () {
@@ -67,16 +69,16 @@ check_for_config () {
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
 	                                                                        echo "Looking for a BERP ingest config file..."
-	while [ -z $CONFIG ];
-	do
+	while [ -z $CONFIG ]; do
 	        _CONFIG="$PRIVATE/$CONFIG_NAME"
 	        if [ -f "$_CONFIG" ]; then
 	                                                                        echo "BERP injest config found @ ${_CONFIG}"
 										echo "Preparing to deploy BERP..."
 	                CONFIG="$_CONFIG"
 	        else
-        	                                                                echo "No BERP ingest config found..."
-	                . $BUILD/quick-config.sh
+	       	                                                                echo "No BERP ingest config found..."
+			[[ -z $1 ]] && . $BUILD/quick-config.sh
+			# OTHERWISE , ASSUME WE PASSED IT RUNTIME ONLY
 	        fi
 		done
 	echo ""
@@ -97,16 +99,33 @@ import_system_config () {
 	echo "Reading config..."
 
 	ALLFIGS=( \
-	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD \
+	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON_PASSWORD \
 	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD \
 	)
+
+	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+	#  SERVICE_ACCOUNT  ::  SERVICE_PASSWORD  ::  MYSQL_USER  ::  MYSQL_PASSWORD  #
+	#/////////////////////////////////////////////////////////////////////////////#
+	#   RCON_PASSWORD   ::   STEAM_WEBAPIKEY  ::  SV_LICENSEKEY  ||
+	#//////////////////////////////////////////////////////////////
+        #  BLOWFISH_SECRET  ::  DB_ROOT_PASSWORD  ||
+        #///////////////////////////////////////////
+
+	jq_SERVICE_ACCOUNT = ".sys.acct.user"
+        jq_SERVICE_PASSWORD = ".sys.acct.password"
+        jq_MYSQL_USER = ".sys.mysql.user"
+        jq_MYSQL_PASSWORD = ".sys.mysql.password"
+        jq_DB_ROOT_PASSWORD = ".sys.mysql.rootPassword"
+        jq_BLOWFISH_SECRET = ".sys.php.blowfishSecret"
+        jq_SV_LICENSEKEY = ".sys.keys.fivemLicenseKey"
+        jq_STEAM_WEBAPIKEY = ".sys.keys.steamWebApiKey"
 
 	for _fig in "${ALLFIGS[@]}";
 	do
 	    echo -n "Importing ${_fig} configuration"
 	        if [ -z ${!_fig} ];
 	        then
-	                eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
+	                eval "$_fig"=\$\( jq '\${jq_${_fig}}' $CONFIG \)
 
 	                #echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
 	                echo -n "... " # DO NOT DISPLAY ON SCREEN
@@ -129,6 +148,7 @@ import_system_config () {
 	steam_webApiKey=STEAM_WEBAPIKEY
 	sv_licenseKey=SV_LICENSEKEY
 	blowfish_secret=BLOWFISH_SECRET
+	rcon_password=RCON_PASSWORD
 	DBPSWD=DB_ROOT_PASSWORD # this one just needs to be more litteral
 }
 
@@ -202,17 +222,17 @@ import_env_config () {
 define_configures () {
 	_new_=0
 	_all_new_=()
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-	#  SERVER_NAME  ::  TXADMIN_CACHE  ::  DB_BKUP_PATH  ::  ARTIFACT_BUILD  #
-	#////////////////////////////////////////////////////////////////////////#
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-	#  SOFTWARE_ROOT  ::  TFIVEM  ::  TCCORE  #
-	#/////////////////////////////////////////#
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
+	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	#  SERVER_NAME  ::  TXADMIN_CACHE  ::  DB_BKUP_PATH  ::  ARTIFACT_BUILD  ##
+	#//////////////////////////////////////////////////////////////////////////
+	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	#  SOFTWARE_ROOT  ::  TFIVEM  ::  TCCORE  ##
+	#///////////////////////////////////////////
+	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	#  MAIN  ::  GAME  ::  RESOURCES  ::  GAMEMODES  ::  MAPS  ::  ESX  #
 	#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 	#  ESEXT ::  ESUI  ::  ESSENTIAL  ::    ESMOD    ::     VEHICLES    #
-	#///////////////////////////////////////////////////////////////////#
+	#////////////////////////////////////////////////////////////////////
 
 	if [ -z "$SERVER_NAME" ]; then
 		_SERVER_NAME="Beyond Earth Roleplay (BERP)"
@@ -299,6 +319,35 @@ define_configures () {
 	else
 		srvAcct=$SERVICE_ACCOUNT  # THIS SHOULD BE TEMPORARY / WAS THE OLD NAME- USING A MORE LITTERAL UPPER NOW
 	fi
+	if [ -z "$RCON_PASSWORD" ]; then
+            if ! $DISABLE_RCON ; then
+		dateStamp=`date +"@%B#%Y"`
+		let "RCON_PASSWORD_LENGTH-=$(expr length $DateStamp)"
+		salt=`date +%s | sha256sum | base64 | head -c $RCON_PASSWORD_LENGTH; echo`
+		_RCON_PASSWORD="$salt$dateStamp"
+
+		if $ASK_TO_ACCEPT ; then
+		    echo ""
+		    echo "You may enter a custom rcon password, or just accept the randomly generated one."
+		    echo ""
+		    echo "Leave blank and hit enter to use this (Recommended):"
+		    echo "      $_RCON_PASSWORD"
+		    echo ""
+		    read -p "Enter an RCON password [leave blank to accept random]" RCON_PASSWORD
+		    RCON_PASSWORD=${RCON_PASSWORD:-$_RCON_PASSWORD}
+		    _all_new_+="RCON_PASSWORD"
+		    let _new_++
+		else
+		    RCON_PASSWORD="$_RCON_PASSWORD"
+		    _all_new_+="RCON_PASSWORD"
+		    let _new_++
+		fi
+	        rcon_password=RCON_PASSWORD # THIS SHOULD BE TEMPORARY / WAS THE OLD NAME- USING AN UPPER NOW
+	    fi
+	fi
+
+
+
 	#THIS NEEDS TO BE CACHED.  SHOULDN'T/CAN NOT CHANGE!
 	MAIN="/home/$SERVICE_ACCOUNT"
 		GAME="$MAIN/server-data"
@@ -390,26 +439,26 @@ build_env_config () {
 	    jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}" > $CONFIG
 }
 
-
-if [ ! -z $1 ] && [ $1 == "TEST" ];
-then
+if [ ! -z $1 ] && [ $1 == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ];
-then
+elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 
 	## ---- BUILD ENVIRONMENT ---- ##
 
-	define_runtime_env;
+	initialize
+	define_runtime_env
 	check_for_config
 
-	if [ -d "${CONFIG%/*}" ];
-	then
+	if [ -d "${CONFIG%/*}" ]; then
 		import_env_config
 		define_configures
 		if [ $_new_ != 0 ]; then
 			echo "_new_ :: $_new_"
+
+			### TO - DO ############
 			# LOOP THROUGH _all_new_ to display changes
 			# CONFIRM
+
 			build_env_config
 		fi
 	else
@@ -418,6 +467,16 @@ then
 	fi
 
 	## ---- BUILD ENVIRONMENT ---- ##
+
+elif [ ! -z $1 ] && [ $1 == "RUNTIME" ]; then
+
+	## ---- BUILD RUNTIME ONLY ---- ##
+
+	initialize
+	define_runtime_env
+	check_for_config runtime
+
+	## ---- BUILD RUNTIME ONLY ---- ##
 
 else
     echo "This script must be executed by the deployment script"

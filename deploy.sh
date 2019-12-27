@@ -26,106 +26,48 @@ fi
 
 #####################################################################
 #
-# THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
+# BUILD DEPLOYMENT ENVIRONMENT
 ##
-apt update && apt -y upgrade && apt -y install jq
-
-#####################################################################
-#
-# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
-##
-									echo "Looking for a config file..."
-while [ -z $CONFIG ];
+_BUILD="build" # If you changed the build folder name for some crazy reason, you need to change this too!
+_BUILD-ENV="build-env.sh"  # If this is also different, then this too... why the heck are you changing my file names tho?!
+if [ -d "$_BUILD" ] && [ -d "$_BUILD" ]; then
+	. $_build/build-env.sh
+else
+while [ ! -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD-ENV" ];
 do
-	_CONFIG="$PRIVATE/$CONFIG_NAME"
-	if [ -f "$_CONFIG" ]; then
-									echo "Config found @ ${_CONFIG}"
-		CONFIG="$_CONFIG"
-	else
-									echo "No config found... Let's create one."
-		. $SCRIPT_ROOT/build/quick-config.sh
+	read -p "Where is the build folder located? [$_BUILD] " _BUILD
+	if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD-ENV" ]; then
+		echo "Config found... You changed the build folder.  You need to change 'deploy.sh' as well, unless you like this prompt and want to see it always... I'm guessing you don't want that though."
+		echo ""
+	elif [ -d "$_BUILD" ]; then
+		echo "Could not find the folder: $_BUILD"
+		echo "Please verify the location and try again."
+		echo ""
+	elif [ -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD-ENV" ]; then
+		echo "Could not find the file '$_BUILD-ENV' in the folder: $_BUILD"
+		echo "Please verify that the file exists and you are entering the correct folder name."
+		echo ""
+		echo "If you've changed this for some crazy reason, you should consult 'deploy.sh' and change appropriately"
+		echo ""
 	fi
 done
-echo ""
-
-#####################################################################
-#
-# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
-##
-echo "Reading config..."
-
-ALLFIGS=( \
-SERVICE_ACCOUNT srvPassword mysql_user mysql_password \
-steam_webApiKey sv_licenseKey blowfish_secret DBPSWD \
-)
-
-for _fig in "${ALLFIGS[@]}";
-do
-    echo -n "Importing ${_fig} configuration"
-	if [ -z ${!_fig} ];
-	then
-		eval "$_fig"="$(jq .[\"$_fig\"] $CONFIG)"
-
-		#echo -n " => $_fig = ${!_fig} => "  # DISPLAY ON SCREEN
-		echo -n "... " # DO NOT DISPLAY ON SCREEN
-
-	fi
-	export ${_fig}
-	if [ ! -z ${!_fig} ];
-	then
-		echo "Done."
-	else
-		echo "FAILED!."
-		exit 1
-	fi
-done
-echo ""
-
-#####################################################################
-#
-# DEFINE VARIABLES TO EXPORT
-##
-. build/build-env.sh
-
 #####################################################################
 #
 # JUST A BANNER
 ##
-. build/just-a-banner.sh
+. $BUILD/just-a-banner.sh
 
 #####################################################################
 #
 # ACCOUNT CREATION
 ##
-echo "checking for local account: $SERVICE_ACCOUNT"
-account=$(id -u ${SERVICE_ACCOUNT})
-if [ -z $account ]; then
-	echo "creating server account..."
-	adduser --home "/home/$SERVICE_ACCOUNT" --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$SERVICE_ACCOUNT"
-	echo "$SERVICE_ACCOUNT:$srvPassword" | chpasswd
-
-	account=$(id -u ${SERVICE_ACCOUNT})
-	if [ ! -z $account ]; then
-		echo ""
-		echo "'$SERVICE_ACCOUNT' account found. Good. Let's continue..."
-		echo ""
-	else
-		echo ""
-		echo "FAILED to create account '$SERVICE_ACCOUNT!'"
-		exit 1
-	fi
-else
-	echo ""
-	echo "Account already exists! Skipping account creation (this is probably bad)..."
-	echo ""
-	ping -c 5 127.0.0.1 > /dev/null  # giving some time to see this.
-fi
+. $BUILD/create-srvaccount.sh
 
 #####################################################################
 #
 # A BIT OF FUNCTION
 ##
-#### THE DATABASE STUFF BELOW CAME FROM THIS GUY! TY! VERY GOOD WORK!!
+#### THE DATABASE STUFF BELOW CAME FROM BERT VAN VRECKEM... TY! VERY GOOD WORK!!
 #### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
 #### A non-interactive replacement for mysql_secure_installation
 ####
@@ -143,11 +85,56 @@ is_mysql_command_available() {
 }
 
 ####
-# OKAY, THESE MINE!
-stopScreen () {
-  echo "Quiting screen session for FiveM (if applicable)"
-  su $SERVICE_ACCOUNT -c "screen -XS 'fivem' quit"
+# CHECK FOR MYSQL
+check_for_mysql() {
+  if [ ! is_mysql_command_available ]; then
+    echo "The MySQL/MariaDB client mysql(1) is not installed."
+    exit 1
+  fi
 }
+
+####
+# OKAY, THESE MINE!
+##
+###
+# THIS STOPS A SCREEN SESSION.
+stop_screen() {
+  SCREEN_SESSION_NAME="fivem"
+  echo "Quiting screen session '$SCREEN_SESSION_NAME' for FiveM (if applicable)"
+  su $SERVICE_ACCOUNT -c "screen -XS '$SCREEN_SESSION_NAME' quit"
+}
+###
+# SLEEP ... nuf'said
+sleep() {
+# Hold up N seconds
+# Default (no args) is 10 seconds-ish
+#
+# usage:
+#   sleep 5
+#   sleep
+#
+  if [ -z $1 ]; then
+    count="10"
+  else
+    count="$1"
+  fi
+  ping -c $count 127.0.0.1 > /dev/null
+}
+#
+###
+# invert (if set, unset // if unset, set to 1)
+#   BASH BOOLEAN
+invert() {
+  local __result=$1
+  if [ ${!__result} ]; then
+    eval unset $__result
+    #FALSE
+  else
+    eval $__result=1
+    #TRUE
+  fi
+}
+
 
 #####################################################################
 #
@@ -167,7 +154,7 @@ if [ -z $1 ]; then
 	echo "    you've got about 10 seconds to cancel this script (hit control-c two times!)      ";
 	echo "                                                                                      ";
 	echo "                                                                                      ";
-	ping -c 15 127.0.0.1 > /dev/null
+	sleep 15
 	### SAVING THIS BIT FOR ANOTHER SCRIPT ######
 	#if is_mysql_root_password_set; then
 	#	echo "Database root password already set"
@@ -177,41 +164,38 @@ if [ -z $1 ]; then
 	. $SCRIPT_ROOT/build-dependancies.sh EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
+
+	####
 	# CHECK FOR MYSQL
-	if [ ! is_mysql_command_available ]; then
-	  echo "The MySQL/MariaDB client mysql(1) is not installed."
-	  exit 1
-	fi
-	. $SCRIPT_ROOT/build/build-fivem.sh EXECUTE
+	check_for_mysql
+
+	. $BUILD/build-fivem.sh EXECUTE
 	echo "FIVEM BUILT!"
 	echo ""
-	. $SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
+	. $BUILD/build-txadmin.sh EXECUTE
 	echo "TXADMIN BUILT!"
 	echo ""
-	. $SCRIPT_ROOT/build/fetch-source.sh EXECUTE
+	. $BUILD/fetch-source.sh EXECUTE
 	echo "SOURCES FETCHED!"
 	echo ""
-	. $SCRIPT_ROOT/build/create-database.sh EXECUTE
+	. $BUILD/create-database.sh EXECUTE
 	echo "DATABASE CREATED!"
 	echo ""
-	. $SCRIPT_ROOT/build/build-config.sh EXECUTE
+	. $BUILD/build-config.sh EXECUTE
 	echo "CONFIG BUILT AND DEPLOYED!"
 	echo ""
-	. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
+	. $BUILD/build-resources.sh EXECUTE
 	echo "RESOURCES BUILT!"
 	echo ""
-	. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+	. $BUILD/build-vmenu.sh EXECUTE
 	echo "VMENU BUILT!"
 	echo ""
 elif [ ! -z $1 ]; then
-	#####################################################################
-	#
+
+	####
 	# CHECK FOR MYSQL
-	##
-	if [ ! is_mysql_command_available ]; then
-	  echo "The MySQL/MariaDB client mysql(1) is not installed."
-	  exit 1
-	fi
+	check_for_mysql;
+
 	if [ "$1"=="--redeploy" ] || [ "$1"=="-r" ]; then
 		#\> REDEPLOY
 		echo "                                                                  ";
@@ -226,34 +210,33 @@ elif [ ! -z $1 ]; then
 		echo "                  (hit control-c two times!)                      ";
 		echo "                                                                  ";
 		echo "                                                                  ";
+		ping -c 15 127.0.0.1 > /dev/null
 		###
 		##### this assumes you've used my teardown script.
 		##### if you've done this on your own. sorry...
 		##### Use my script to tear down, next time.
 		###
-		# CHECK FOR MYSQL
-                if [ ! is_mysql_command_available ]; then
-                  echo "The MySQL/MariaDB client mysql(1) is not installed."
-	          exit 1
-                fi
 
-		stopScreen # STOP THE SCREEN SESSION
-		. $SCRIPT_ROOT/build/build-fivem.sh EXECUTE
+		####
+		# STOP THE SCREEN SESSION
+		stop_screen
+
+		. $BUILD/build-fivem.sh EXECUTE
 		echo "FIVEM REBUILT!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-txadmin.sh EXECUTE
+		. $BUILD/build-txadmin.sh EXECUTE
 		echo "TXADMIN REBUILT!"
 		echo ""
-		. $SCRIPT_ROOT/build/create-database.sh EXECUTE
+		. $BUILD/create-database.sh EXECUTE
 		echo "FRESH DATABASE RECREATED!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-config.sh EXECUTE
+		. $BUILD/build-config.sh EXECUTE
 		echo "CONFIG BUILT AND DEPLOYED!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
+		. $BUILD/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+		. $BUILD/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
@@ -270,18 +253,23 @@ elif [ ! -z $1 ]; then
 		echo "           (hit control-c two times!)               ";
 		echo "                                                    ";
 		echo "                                                    ";
+		sleep 15
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.
 		###
-		stopScreen #STOP THE SCREEN SESSION
-		. $SCRIPT_ROOT/build/build-config.sh DEPLOY
+
+		####
+		# STOP THE SCREEN SESSION
+		stop_screen; #STOP THE SCREEN SESSION
+
+		. $BUILD/build-config.sh DEPLOY
 		echo "CONFIG REDEPLOYED!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-resources.sh EXECUTE
+		. $BUILD/build-resources.sh EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		. $SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+		. $BUILD/build-vmenu.sh EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
@@ -304,14 +292,16 @@ elif [ ! -z $1 ]; then
 		###
 		echo "THIS IS NOT YET IMPLEMENTED. -sry!"
 		exit 1
-		#stopScreen
-		#$SCRIPT_ROOT/build/build-config.sh DEPLOY
+		####
+		# STOP THE SCREEN SESSION
+		#stop_screen; #STOP THE SCREEN SESSION
+		#$BUILD/build-config.sh DEPLOY
 		#echo "CONFIG REDEPLOYED!"
 		#echo ""
-		#$SCRIPT_ROOT/build/build-resources.sh EXECUTE
+		#$BUILD/build-resources.sh EXECUTE
 		#echo "RESOURCES REBUILT!"
 		#echo ""
-		#$SCRIPT_ROOT/build/build-vmenu.sh EXECUTE
+		#$BUILD/build-vmenu.sh EXECUTE
 		#echo "VMENU REBUILT!"
 		#echo ""
 		#echo "Importing last database backup"
@@ -402,7 +392,7 @@ chmod +x $STARTUP_SCRIPT
 
 ######################################################################
 #
-# THIS NEEDS TO BE (PRETTY MUCH) LAST -- OWNING!
+# THIS NEEDS TO BE (PRETTY MUCH) LAST! -- OWNING! ALL THE THINGS!
 ##
 chown -R $SERVICE_ACCOUNT:$SERVICE_ACCOUNT $MAIN
 

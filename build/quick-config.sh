@@ -162,13 +162,13 @@ input_fig_entry() { # fig // prompt // confirm => 0/1
 
                                                                   # Assign the prompt (with or without default value)- then clean up
   [[ ${__prompt__:=$__prompt}  ]] && unset __prompt
-  if [ ! -z $__verbose ] ;                                                                          # If the confirmation is enabled
-  then                                                                      # check if the setting is a valid int (1 = on / 2 = off)
-    if [[ $__verbose =~ '^[0-9]+$' ]] ;                                                         # If this validation checks out okay
-    then                                                  # this is a number, not a defininition string; Using the on/off assignment
-      if [ $__verbose -eq 1 ] ;                                                         # if it is set to 1, use quick settings- C:N
-      then
-        local __verbose_prompt="C:N"
+  if [ ! -z $__verbose ] ;                                                                     # If the confirmation is enabled
+  then                                                                        # check if the setting is a valid int (1 = on / 2 = off)
+    if [[ $__verbose =~ '^[0-9]+$' ]] ;                                                     # If this validation checks out okay
+    then                                                      # this is a number, not a defininition string; Using the on/off assignment
+      if [ $__verbose -eq 1 ] ;
+			then                                                        # if it is set to 1, use quick settings- C:N
+				local __verbose_prompt="C:N"
       elif [ $__verbose -eq 10 ] || [ $__verbose -eq 11 ] ;
       then
         unset __verbose_prompt
@@ -178,7 +178,7 @@ input_fig_entry() { # fig // prompt // confirm => 0/1
         unset __verbose_display
         unset __verbose
       fi
-    else # because this is not a valid int, this prompt has param settings
+    else       																										 # because this is not a valid int, this prompt has param settings
       local __verbose_prompt=$(echo $__verbose | cut -f1 -d/) # collect the prompt params
     fi
 
@@ -224,6 +224,7 @@ input_fig_entry() { # fig // prompt // confirm => 0/1
         [Cc]* ) local _p1="Continue?" ; local __p1=c ;;
             * ) local _p1="Continue?" ; local __p1=C ;;
       esac;
+
       case $(echo "$__verbose_prompt" | cut -f2 -d:) in
         [Yy]* ) local _p2="[Y/n]" ; local __p2=y ;;
         [Nn]* ) local _p2="[N/y]" ; local __p2=n ;;
@@ -391,10 +392,10 @@ else
 	PROMPT="Enter the linux account to be used for FiveM"
 #	input_fig_entry "SERVICE_ACCOUNT" "$PROMPT" "0"
 
-        PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
+  PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
 #	input_fig_entry "SERVICE_PASSWORD" "$PROMPT" "s:n/y" 9
 
-        PROMPT="Password for root account on MySQL"
+  PROMPT="Password for root account on MySQL"
 #	input_fig_entry "DB_ROOT_PASSWORD" "$PROMPT" "s:n/y" 16
 
 	PROMPT="Enter MySql username for the essentialmode database"
@@ -420,13 +421,14 @@ else
 	PROMPT="Enable RCON (probably not needed)?"
         input_fig_entry "RCON" "$PROMPT" 10
 
-	if [ $RCON == "true" ] ; then
-          PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
-          input_fig_entry "RCON_PASSWORD_GEN" "$PROMPT" 10
+	if [ "$RCON" == "true" ] ; then
+    PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
+    input_fig_entry "RCON_PASSWORD_GEN" "$PROMPT" 10
 
-          if [ $RCON_PASSWORD_GEN == "true" ] ; then
-            PROMPT="Number of characters to generate?"
-            input_fig_entry "RCON_PASSWORD_LENGTH" "$PROMPT" 20 20 128
+    if [ "$RCON_PASSWORD_GEN" == "true" ] ; then
+      PROMPT="Number of characters to generate?"
+      input_fig_entry "RCON_PASSWORD_LENGTH" "$PROMPT" 20 20 128
+		fi
 
 		##
 		# RANDOM GENERATION OF PASSWORDS
@@ -434,10 +436,10 @@ else
 
 		echo ""
 		_confirm="";read -p "$_prompt " _confirm
-		if [ "$_confirm"=="n" ] || [ "$_confirm"=="no" ] ; then
+		if [ "$_confirm" == "n" ] || [ "$_confirm" == "no" ] ; then
 			RCON_PASSWORD_GEN=false
 		fi
-		if $RCON_PASSWORD_GEN ; then
+		if "$RCON_PASSWORD_GEN" ; then
 			##
 			# HOW LONG SHOULD THE PASSWORDS BE?
 			_prompt="";_prompt="Number of characters to generate (20-128)? [$RCON_PASSWORD_LENGTH]:"
@@ -446,7 +448,7 @@ else
 			while [ -z RCON_PASSWORD_LENGTH ] ; do
 				echo ""
 				_confirm="";read -p "$_prompt" _rclen
-				if [ -z $_rclen ] ; then
+				if [ -z "$_rclen" ] ; then
 					RCON_PASSWORD_LENGTH="$_RCON_PASSWORD_LENGTH"
 				elif [ "$_rclen" -ge "20" ] && [ "$_rclen" <= "128" ] ; then
 					RCON_PASSWORD_LENGTH="$_rclen"
@@ -461,20 +463,20 @@ else
 
 			echo ""
 			_confirm="";read -p "$_prompt " _confirm
-			if [ "$_confirm"=="y" ] || [ "$_confirm"=="yes" ] ; then
+			if [ "$_confirm" == "y" ] || [ "$_confirm" == "yes" ] ; then
 				ASK_TO_ACCEPT=true
 			fi
 		fi
 	else
 		RCON=false
 	fi
-	if [ -f $CONFIG ] ; then
+	if [ -f "$CONFIG" ] ; then
 		echo "This will over-write the current config found at:"
 		echo ""
 		echo "        $CONFIG"
 		echo ""
 		read -p "Last chance to cancel... continue? [N/y]"
-		if [ ! "$_confirm"=="y" ] || [ ! "$_confirm"=="yes" ] ; then
+		if [ ! "$_confirm" == "y" ] || [ ! "$_confirm" == "yes" ] ; then
 			echo "installation canceled by user.  exiting."
 			exit 1
 		fi

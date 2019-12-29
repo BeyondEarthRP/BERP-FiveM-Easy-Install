@@ -45,3 +45,4 @@ add_salt() {
 	# This is needed to return for variable assignment
 	echo "$__shaker"
 }
+[[ ! $APPMAIN ]] && add_salt $1 $2 $3

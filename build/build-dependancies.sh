@@ -8,7 +8,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 		_return="";read -p "Enter root account password for MySQL: " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
-		if [ "$_confirm"=="y" ] || [ "$_confirm"=="yes" ];
+		if [ "$_confirm" == "y" ] || [ "$_confirm" == "yes" ];
 		then
 			DB_ROOT_PASSWORD="$_return"
 		fi

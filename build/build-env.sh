@@ -62,14 +62,19 @@ elif [ ! -z "$1" ] && [ "$1" == "RUNTIME" ]; then
 
 	## ---- BUILD RUNTIME ONLY ---- ##
 
-elif [ ! -z "$1" ] && [ "$1" == "TEST-RUNTIME" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "TEST-RUNTIME" ] || [ "$1" == "TEST-CONFIGURES" ]; then
 
 	## ---- BUILD RUNTIME ONLY ---- ##
 
-	initialize
+	[[ "$1" == "TEST-RUNTIME" ]] && APPMAIN="TEST-RUNTIME"
+	[[ "$1" == "TEST-CONFIGURES" ]] & APPMAIN="TEST-CONSTRUCT"
+
         __TEST__="1"
+
+	initialize
 	define_runtime_env
-	check_for_config RUNTIME
+	[[ "$APPMAIN" == "TEST-RUNTIME" ]] && check_for_config RUNTIME
+	[[ "$APPMAIN" == "TEST-CONFIGURES" ]] && check_for_config
         [[ ! "$__INVALID_CONFIG__" ]] && import_system_config
 	[[ ! "$__INVALID_CONFIG__" ]] && import_env_config
         [[ ! "$__INVALID_CONFIG__" ]] && define_configures

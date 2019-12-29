@@ -14,14 +14,14 @@ then
   unset THIS_SCRIPT_ROOT
 fi
 ###################################################################
-[[ ! "$APPMAIN" ]] && APPMAIN="QUICK_DEPLOY" \
-&& . "$BUILD/build-env.sh" "RUNTIME"
+[[ ! "$APPMAIN" ]] && APPMAIN="QUICK_DEPLOY" && . "$BUILD/build-env.sh" "RUNTIME"
 ####
 # If assumptions were correct, we should not fail!
-if [ -z "$CONFIG" ] ; then
+if [ -z "$CONFIG" ] && [ -z "$_CONFIG" ]; then
 	echo "No config file has been defined.  I'VE FAILED!"
 	exit 1
 fi
+[[ ! "$CONFIG" ]] && [[ "$_CONFIG" ]] && CONFIG="$_CONFIG"
 
 #################################################################
 # DEFAULTS
@@ -224,6 +224,7 @@ else
           echo -e "\nOkay, writing the config...\n"
           color - - clearAll
 	fi
+
 	                                                                                     BASE_CONFIG={}
         echo "$BASE_CONFIG"                                                                              | \
         jq ". += {\"sys\":{}}"                                                                           | \

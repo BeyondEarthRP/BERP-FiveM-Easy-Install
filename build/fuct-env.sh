@@ -80,36 +80,33 @@ define_runtime_env() {
 	# END DATABASE BACKUP DISCOVERY
 }
 
-quick_config() {
-	echo ""
-	echo "Welcome to the BERP deployer!"
-	echo "Let's create a new BERP injest config..."
-	. "$BUILD/quick-config.sh"
-}
-
 check_for_config() {
 	#####################################################################
 	#
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
 	                                                                        echo "Looking for a BERP ingest config file..."
-	_CONFIG="$CONFIG" ; unset CONFIG
+	_CONFIG="$CONFIG"
+	_valid=$(cat "$_CONFIG")
 	while [ -z "$CONFIG" ]; do
-	        if [ -f "$_CONFIG" ]; then
+	        if [ -f "$_CONFIG" ] && [ ! -z "$_valid" ] ;
+                then
 	                                                                        echo "BERP injest config found @ ${_CONFIG}"
 										echo "Preparing BERP to be deployed..."
 	                CONFIG="$_CONFIG"
 	        else
 	       	                                                                echo "No BERP ingest config found..."
-			if [ -z $1 ] ;
+			if [ -z "$1" ] ;
                         then
 				# EXECUTION LIKELY CAME FROM DEPLOY
-				echo "Entering quick configuration tool..."
-                        	quick_config
-                        else
+				echo -e "Entering quick configuration tool...\n"
+				echo "Welcome to the BERP deployer!"
+				echo "Let's create a new BERP injest config..."
+				. "$BUILD/quick-config.sh"
+			else
                         	# OTHERWISE, WE PASSED IT RUNTIME ONLY
                         	__INVALID_CONFIG__="1"
-                        	CONFIG="$_CONFIG"
+				break ;
 			fi
 	        fi
 	done
@@ -118,28 +115,32 @@ check_for_config() {
 
 # READS IN MY ENV VARIABLES
 read_figs() {
-        for _fig in "$@";
 #	for _fig in "${ALLFIGS[@]}";
-
+        for _fig in "$@";
         do
+	[[ ! "$CONFIG" ]] && echo "no config found by read_figs()... exiting" && exit 1
+
             echo -n "Importing ${_fig} configuration"
                 if [ -z "${!_fig}" ];
                 then
-
                         local _jq="$(eval echo \$jq_${_fig})"
                         local _jsData="$(jq -r $_jq $CONFIG)"
 
-			[[ "$_jsData" != "null" ]] && [[ ! -z "$_jsData" ]] && printf -v "$_fig" '%s' "${_jsData}"
+			[[ "$__invalid__" ]] && unset __invalid__
+
+			[[ "$_jsData" == "null" ]] && local __invalid__="1"
+			[[ -z "$_jsData" ]] && local __invalid__="1"
+
+			[[ -z "$__invalid__" ]] && printf -v "$_fig" '%s' "${_jsData}"
+			[[ "$__invalid__" ]] && unset __invalid__
                         unset _jsData ; unset _jq
 
 			color yellow - bold
-                        [[ $__TEST__ ]] && [[ ${!_fig} ]] && local __val="${!_fig}" || local __val="\"\""
-			[[ $__TEST__ ]] &&  echo -e -n " => $_fig == $__val => "  || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
+                        [[ "$__TEST__" ]] && [[ "${!_fig}" ]] && local __val="${!_fig}" || local __val="\"\""
+			[[ "$__TEST__" ]] &&  echo -e -n " => $_fig == $__val => "; unset __val || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
 			color - - clearAll
 
                 fi
-
-		[[ "$_err_" ]] && unset "${!_fig}"
 
                 if [ ! -z "${!_fig}" ];
                 then
@@ -259,6 +260,10 @@ define_configures() {
 	#  ESEXT ::  ESUI  ::  ESSENTIAL  ::    ESMOD    ::     VEHICLES    #
 	#////////////////////////////////////////////////////////////////////
 
+
+
+
+
 	color red - bold
 	echo -e "\nI'm all up in the design, doin the configures!\n"
 	color - - clearAll
@@ -270,7 +275,7 @@ define_configures() {
 	_prompt_=0
 	if [ -z "$TXADMIN_CACHE" ]; then
 		if [ _prompt_ == 0 ]; then
-			echo "You'll probably want to hit enter for these next few that may come up... just accept the defaults."
+			echo -e "\nYou'll probably want to hit enter for these next few that may come up... just accept the defaults."
 			let _prompt_++
 		fi
 		_TXADMIN_CACHE="data-txadmin"
@@ -280,9 +285,9 @@ define_configures() {
 		_all_new_+="TXADMIN_CACHE"
 		let _new_++
 	fi
-	if [ -z "$TXADMIN_CACHE" ]; then
+	if [ -z "$DB_BKUP_PATH" ]; then
 		if [ _prompt_ == 0 ]; then
-			echo "You'll probably want to hit enter for these next couple that may come up... just accept the defaults."
+			echo -e "\nYou'll probably want to hit enter for these next couple that may come up... just accept the defaults."
 			let _prompt_++
 		fi
 		_DB_BKUP_PATH="data-mysql"
@@ -294,7 +299,7 @@ define_configures() {
 	fi
 	if [ -z "$ARTIFACT_BUILD" ]; then
 		if [ _prompt_ == 0 ]; then
-			echo "You'll probably want to hit enter for this new one... just accept the defaults."
+			echo -e "\nYou'll probably want to hit enter for this new one... just accept the defaults."
 			let _prompt_++
 		fi
 		_ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
@@ -307,13 +312,12 @@ define_configures() {
 		let _new_++
 
 		# CFX_BUILD = FiveM's build number
-		CFX_BUILD="$( echo $ARTIFACT_BUILD | cut -f1 -d- )"
+		CFX_BUILD="$(echo $ARTIFACT_BUILD | cut -f1 -d-)"
 	else
 		artifact_build="$ARTIFACT_BUILD" # THIS SHOULD BE TEMPORARY / I MOVED THIS TO UPPER LATE
 	fi
 	_prompt_=0
 
-	##########################################################################
 	#THIS CAN BE CACHED. CAN ALSO CHANGE WITHOUT AFFECTING THE INSTALL.
 	if [ -z "$SOFTWARE_ROOT" ]; then
 		_SOFTWARE_ROOT="/var/software"
@@ -323,7 +327,8 @@ define_configures() {
 		_all_new_+="SOFTWARE_ROOT"
 		let _new_++
 	fi
-	SOFTWARE_ROOT="SOFTWARE_ROOT"  # I just did this to keep my structure below.  Its for me, shut up!
+
+	SOFTWARE_ROOT="$SOFTWARE_ROOT"  # I just did this to keep my structure below.  Its for me, shut up!
 		TFIVEM="$SOFTWARE_ROOT/fivem"
 			TCCORE="$TFIVEM/citizenfx.core.server"
 
@@ -332,7 +337,7 @@ define_configures() {
 
 		dateStamp="$(date +%B#%Y)"
 		let "RCON_PASSWORD_LENGTH-=$(expr length $dateStamp)"
-		salt="$( date +%s | sha256sum | base64 | head -c $RCON_PASSWORD_LENGTH; echo )"
+		salt="$(date +%s | sha256sum | base64 | head -c $RCON_PASSWORD_LENGTH; echo)"
 		_RCON_PASSWORD="$salt$dateStamp"
 
 		if "$RCON_ASK_TO_CONFIRM" ; then
@@ -373,25 +378,24 @@ define_configures() {
 
 build_env_config() {
 	##################################################################################
+	BASE_CONFIG="{}"
 	if [ ! -d "${CONFIG%/*}" ];
 	then
 		echo "No previous configuration found.  Building Privly folder & base config..."
 		mkdir "${CONFIG%/*}"
 		touch "$CONFIG"
-		BASE_CONFIG="{}"
-		# $BUILD/quick-config.sh
+		. "$BUILD/quick-config.sh"
 	else
 		echo "Previous config found... Rebuilding with new config options..."
 		echo ""
 		_check=$( read -p 'are you sure you know what you are doing? (y/N)' )
-		if [ "$_check"=="y" ];
+		if [ "$_check" == "y" ];
 		then
 			if [ -z "$_CONFIG" ];
 			then
 				echo "The current config is not valid or is empty.  Starting over."
-				BASE_CONFIG="{}"
 			else
-				BASE_CONFIG="$( echo $_CONFIG | jq 'del(.pref)' | jq 'del(.env)' )"
+				BASE_CONFIG="$(echo $_CONFIG | jq 'del(.pref)' | jq 'del(.env)')"
 
 				if [ -z "$_ARTIFACT_BUILD" ]; then
 					ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"

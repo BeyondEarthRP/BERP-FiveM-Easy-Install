@@ -42,7 +42,6 @@ then
   unset THIS_SCRIPT_ROOT
 fi
 
-
 if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD_ENV" ] ; then
 
 	. "$_BUILD/$_BUILD_ENV" EXECUTE
@@ -228,7 +227,7 @@ elif [ ! -z "$1" ]; then
 	# CHECK FOR MYSQL
 	check_for_mysql;
 
-	if [ "$1"=="--redeploy" ] || [ "$1"=="-r" ]; then
+	if [ "$1" == "--redeploy" ] || [ "$1" == "-r" ]; then
 		#\> REDEPLOY
 		echo "                                                                  ";
 		echo "██████╗ ███████╗██████╗ ███████╗██████╗ ██╗      ██████╗ ██╗   ██╗";
@@ -271,7 +270,7 @@ elif [ ! -z "$1" ]; then
 		. "$BUILD/build-vmenu.sh" EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
-	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
+	elif [ "$1" == "--rebuild" ] || [ "$1" == "-b" ]; then
 		#\> REBUILD
 		echo "                                                    ";
 		echo "██████╗ ███████╗██████╗ ██╗   ██╗██╗██╗     ██████╗ ";
@@ -304,7 +303,7 @@ elif [ ! -z "$1" ]; then
 		. "$BUILD/build-vmenu.sh" EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
-	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
+	elif [ "$1" == "--restore" ] || [ "$1" == "-oof" ]; then
 		#\> RESTORE
 		echo "                                                          ";
 		echo "██████╗ ███████╗███████╗████████╗ ██████╗ ██████╗ ███████╗";

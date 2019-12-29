@@ -115,6 +115,7 @@ check_for_config() {
 	done
 }
 
+
 # READS IN MY ENV VARIABLES
 read_figs() {
         for _fig in "$@";
@@ -126,15 +127,12 @@ read_figs() {
                 then
 
                         local _jq="$(eval echo \$jq_${_fig})"
-                        local _jsDirty="$(jq $_jq $CONFIG)"
-			local _jsData=${_jsDirty//[^a-zA-Z0-9 ]/}
+                        local _jsData="$(jq -r $_jq $CONFIG)"
 
 			[[ "$_jsData" != "null" ]] && [[ ! -z "$_jsData" ]] && printf -v "$_fig" '%s' "${_jsData}"
-
                         unset _jsData ; unset _jq
 
 			color yellow - bold
-
                         [[ $__TEST__ ]] && [[ ${!_fig} ]] && local __val="${!_fig}" || local __val="\"\""
 			[[ $__TEST__ ]] &&  echo -e -n " => $_fig == $__val => "  || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
 			color - - clearAll
@@ -158,6 +156,7 @@ read_figs() {
 }
 
 import_system_config() {
+
 	#####################################################################
 	#
 	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
@@ -264,13 +263,6 @@ define_configures() {
 	echo -e "\nI'm all up in the design, doin the configures!\n"
 	color - - clearAll
 
-	if [ -z "$SERVER_NAME" ]; then
-		_SERVER_NAME="Beyond Earth Roleplay (BERP)"
-		read -p "What would you like to name the server? [$_SERVER_NAME]" SERVER_NAME
-		SERVER_NAME=${SERVER_NAME:-$_SERVER_NAME}
-		_all_new_+="SERVER_NAME"
-		let _new_++
-	fi
 	if [ -z "$PRIVATE" ]; then
 		echo "Erp. Derp. Problems... I have no private! FAILED @ x0532!"
 		exit 1
@@ -283,7 +275,7 @@ define_configures() {
 		fi
 		_TXADMIN_CACHE="data-txadmin"
 		read -p "txAdmin backup folder name [$_TXADMIN_CACHE]: " TXADMIN_CACHE
-		_TXADMIN_CACHE=${TXADMIN_CACHE:-$_TXADMIN_CACHE}
+		_TXADMIN_CACHE="${TXADMIN_CACHE:-$_TXADMIN_CACHE}"
 		TXADMIN_CACHE="$PRIVATE/$_TXADMIN_CACHE"
 		_all_new_+="TXADMIN_CACHE"
 		let _new_++
@@ -295,7 +287,7 @@ define_configures() {
 		fi
 		_DB_BKUP_PATH="data-mysql"
 		read -p "MySQL backup folder name [$_DB_BKUP_PATH]: " DB_BKUP_PATH
-		_DB_BKUP_PATH=${DB_BKUP_PATH:-$_DB_BKUP_PATH}
+		_DB_BKUP_PATH="${DB_BKUP_PATH:-$_DB_BKUP_PATH}"
 		DB_BKUP_PATH="$PRIVATE/$_DB_BKUP_PATH"
 		_all_new_+="DB_BKUP_PATH"
 		let _new_++
@@ -310,7 +302,7 @@ define_configures() {
 		echo "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**"
 		echo ""
 		read -p "Enter Build [$_ARTIFACT_BUILD]: " ARTIFACT_BUILD
-		ARTIFACT_BUILD=${ARTIFACT_BUILD:-$_ARTIFACT_BUILD}
+		ARTIFACT_BUILD="${ARTIFACT_BUILD:-$_ARTIFACT_BUILD}"
 		_all_new_+="ARTIFACT_BUILD"
 		let _new_++
 
@@ -327,7 +319,7 @@ define_configures() {
 		_SOFTWARE_ROOT="/var/software"
 		echo "NOTE: This is not the repo.  It is basically a cache of temporary downloads."
 		read -p "Where would you like to store the downloaded files? [$_SOFTWARE_ROOT]" SOFTWARE_ROOT
-		SERVER_NAME=${SOFTWARE_ROOT:-$_SOFTWARE_ROOT}
+		SERVER_NAME="${SOFTWARE_ROOT:-$_SOFTWARE_ROOT}"
 		_all_new_+="SOFTWARE_ROOT"
 		let _new_++
 	fi
@@ -335,29 +327,15 @@ define_configures() {
 		TFIVEM="$SOFTWARE_ROOT/fivem"
 			TCCORE="$TFIVEM/citizenfx.core.server"
 
-
-#	if [ -z "$SERVICE_ACCOUNT" ]; then
-#		_SERVICE_ACCOUNT="fivem"
-#		echo ""
-#		echo "DO NOT USE ROOT HERE! SU OR SUDO LIKE NORMAL!"
-#		echo ""
-#		read -p "What linux account would you like to use for fivem? [$_SERVICE_ACCOUNT]" SERVICE_ACCOUNT
-#		SERVICE_ACCOUNT=${SERVICE_ACCOUNT:-$_SERVICE_ACCOUNT}
-#		#srvAcct=$SERVICE_ACCOUNT
-#		_all_new_+="SERVICE_ACCOUNT"
-#		let _new_++
-#	else
-#		#srvAcct=$SERVICE_ACCOUNT  # THIS SHOULD BE TEMPORARY / WAS THE OLD NAME- USING A MORE LITTERAL UPPER NOW
-#	fi
-
 	if [ "$RCON_PASSWORD" == "random" ]; then
-            if ! $DISABLE_RCON ; then
-		dateStamp=`date +"@%B#%Y"`
-		let "RCON_PASSWORD_LENGTH-=$(expr length $DateStamp)"
-		salt=`date +%s | sha256sum | base64 | head -c $RCON_PASSWORD_LENGTH; echo`
+            if [ ! "$DISABLE_RCON" ] ; then
+
+		dateStamp="$(date +%B#%Y)"
+		let "RCON_PASSWORD_LENGTH-=$(expr length $dateStamp)"
+		salt="$( date +%s | sha256sum | base64 | head -c $RCON_PASSWORD_LENGTH; echo )"
 		_RCON_PASSWORD="$salt$dateStamp"
 
-		if $RCON_ASK_TO_CONFIRM ; then
+		if "$RCON_ASK_TO_CONFIRM" ; then
 		    echo ""
 		    echo "You may enter a custom rcon password, or just accept the randomly generated one."
 		    echo ""
@@ -365,7 +343,7 @@ define_configures() {
 		    echo "      $_RCON_PASSWORD"
 		    echo ""
 		    read -p "Enter an RCON password [leave blank to accept random]" RCON_PASSWORD
-		    RCON_PASSWORD=${RCON_PASSWORD:-$_RCON_PASSWORD}
+		    RCON_PASSWORD="${RCON_PASSWORD:-$_RCON_PASSWORD}"
 		    _all_new_+="RCON_PASSWORD"
 		    let _new_++
 		else
@@ -401,17 +379,13 @@ build_env_config() {
 		mkdir "${CONFIG%/*}"
 		touch "$CONFIG"
 		BASE_CONFIG="{}"
+		# $BUILD/quick-config.sh
 	else
 		echo "Previous config found... Rebuilding with new config options..."
 		echo ""
 		_check=$( read -p 'are you sure you know what you are doing? (y/N)' )
 		if [ "$_check"=="y" ];
 		then
-			_CONFIG="$( cat $CONFIG )"
-			_SERVER_NAME="$( echo $_CONFIG | jq -r '.pref.serverName' )"
-			_ARTIFACT_BUILD="$( echo $_CONFIG | jq -r '.pref.artifactBuild' )"
-			_REPO_NAME="$( echo $_CONFIG | jq -r '.pref.repoName' )"
-
 			if [ -z "$_CONFIG" ];
 			then
 				echo "The current config is not valid or is empty.  Starting over."
@@ -419,22 +393,20 @@ build_env_config() {
 			else
 				BASE_CONFIG="$( echo $_CONFIG | jq 'del(.pref)' | jq 'del(.env)' )"
 
-				if [ -z "$_SERVER_NAME" ]; then
-					SERVER_NAME="B.E.R.P Clone"
-					echo "Server name is empty. Using hard-coded version: $SERVER_NAME"
-				else
-					SERVER_NAME="$_SERVER_NAME"
-				fi
 				if [ -z "$_ARTIFACT_BUILD" ]; then
 					ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
-					echo "Artifact build is not populated. Using hard-coded version: $ARTIFACT_BUILD"
+					color red - bold
+					echo -e "Artifact build is not populated. Using hard-coded version: $ARTIFACT_BUILD"
+					color - - clearAll
 				else
 					ARTIFACT_BUILD="$_ARTIFACT_BUILD"
 				fi
 
 				if [ -z "$_REPO_NAME" ]; then
 					REPO_NAME="BERP-Source"
+					color red - bold
 					echo "Repository name is not populated. Using hard-coded version: $REPO_NAME"
+					color - - clearAll
 				else
 					REPO_NAME="$_REPO_NAME"
 				fi

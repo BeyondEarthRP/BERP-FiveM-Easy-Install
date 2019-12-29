@@ -36,16 +36,38 @@ _RCON_PASSWORD_GEN=true
 _RCON_PASSWORD_LENGTH=64
 _RCON_ASK_TO_CONFIRM=false
 
-[[ "${SERVICE_ACCOUNT:=$_SERVICE_ACCOUNT}" ]] ; _SERVICE_ACCOUNT="$SERVICE_ACCOUNT"
-[[ "${MYSQL_USER:=$_MYSQL_USER}" ]] ; _MYSQL_USER="$MYSQL_USER"
+_SERVER_NAME="Beyond Earth Roleplay (BERP)"
 
-[[ "${STEAM_WEBAPIKEY:=$_STEAM_WEBAPIKEY}" ]] ; _STEAM_WEBAPIKEY="$STEAM_WEBAPIKEY"
-[[ "${SV_LICENSEKEY:=$_SV_LICENSEKEY}" ]] ; _SV_LICENSEKEY="$SV_LICENSEKEY"
+# I feel like there is a better way
+# Whatever the current figs are, if they are blank... then use the default above....
+# Then set the default (over-writing the above) to whatever is read in from the config file.
 
-[[ "${RCON:=$_RCON}" ]] ; _RCON="$RCON"
-[[ "${RCON_PASSWORD_GEN:=$_RCON_PASSWORD_GEN}" ]] ; _RCON_PASSWORD_GEN="$RCON_PASSWORD_GEN"
-[[ "${RCON_PASSWORD_LENGTH:=$_RCON_PASSWORD_LENGTH}" ]] ; _RCON_PASSWORD_LENGTH="$RCON_PASSWORD_LENGTH"
-[[ "${RCON_ASK_TO_CONFIRM:=$_RCON_ASK_TO_CONFIRM}" ]] ; _RCON_ASK_TO_CONFIRM="$RCON_ASK_TO_CONFIRM"
+[[ "${SERVICE_ACCOUNT:=$_SERVICE_ACCOUNT}" ]] ;
+[[ ! -z "$SERVICE_ACCOUNT" ]] &&  _SERVICE_ACCOUNT="$SERVICE_ACCOUNT" ;
+
+[[ "${MYSQL_USER:=$_MYSQL_USER}" ]] ;
+[[ ! -z "$MYSQL_USER" ]] && _MYSQL_USER="$MYSQL_USER" ;
+
+[[ "${STEAM_WEBAPIKEY:=$_STEAM_WEBAPIKEY}" ]] ;
+[[ ! -z "$STEAM_WEBAPIKEY" ]] && _STEAM_WEBAPIKEY="$STEAM_WEBAPIKEY" ;
+
+[[ "${SV_LICENSEKEY:=$_SV_LICENSEKEY}" ]] ;
+[[ ! -z "$SV_LICENSEKEY" ]] &&  _SV_LICENSEKEY="$SV_LICENSEKEY" ;
+
+[[ "${RCON:=$_RCON}" ]] ;
+[[ ! -z "$RCON" ]] && _RCON="$RCON" ;
+
+[[ "${RCON_PASSWORD_GEN:=$_RCON_PASSWORD_GEN}" ]] ;
+[[ ! -z "$RCON_PASSWORD_GEN" ]] && _RCON_PASSWORD_GEN="$RCON_PASSWORD_GEN" ;
+
+[[ "${RCON_PASSWORD_LENGTH:=$_RCON_PASSWORD_LENGTH}" ]] ;
+[[ ! -z "$RCON_PASSWORD_LENGTH" ]] && _RCON_PASSWORD_LENGTH="$RCON_PASSWORD_LENGTH" ;
+
+[[ "${RCON_ASK_TO_CONFIRM:=$_RCON_ASK_TO_CONFIRM}" ]] ;
+[[ ! -z "$RCON_ASK_TO_CONFIRM" ]] && _RCON_ASK_TO_CONFIRM="$RCON_ASK_TO_CONFIRM"
+
+[[ "${SERVER_NAME:=$_SERVER_NAME}" ]] ;
+[[ ! -z "$SERVER_NAME" ]] && _SERVER_NAME="$SERVER_NAME"
 
 ##################################################################
 #
@@ -134,6 +156,14 @@ else
               input_fig_entry "RCON_ASK_TO_CONFIRM" "$PROMPT" 11
             fi
 	fi
+
+        if [ -z "$SERVER_NAME" ]; then
+          PROMPT="What would you like to name the server?"
+          input_fig_entry "SERVER_NAME" "$PROMPT" "s:y/y"
+          # _all_new_+="SERVER_NAME"
+          # let _new_++
+        fi
+
 
 	if [ -f "$CONFIG" ] ; then
           [[ "$__confirmed__" ]] && unset __confirmed__

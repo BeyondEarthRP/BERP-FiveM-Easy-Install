@@ -1,0 +1,1 @@
+./build/quick-config.sh

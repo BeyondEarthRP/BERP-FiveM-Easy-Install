@@ -15,9 +15,19 @@ harvest() { # fig // prompt // confirm => 0/1
   [[ "$__p1" ]] && unset __p1 ; [[ "$__p1" ]] && unset __p1 ;
   [[ "$_p1" ]] && unset _p1 ; [[ "$_p2" ]] && unset _p2 ;
 
-  local __fig_key="$1" ; local __prompt="$2" ;
-  local __verbose="$3" ; local __min_len="$4" ;
-  local __max_len="$5" ;
+  local __fig_key="$1" ; 
+  local __prompt="$2" ;
+  local __verbose="$3" ;
+  local __random="$4" ;
+  local __min_len="$5" ;
+  local __max_len="$6" ;
+  
+  if [ "$__random" == "true" ] ; 
+  then
+	local _pass="$(add_salt 64 1 date)"
+	printf "_${__fig_key}" '%s' "$_pass"
+	unset _pass
+  fi
                                                    # I got this working then realized i didn't need it/ or the above function. derp.
                                                  # declare -a local __prompt=("${!2}")  ## Just saving it here for future reference.
                                                                                          # arg_constructor __prompt  __default_input
@@ -39,7 +49,11 @@ harvest() { # fig // prompt // confirm => 0/1
                                                      # Pull the default and update the prompt (if applicable)- otherwise, do nothing
   local __default="$(eval echo \$_${__fig_key})"                                                         # Pick up the default value
                                                                    # if it is blank, unset the var ; otherwise, add it to the prompt
-  [[ -z "$__default" ]] && unset __default || local __prompt__=$(echo -e "$__prompt \e[32m[$__default]\e[39m")
+  
+  [[ ! -z "$__default" ]] && [[ ! "$__random" == "true" ]] && [[ "$__verbose" != 10 ]] && [[ "$__verbose" != 11 ]] \
+  && local __prompt__=$(echo -e "$__prompt \e[32m[$__default]\e[39m")
+  
+  [[ -z "$__default" ]] && unset __default
 
                                                                   # Assign the prompt (with or without default value)- then clean up
   [[ "${__prompt__:=$__prompt}"  ]] && unset __prompt
@@ -49,7 +63,7 @@ harvest() { # fig // prompt // confirm => 0/1
     then                                                      # this is a number, not a defininition string; Using the on/off assignment
       if [ "$__verbose" -eq 1 ] ;
       then                                                        # if it is set to 1, use quick settings- C:N
-	local __verbose_prompt="C:N"
+		local __verbose_prompt="C:N"
       elif [ "$__verbose" -eq 10 ] || [ "$__verbose" -eq 11 ] ;
       then
         unset __verbose_prompt
@@ -81,6 +95,10 @@ harvest() { # fig // prompt // confirm => 0/1
 
       if [ "$__verbose" == 10 ] || [ "$__verbose" == 11 ] ;
       then
+
+		[[ "$__default" == "true" ]] || [[ "$__default" == "1" ]] && __verbose=10
+		[[ "$__default" == "false" ]] || [[ "$__default" == "0" ]] && __verbose=11
+		
         case "$__verbose" in   # if verbose
           10 ) local _q="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; local __q=y ;;  # is 10, make Yes the default
           11 ) local _q="\e[93m[N/\e[2my\e[22m]\e[39m" ; local __q=n ;;  # is 11, make No the default
@@ -175,6 +193,7 @@ harvest() { # fig // prompt // confirm => 0/1
       ####################
       # PROMPT THE USER
       ## -- standard prompt
+	  [[ "$__random" == "true" ]] && echo -e -n "\n   Random Password (Leave Blank to Accept):\n\n        > $__default <\n\n"
       color white - bold ;
       echo -n "$__prompt__: " ; # prompt the user
       color - - clearAll ;
@@ -297,4 +316,54 @@ harvest() { # fig // prompt // confirm => 0/1
     fi
   done
   unset __prompt__ ; unset return__ ;  unset __confirm ; unset __question__ ;
+}
+
+add_salt() {
+	# default
+	local _default_length_=64
+
+	# some vars
+	[[ -n "$1" ]] && __len="$1" || __len="$_default_length_"
+	[[ -n "$2" ]] && local __salt="$2" || local __salt="default"
+	[[ -n "$3" ]] && local __stamp="$3"
+
+	if ! [ "$1" -eq "$1" ] 2> /dev/null
+	then
+        	# using default
+		local __len="$_default_length_"
+	else
+		declare -i local __len
+		__len="$1"
+	fi
+
+	#random delim char
+	if [ "$__salt" -eq 1 ] ; then
+		_d=$(cat /dev/urandom | tr -dc "!@#%" | fold -w 1 | head -n 1) \
+	else
+		_d=$(cat /dev/urandom | tr -dc "!@#$%&*_+?" | fold -w 1 | head -n 1)
+	fi
+
+	#make stamp
+	if [ -n "$__stamp" ] ;
+	then
+		case "$__stamp" in
+		  "date" ) local _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
+		       * ) local _shakerStamp="${_d}$__stamp" ;;
+		esac ;
+		local __len="$(( $__len - ${#_shakerStamp} ))"
+		[ "$__len" -lt 0 ] && __len=3 && _shakerStamp="${_shakerStamp:3}"
+	fi
+
+	# make salt
+	case "$__salt" in
+	  0 ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	  1 ) local _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%^&*()_+?><~" | fold -w "$__len" | head -n 1) ;;
+	  * ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	esac ;
+
+	# if __stamp is empty, then just add salt / otherwise, add salt and the shaker stamp
+	[ ! "$__stamp" ] && local __shaker="${_salt}" || local __shaker="${_salt}${_shakerStamp}"
+
+	# This is needed to return for variable assignment
+	echo "$__shaker"
 }

@@ -259,14 +259,7 @@ define_configures() {
 	#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 	#  ESEXT ::  ESUI  ::  ESSENTIAL  ::    ESMOD    ::     VEHICLES    #
 	#////////////////////////////////////////////////////////////////////
-<<<<<<< Updated upstream
 
-
-
-
-
-=======
->>>>>>> Stashed changes
 	color red - bold
 	echo -e "\nI'm all up in the design, doin the configures!\n"
 	color - - clearAll

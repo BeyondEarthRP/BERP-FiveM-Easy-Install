@@ -5,7 +5,7 @@
 #>> THESE ARE MINE <3
 #>>>>>>>>>>>>>>>>>>>>>
 # INPUT A CONFIG ENTRY
-input_fig_entry() { # fig // prompt // confirm => 0/1
+harvest() { # fig // prompt // confirm => 0/1
 
   [[ "$return__" ]] && unset return__ ; [[ "$__default" ]] && unset __default ;
   [[ "$__prompt__" ]] && unset __prompt___ ; [[ "$__prompt" ]] && unset __prompt ;

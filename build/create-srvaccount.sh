@@ -9,7 +9,11 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	#
 	# ACCOUNT CREATION
 	##
+	[[ ! "$SERVICE_ACCOUNT" ]] && echo "Service account not found! I'VE FAILED!" && exit 1
+
+	echo "SERVICE ACCOUNT: $SERVICE_ACCOUNT"
 	echo "checking for local account: $SERVICE_ACCOUNT"
+
 	account=$(id -u "${SERVICE_ACCOUNT}")
 	if [ -z "$account" ]; then
 	        echo "creating server account..."

@@ -29,37 +29,63 @@ fi
 # BUILD DEPLOYMENT ENVIRONMENT
 ##
 APPMAIN="APPMAIN" # DONUT TOUCH!
-THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-[[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] \
-&& _BUILD="$THIS_SCRIPT_ROOT" ||  _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-_BUILD-ENV="build-env.sh"  # If this is different... why the heck are you changing my file names?!
 
-if [ -d "$_BUILD" ] && [ -d "$_BUILD" ]; then
-	. "$_build/$_BUILD-ENV"
+if [ ! "$BUILD" ] ;
+then
+  _BUILD="build" # If you changed this.... why?! btw, it is also hard coded in some of the files at the top (similar to this).
+  _BUILD_ENV="build-env.sh"  # If this is different... why the heck are you changing my file names?!
+
+  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+  [[ -d "$THIS_SCRIPT_ROOT/$_BUILD" ]] && _BUILD="$THIS_SCRIPT_ROOT/$_BUILD"
+  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "$_BUILD" ]] && _BUILD="$THIS_SCRIPT_ROOT"
+  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "$_BUILD" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+  unset THIS_SCRIPT_ROOT
+fi
+
+
+if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD_ENV" ] ; then
+
+	. "$_BUILD/$_BUILD_ENV" EXECUTE
+
+	[[ ! $CONFIG ]] && _FAILED=1 && echo "Config not found by deploy script. I'VE FAILED!" && exit 1
+
+        BUILD="$_BUILD"
+
+	[[ "$_BUILD" ]] && unset _BUILD
+	[[ "$_BUILD_ENV" ]] && unset _BUILD_ENV
 else
-while [ ! -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD-ENV" ];
-do
+    while [ ! -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD_ENV" ];
+    do
 	read -p "Where is the build folder located? [$_BUILD] " _BUILD
-	if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD-ENV" ]; then
+	if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD_ENV" ]; then
 		echo "Config found... You changed the build folder.  You need to change 'deploy.sh' as well, unless you like this prompt and want to see it always... I'm guessing you don't want that though."
 		echo ""
+		_FAILED=1
 	elif [ -d "$_BUILD" ]; then
 		echo "Could not find the folder: $_BUILD"
 		echo "Please verify the location and try again."
 		echo ""
-	elif [ -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD-ENV" ]; then
-		echo "Could not find the file '$_BUILD-ENV' in the folder: $_BUILD"
+		_FAILED=1
+	elif [ -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD_ENV" ]; then
+		echo "Could not find the file '$_BUILD_ENV' in the folder: $_BUILD"
 		echo "Please verify that the file exists and you are entering the correct folder name."
 		echo ""
 		echo "If you've changed this for some crazy reason, you should consult 'deploy.sh' and change appropriately"
 		echo ""
+		_FAILED=1
 	fi
-done
+    done
+fi
+
+if [ "$_FAILED" == "1" ] ; then
+	exit 1
+fi
+
 #####################################################################
 #
 # JUST A BANNER
 ##
-. "$BUILD/just-a-banner.sh" HEADER
+. "$BUILD/just-a-banner.sh"
 
 #####################################################################
 #
@@ -159,13 +185,15 @@ if [ -z "$1" ]; then
 	echo "                                                                                      ";
 	echo "                                                                                      ";
 	sleep 15
+
 	### SAVING THIS BIT FOR ANOTHER SCRIPT ######
 	#if is_mysql_root_password_set; then
 	#	echo "Database root password already set"
 	#	exit 0
 	#fi
 
-	. "$SCRIPT_ROOT/build-dependancies.sh" EXECUTE
+
+	. "$BUILD/build-dependancies.sh" EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
 

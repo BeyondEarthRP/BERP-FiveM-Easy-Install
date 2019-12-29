@@ -3,25 +3,26 @@
 #
 # JUST A BANNER
 ##
-echo "                                                            ";
-echo "                                                            ";
-echo "  ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d      ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d      ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^$
-echo " ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l    ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l    ^v^p ^v^q ^v^q ^v^$
-echo " ^v^p ^v^q ^v^h ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^h ^v^q ^v^l   ^v^p ^v^q ^v^h ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^`     ^v^p ^v^q ^v^h ^v^$
-echo " ^v^p ^v^q ^v^l        ^v^p ^v^q ^v^l   ^v^p ^v^q ^v^l              ^v^p ^v^q ^v^l        ^v^p ^v^q ^v^l    ^v^p ^v^q ^v^l        ^v^p ^v^q ^v^l";
-echo " ^v^p ^v^q ^v^h ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^h ^v^q ^v^l   ^v^p ^v^q ^v^h ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d     ^v^p ^v^q ^v^h ^v^$
-echo " ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l    ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l    ^v^p ^v^q ^v^q ^v^$
-echo " ^v^p ^v^q ^v^h ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^h ^v^q ^v^l   ^v^p ^v^q ^v^h ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^`     ^v^p ^v^q ^v^h ^v^$
-echo " ^v^p ^v^q ^v^l        ^v^p ^v^q ^v^l   ^v^p ^v^q ^v^l              ^v^p ^v^q ^v^l      ^v^p ^v^q ^v^l      ^v^p ^v^q ^v^l          ";
-echo " ^v^p ^v^q ^v^h ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^h ^v^q ^v^l ^v^d  ^v^p ^v^q ^v^h ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d ^v^d   ^v^d  ^v^p ^v^q $
-echo " ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l ^v^p ^v^q ^v^l ^v^p ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^q ^v^l ^v^p ^v^q$
-echo "  ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^`   ^v^`   ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^` ^v^`   ^v^`   ^v^`          ^v^`   ^v^`$
-echo "     __                 __             __                   ";
-echo "    |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _       ";
-echo "    |__)(-\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\/    ";
-echo "          /                                    |      /     ";
-echo "                                                            ";
-echo "         EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT            ";
-echo "                                                            ";
-echo "                                                            ";
-
+cat <<EOF
+                                                                  
+                                                                  
+   8 888888888o   8 88888888888  8 888888888o.   8 888888888o     
+   8 8888    \`88. 8 8888         8 8888    \`88.  8 8888    \`88.   
+   8 8888     \`88 8 8888         8 8888     \`88  8 8888     \`88   
+   8 8888     ,88 8 8888         8 8888     ,88  8 8888     ,88   
+   8 8888.   ,88' 8 888888888888 8 8888.   ,88'  8 8888.   ,88'   
+   8 8888888888   8 8888         8 888888888P'   8 888888888P'    
+   8 8888    \`88. 8 8888         8 8888\`8b       8 8888           
+   8 8888      88 8 8888         8 8888 \`8b.     8 8888           
+   8 8888    ,88' 8 8888         8 8888   \`8b.   8 8888           
+   8 888888888P   8 888888888888 8 8888     \`88. 8 8888           
+   8 Beyond       8 Earth        8 Role          8 Play           
+      __                 __             __                        
+     |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _            
+     |__)(-\\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\\/       
+           /                                    |      /          
+                                                                  
+            EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT               
+                                                                  
+                                                                  
+EOF

@@ -13,7 +13,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
 		## ---- mySQL Database ---- ##
 	else
-		echo "Error: no exports found.  I'VE FAILED!"
+		echo "Error: required *figs not found.  I'VE FAILED!"
 	fi
 else
     echo "This script must be executed by the deployment script"

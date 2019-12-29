@@ -2,7 +2,7 @@
 
 generate () {
 	echo "Creating configuration & database scheme..."
-	$SOURCE/build-srvcfg.sh
+	"$SOURCE/build-srvcfg.sh"
 }
 
 deploy () {
@@ -17,11 +17,11 @@ deploy () {
 	echo "Logo deployed."
 }
 
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-	if [ ! -z $GAME ] && [ ! -z $SOURCE ]; then
+	if [ ! -z "$GAME" ] && [ ! -z "$SOURCE" ]; then
 
 		## ---- Generate and Deploy Server Config ---- ##
 
@@ -34,9 +34,9 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 		echo "ERROR: Exports not found. I'VE FAILED!"
 	fi
 
-elif [ ! -z $1 ] && [ $1 == "GENERATE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "GENERATE" ]; then
 
-	if [ ! -z $SOURCE ]; then
+	if [ ! -z "$SOURCE" ]; then
 
 		## ---- Only Generate Server Config ---- ##
 
@@ -48,9 +48,9 @@ elif [ ! -z $1 ] && [ $1 == "GENERATE" ]; then
 		echo "ERROR: Exports not found. I'VE FAILED!"
 	fi
 
-elif [ ! -z $1 ] && [ $1 == "DEPLOY" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "DEPLOY" ]; then
 
-	if [ ! -z $GAME ] && [ ! -z $SOURCE ]; then
+	if [ ! -z "$GAME" ] && [ ! -z "$SOURCE" ]; then
 
 		## ---- Only Deploy Server Config ---- ##
 

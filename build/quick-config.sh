@@ -5,9 +5,14 @@
 ###################################################################
 ### check if I'm starting from the build directory...
 ### I assume this is correct.  It should be, let us see!
-SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-[[ "$(echo $SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] \
-&& BUILD="$SCRIPT_ROOT" || BUILD="$(dirname $SCRIPT_ROOT)"
+if [ ! "$BUILD" ] ;
+then
+  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
+  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
+  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+  unset THIS_SCRIPT_ROOT
+fi
 ###################################################################
 [[ ! "$APPMAIN" ]] && APPMAIN="QUICK_DEPLOY" \
 && . "$BUILD/build-env.sh" "RUNTIME"

@@ -7,9 +7,14 @@
 # BUILD OUT THE RUN TIME DETIALS
 ### check if I'm starting from the build directory...
 ### I assume this is correct.  It should be, let us see!
-THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-[[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] \
-&& BUILD="$THIS_SCRIPT_ROOT" ||  BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+if [ ! "$BUILD" ] ;
+then
+  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
+  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
+  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+  unset THIS_SCRIPT_ROOT
+fi
 
 # LOADING FUNCTIONS
 . "$BUILD/fuct-env.sh"
@@ -35,7 +40,6 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 			### TO - DO ############
 			# LOOP THROUGH _all_new_ to display changes
 			# CONFIRM
-
 			build_env_config
 		fi
 	else
@@ -53,6 +57,7 @@ elif [ ! -z "$1" ] && [ "$1" == "RUNTIME" ]; then
 	define_runtime_env
 	check_for_config RUNTIME
 	[[ ! "$__INVALID_CONFIG__" ]] && import_system_config
+	[[ ! "$__INVALID_CONFIG__" ]] && import_env_config
 
 
 	## ---- BUILD RUNTIME ONLY ---- ##
@@ -66,6 +71,8 @@ elif [ ! -z "$1" ] && [ "$1" == "TEST-RUNTIME" ]; then
 	define_runtime_env
 	check_for_config RUNTIME
         [[ ! "$__INVALID_CONFIG__" ]] && import_system_config
+	[[ ! "$__INVALID_CONFIG__" ]] && import_env_config
+        [[ ! "$__INVALID_CONFIG__" ]] && define_configures
 
 
 	## ---- BUILD RUNTIME ONLY ---- ##

@@ -36,17 +36,21 @@ define_runtime_env() {
 	# WHO THE HECK AM I?!
 	# GENERATE RUNTIME VARIABLES - NEEDS TO RUN EACH LOAD
 	SCRIPT=$(echo "$0" | rev | cut -f1 -d/ | rev)
-        SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+	if [ ! "$BUILD" ] ;
+	then
+		THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+		[[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
+		[[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
+		[[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+		unset THIS_SCRIPT_ROOT
+	fi
 
-        [[ "$(echo $SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] \
-        && BUILD="$SCRIPT_ROOT" ||  BUILD="$(dirname $SCRIPT_ROOT)"
-
-        SCRIPT_ROOT="$SCRIPT_ROOT" # THIS IS JUST FOR ME... SHUT UP
-		SCRIPT_FULLPATH="$SCRIPT_ROOT/$SCRIPT"
-		BUILD="$BUILD" # YEAH, I KNOW- THIS IS VERY POINTLESS (I JUST READ IT EASIER THIS WAY)
+	SCRIPT_ROOT="$(dirname $0)"
+	SCRIPT_FULLPATH="$0"
+	BUILD="$BUILD"
 
         [[ ! -d "$BUILD" ]] && \
-          echo "Could not find the build folder.  It should be right here next to me..."
+          echo "Could not find the build folder.  It should be right here next to me..." && exit 1
 
 	##########################################################################
 	# WHERE THE HECK AM I?!!
@@ -76,6 +80,13 @@ define_runtime_env() {
 	# END DATABASE BACKUP DISCOVERY
 }
 
+quick_config() {
+	echo ""
+	echo "Welcome to the BERP deployer!"
+	echo "Let's create a new BERP injest config..."
+	. "$BUILD/quick-config.sh"
+}
+
 check_for_config() {
 	#####################################################################
 	#
@@ -93,6 +104,7 @@ check_for_config() {
 			if [ -z $1 ] ;
                         then
 				# EXECUTION LIKELY CAME FROM DEPLOY
+				echo "Entering quick configuration tool..."
                         	quick_config
                         else
                         	# OTHERWISE, WE PASSED IT RUNTIME ONLY
@@ -103,11 +115,46 @@ check_for_config() {
 	done
 }
 
-quick_config() {
-	echo ""
-	echo "Welcome to the BERP deployer!"
-	echo "Let's create a new BERP injest config..."
-	. "$BUILD/quick-config.sh"
+# READS IN MY ENV VARIABLES
+read_figs() {
+        for _fig in "$@";
+#	for _fig in "${ALLFIGS[@]}";
+
+        do
+            echo -n "Importing ${_fig} configuration"
+                if [ -z "${!_fig}" ];
+                then
+
+                        local _jq="$(eval echo \$jq_${_fig})"
+                        local _jsDirty="$(jq $_jq $CONFIG)"
+			local _jsData=${_jsDirty//[^a-zA-Z0-9 ]/}
+
+			[[ "$_jsData" != "null" ]] && [[ ! -z "$_jsData" ]] && printf -v "$_fig" '%s' "${_jsData}"
+
+                        unset _jsData ; unset _jq
+
+			color yellow - bold
+
+                        [[ $__TEST__ ]] && [[ ${!_fig} ]] && local __val="${!_fig}" || local __val="\"\""
+			[[ $__TEST__ ]] &&  echo -e -n " => $_fig == $__val => "  || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
+			color - - clearAll
+
+                fi
+
+		[[ "$_err_" ]] && unset "${!_fig}"
+
+                if [ ! -z "${!_fig}" ];
+                then
+                        color green - bold
+                        echo "Done."
+                        color - - clearAll
+                else
+                        color red - bold
+                        echo "Nothing set!"
+                        color - - clearAll
+                fi
+        done
+        echo ""
 }
 
 import_system_config() {
@@ -117,7 +164,7 @@ import_system_config() {
 	##
 	echo "Reading config..."
 
-	ALLFIGS=( \
+	local ALLFIGS=( \
 	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON RCON_PASSWORD \
 	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD RCON_PASSWORD_GEN \
         RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM \
@@ -140,38 +187,10 @@ import_system_config() {
         jq_SV_LICENSEKEY=".sys.keys.fivemLicenseKey"
         jq_STEAM_WEBAPIKEY=".sys.keys.steamWebApiKey"
 
-        # working bits
-	for _fig in "${ALLFIGS[@]}";
-	do
-	    echo -n "Importing ${_fig} configuration"
-	        if [ -z "${!_fig}" ];
-	        then
 
-                        _jq="$(eval echo \$jq_${_fig})"
-                        _jsData="$(jq $_jq $CONFIG)"
+	read_figs "${ALLFIGS[@]}"
 
-                        #_jsData="${jsDirty//[^a-zA-Z0-9 ]/}"
-
-                        printf -v "$_fig" '%s' "${_jsData//[^a-zA-Z0-9 ]/}"
-                        unset _jsDirty ; unset _jsData ; unset _jq
-
-                        [[ $__TEST__ ]] && echo -e -n " => $_fig = ${!_fig} => "  || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
-
-	        fi
-	        if [ ! -z "${!_fig}" ];
-	        then
-			color green - bold
-	                echo "Done."
-			color - - clearAll
-	        else
-			color red - bold
-	                echo "FAILED!"
-			color - - clearAll
-	        fi
-	done
-	echo ""
-
-	srvAcct="$SERVICE_ACCOUNT" # TEMPORARY FOR COMPATABIBLITY (CONVERTING THESE TO UPPERS)
+	# TEMPORARY FOR COMPATABIBLITY (CONVERTING THESE TO UPPERS)
 	srvPassword="$SERVICE_PASSWORD" # ditto.
 	mysql_user="$MYSQL_USER" # i'm not going to continue typing ditto.
 	mysql_password="$MYSQL_PASSWORD"
@@ -184,70 +203,46 @@ import_system_config() {
 }
 
 import_env_config() {
-	##############################
-	#	"pref": {
-	#		"serverName":"${SERVER_NAME}",
-	#		"artifactBuild":"${ARTIFACT_BUILD}",
-	#		"repoName":"${REPO_NAME}",
-	#		"serviceAccount":"${SERVICE_ACCOUNT}"
-	#	},
-	#	"env": {
-	#		"sourceRoot":"${SOURCE_ROOT}",
-	#			"source":"${SOURCE}",
-	#		"private": {
-	#		      "txadminCache":"${TXADMIN_CACHE}",
-	#		       "dbBkupPath":"${DB_BKUP_PATH}"
-	#		},
-	#		"software": {
-	#			"softwareRoot":"${SOFTWARE_ROOT}",
-	#	                "tfivem":"${TFIVEM}",
-	#                       "tccore":"${TCCORE}"
-	#		},
-	#		"install": {
-	#			"main":"${MAIN}",
-	#	                "game":"${GAME}",
-	#                       "resources":"${RESOURCES}",
-	#			"gamemodes":"${GAMEMODES}",
-	#			"maps":"${MAPS}",
-	#			"esx":"${ESX}",
-	#			"esext":"${ESEXT}",
-	#			"esui":"${ESUI}",
-	#			"essential":"${ESSENTIAL}",
-	#			"esmod":"${ESMOD}",
-	#			"vehicles":"${VEHICLES}"
-	#		}
 
-	#pref
-	SERVER_NAME=$( jq '.pref.serverName' "$CONFIG" )
-	ARTIFACT_BUILD=$( jq '.pref.artifactBuild' "$CONFIG" )
-	REPO_NAME=$( jq '.pref.repoName' "$CONFIG" )
-	SERVICE_ACCOUNT=$( jq '.pref.serviceAccount' "$CONFIG" )
+	local ALLFIGS=( \
+	SERVER_NAME ARTIFACT_BUILD REPO_NAME SOURCE_ROOT SOURCE TXADMIN_CACHE \
+        DB_BKUP_PATH SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
+        MAPS ESX ESEX ESUI ESSENTIAL ESMOD VEHICLES \
+        ) ;
 
-	#env
-	SOURCE_ROOT=$( jq '.env.sourceRoot' "$CONFIG" )
-	SOURCE=$( jq '.env.source' "$CONFIG" )
+	# .pref
+	jq_SERVER_NAME=".pref.serverName"
+	jq_ARTIFACT_BUILD=".pref.artifactBuild"
+	jq_REPO_NAME=".pref.repoName"
 
-	#env.private
-	TXADMIN_CACHE=$( jq '.env.private.txadminCache' "$CONFIG" )
-	DB_BKUP_PATH=$( jq '.env.private.dbBkupPath' "$CONFIG" )
+	# .env
+	jq_SOURCE_ROOT=".env.sourceRoot"
+	jq_SOURCE=".env.source"
 
-	#env.software
-	SOFTWARE_ROOT=$( jq '.env.software.softwareRoot' "$CONFIG" )
-	TFIVEM=$( jq '.env.software.tfivem' "$CONFIG" )
-	TCCORE=$( jq '.env.software.tccore' "$CONFIG" )
+       	# .env.private
+	jq_TXADMIN_CACHE=".env.private.txadminCache"
+	jq_DB_BKUP_PATH=".env.private.dbBkupPath"
 
-	#env.install
-	MAIN=$( jq '.env.install.main' "$CONFIG" )
-	GAME=$( jq '.env.install.game' "$CONFIG" )
-	RESOURCES=$( jq '.env.install.resources' "$CONFIG" )
-	GAMEMODES=$( jq '.env.install.gamemodes' "$CONFIG" )
-	MAPS=$( jq '.env.install.maps' "$CONFIG" )
-	ESX=$( jq '.env.install.esx' "$CONFIG" )
-	ESEXT=$( jq '.env.install.esext' "$CONFIG" )
-	ESUI=$( jq '.env.install.esui' "$CONFIG" )
-	ESSENTIAL=$( jq '.env.install.essential' "$CONFIG" )
-	ESMOD=$( jq '.env.install.esmod' "$CONFIG" )
-	VEHICLES=$( jq '.env.install.vehicles' "$CONFIG" )
+	# .env.software
+	jq_SOFTWARE_ROOT=".env.software.softwareRoot"
+	jq_TFIVEM=".env.software.tfivem"
+	jq_TCCORE=".env.software.tccore"
+
+	# .env.install
+	jq_MAIN=".env.install.main"
+	jq_GAME=".env.install.game"
+	jq_RESOURCES=".env.install.resources"
+	jq_GAMEMODES=".env.install.gamemodes"
+	jq_MAPS=".env.install.maps"
+	jq_ESX=".env.install.esx"
+	jq_ESEX=".env.install.esext"
+	jq_ESUI=".env.install.esui"
+	jq_ESSENTIAL=".env.install.essential"
+	jq_ESMOD=".env.install.esmod"
+	jq_VEHICLES=".env.install.vehicles"
+
+	read_figs "${ALLFIGS[@]}"
+
 }
 
 define_configures() {
@@ -264,6 +259,10 @@ define_configures() {
 	#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 	#  ESEXT ::  ESUI  ::  ESSENTIAL  ::    ESMOD    ::     VEHICLES    #
 	#////////////////////////////////////////////////////////////////////
+
+	color red - bold
+	echo -e "\nI'm all up in the design, doin the configures!\n"
+	color - - clearAll
 
 	if [ -z "$SERVER_NAME" ]; then
 		_SERVER_NAME="Beyond Earth Roleplay (BERP)"
@@ -337,19 +336,20 @@ define_configures() {
 			TCCORE="$TFIVEM/citizenfx.core.server"
 
 
-	if [ -z "$SERVICE_ACCOUNT" ]; then
-		_SERVICE_ACCOUNT="fivem"
-		echo ""
-		echo "DO NOT USE ROOT HERE! SU OR SUDO LIKE NORMAL!"
-		echo ""
-		read -p "What linux account would you like to use for fivem? [$_SERVICE_ACCOUNT]" SERVICE_ACCOUNT
-		SERVICE_ACCOUNT=${SERVICE_ACCOUNT:-$_SERVICE_ACCOUNT}
-		srvAcct=$SERVICE_ACCOUNT
-		_all_new_+="SERVICE_ACCOUNT"
-		let _new_++
-	else
-		srvAcct=$SERVICE_ACCOUNT  # THIS SHOULD BE TEMPORARY / WAS THE OLD NAME- USING A MORE LITTERAL UPPER NOW
-	fi
+#	if [ -z "$SERVICE_ACCOUNT" ]; then
+#		_SERVICE_ACCOUNT="fivem"
+#		echo ""
+#		echo "DO NOT USE ROOT HERE! SU OR SUDO LIKE NORMAL!"
+#		echo ""
+#		read -p "What linux account would you like to use for fivem? [$_SERVICE_ACCOUNT]" SERVICE_ACCOUNT
+#		SERVICE_ACCOUNT=${SERVICE_ACCOUNT:-$_SERVICE_ACCOUNT}
+#		#srvAcct=$SERVICE_ACCOUNT
+#		_all_new_+="SERVICE_ACCOUNT"
+#		let _new_++
+#	else
+#		#srvAcct=$SERVICE_ACCOUNT  # THIS SHOULD BE TEMPORARY / WAS THE OLD NAME- USING A MORE LITTERAL UPPER NOW
+#	fi
+
 	if [ "$RCON_PASSWORD" == "random" ]; then
             if ! $DISABLE_RCON ; then
 		dateStamp=`date +"@%B#%Y"`
@@ -467,5 +467,5 @@ build_env_config() {
 	    jq ".env.install += {\"esui\":\"${ESUI}\"}"                    | \
 	    jq ".env.install += {\"essential\":\"${ESSENTIAL}\"}"          | \
 	    jq ".env.install += {\"esmod\":\"${ESMOD}\"}"                  | \
-	    jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}" > "$CONFIG"
+	    jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}"		      > "$CONFIG"
 }

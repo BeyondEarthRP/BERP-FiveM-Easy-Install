@@ -199,16 +199,16 @@ import_system_config() {
 	blowfish_secret="$BLOWFISH_SECRET"
 	rcon_password="$RCON_PASSWORD"
 	DBPSWD="$DB_ROOT_PASSWORD" # this one just needs to be more litteral
-        ASK_TO_CONFIRM="$RCON_ASK_TO_CONFIRM"
+    ASK_TO_CONFIRM="$RCON_ASK_TO_CONFIRM"
 }
 
 import_env_config() {
 
 	local ALLFIGS=( \
 	SERVER_NAME ARTIFACT_BUILD REPO_NAME SOURCE_ROOT SOURCE TXADMIN_CACHE \
-        DB_BKUP_PATH SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
-        MAPS ESX ESEX ESUI ESSENTIAL ESMOD VEHICLES \
-        ) ;
+    DB_BKUP_PATH SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
+    MAPS ESX ESEX ESUI ESSENTIAL ESMOD VEHICLES \
+    ) ;
 
 	# .pref
 	jq_SERVER_NAME=".pref.serverName"
@@ -259,11 +259,14 @@ define_configures() {
 	#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 	#  ESEXT ::  ESUI  ::  ESSENTIAL  ::    ESMOD    ::     VEHICLES    #
 	#////////////////////////////////////////////////////////////////////
+<<<<<<< Updated upstream
 
 
 
 
 
+=======
+>>>>>>> Stashed changes
 	color red - bold
 	echo -e "\nI'm all up in the design, doin the configures!\n"
 	color - - clearAll
@@ -272,6 +275,7 @@ define_configures() {
 		echo "Erp. Derp. Problems... I have no private! FAILED @ x0532!"
 		exit 1
 	fi
+	
 	_prompt_=0
 	if [ -z "$TXADMIN_CACHE" ]; then
 		if [ _prompt_ == 0 ]; then

@@ -112,54 +112,54 @@ if [ "$_confirm" == n ] ; then
 else
 	# FIG  PROMPT  dialog:default/display  MIN  MAX
 	PROMPT="Enter the linux account to be used for FiveM"
-	input_fig_entry "SERVICE_ACCOUNT" "$PROMPT" "0"
+	harvest "SERVICE_ACCOUNT" "$PROMPT" "0" -
 
         PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
-	input_fig_entry "SERVICE_PASSWORD" "$PROMPT" "s:n/y" 9
+	harvest "SERVICE_PASSWORD" "$PROMPT" "s:n/y" true 9
 
         PROMPT="Password for root account on MySQL"
-	input_fig_entry "DB_ROOT_PASSWORD" "$PROMPT" "s:n/y" 16
+	harvest "DB_ROOT_PASSWORD" "$PROMPT" "s:n/y" true 16
 
 	PROMPT="Enter MySql username for the essentialmode database"
-	input_fig_entry "MYSQL_USER" "$PROMPT" "0"
+	harvest "MYSQL_USER" "$PROMPT" "0" -
 
 	PROMPT=$(echo "Enter MySQL password for $MYSQL_USER")
-	input_fig_entry "MYSQL_PASSWORD" "$PROMPT" "s:n/y" 16 128
+	harvest "MYSQL_PASSWORD" "$PROMPT" "s:n/y" true 16 128
 
 	PROMPT="Enter Blowfish Secret for PHP"
-	input_fig_entry "BLOWFISH_SECRET" "$PROMPT" "s:n/y" 16
+	harvest "BLOWFISH_SECRET" "$PROMPT" "s:n/y" true 16
 
 	PROMPT="Enter your Steam Web API Key"
-	input_fig_entry "STEAM_WEBAPIKEY" "$PROMPT" "s:y/y"
+	harvest "STEAM_WEBAPIKEY" "$PROMPT" "s:y/y" false
 
 	PROMPT="Enter your Cfx FiveM License"
-	input_fig_entry "SV_LICENSEKEY" "$PROMPT" "s:y/y"
+	harvest "SV_LICENSEKEY" "$PROMPT" "s:y/y" false
 
 	##########################################################################################
 	# RCON DETAILS
 	## THESE ARE NOT SETTINGS TO BE CHANGED- DOING SO WILL VOID THE MANUFACTURERS WARRANTY!
 
 	PROMPT="Enable RCON (probably not needed)?"
-        input_fig_entry "RCON" "$PROMPT" 10
+        harvest "RCON" "$PROMPT" 10 -
 
 	if [ "$RCON" == "true" ] ;
         then
           PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
-          input_fig_entry "RCON_PASSWORD_GEN" "$PROMPT" 10
+          harvest "RCON_PASSWORD_GEN" "$PROMPT" 10 -
 
             if [ "$RCON_PASSWORD_GEN" == "true" ] ;
             then
               PROMPT="Number of characters to generate?"
-              input_fig_entry "RCON_PASSWORD_LENGTH" "$PROMPT" 20 20 128
+              harvest "RCON_PASSWORD_LENGTH" "$PROMPT" 20 - 20 128
 
               PROMPT="(not recommended) Require manual approval of each randomly generated password"
-              input_fig_entry "RCON_ASK_TO_CONFIRM" "$PROMPT" 11
+              harvest "RCON_ASK_TO_CONFIRM" "$PROMPT" 11 -
             fi
 	fi
 
         if [ -z "$SERVER_NAME" ]; then
           PROMPT="What would you like to name the server?"
-          input_fig_entry "SERVER_NAME" "$PROMPT" "s:y/y"
+          harvest "SERVER_NAME" "$PROMPT" "s:y/y" -
           # _all_new_+="SERVER_NAME"
           # let _new_++
         fi

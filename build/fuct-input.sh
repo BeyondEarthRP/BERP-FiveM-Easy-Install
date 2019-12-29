@@ -5,6 +5,56 @@
 #>> THESE ARE MINE <3
 #>>>>>>>>>>>>>>>>>>>>>
 # INPUT A CONFIG ENTRY
+add_salt() {
+	# default
+	local _default_length_=64
+
+	# some vars
+	[[ -n "$1" ]] && __len="$1" || __len="$_default_length_"
+	[[ -n "$2" ]] && local __salt="$2" || local __salt="default"
+	[[ -n "$3" ]] && local __stamp="$3"
+
+	if ! [ "$1" -eq "$1" ] 2> /dev/null
+	then
+        	# using default
+		local __len="$_default_length_"
+	else
+		declare -i local __len
+		__len="$1"
+	fi
+
+	#random delim char
+	if [ "$__salt" -eq 1 ] ; then
+		_d=$(cat /dev/urandom | tr -dc "!@#%" | fold -w 1 | head -n 1)
+	else
+		_d=$(cat /dev/urandom | tr -dc "!@#$%&*_+?" | fold -w 1 | head -n 1)
+	fi
+
+	#make stamp
+	if [ -n "$__stamp" ] ;
+	then
+		case "$__stamp" in
+		  "date" ) local _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
+		       * ) local _shakerStamp="${_d}$__stamp" ;;
+		esac ;
+		local __len="$(( $__len - ${#_shakerStamp} ))"
+		[ "$__len" -lt 0 ] && __len=3 && _shakerStamp="${_shakerStamp:3}"
+	fi
+
+	# make salt
+	case "$__salt" in
+	  0 ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	  1 ) local _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%&_+?~" | fold -w "$__len" | head -n 1) ;;
+	  * ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	esac ;
+
+	# if __stamp is empty, then just add salt / otherwise, add salt and the shaker stamp
+	[ ! "$__stamp" ] && local __shaker="${_salt}" || local __shaker="${_salt}${_shakerStamp}"
+
+	# This is needed to return for variable assignment
+	echo "$__shaker"
+}
+
 harvest() { # fig // prompt // confirm => 0/1
 
   [[ "$return__" ]] && unset return__ ; [[ "$__default" ]] && unset __default ;
@@ -25,8 +75,7 @@ harvest() { # fig // prompt // confirm => 0/1
   if [ "$__random" == "true" ] ; 
   then
 	local _pass="$(add_salt 64 1 date)"
-	printf "_${__fig_key}" '%s' "$_pass"
-	unset _pass
+	printf -v "_${__fig_key}" '%s' "$_pass"
   fi
                                                    # I got this working then realized i didn't need it/ or the above function. derp.
                                                  # declare -a local __prompt=("${!2}")  ## Just saving it here for future reference.
@@ -98,7 +147,7 @@ harvest() { # fig // prompt // confirm => 0/1
 
 		[[ "$__default" == "true" ]] || [[ "$__default" == "1" ]] && __verbose=10
 		[[ "$__default" == "false" ]] || [[ "$__default" == "0" ]] && __verbose=11
-		
+
         case "$__verbose" in   # if verbose
           10 ) local _q="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; local __q=y ;;  # is 10, make Yes the default
           11 ) local _q="\e[93m[N/\e[2my\e[22m]\e[39m" ; local __q=n ;;  # is 11, make No the default
@@ -193,7 +242,9 @@ harvest() { # fig // prompt // confirm => 0/1
       ####################
       # PROMPT THE USER
       ## -- standard prompt
-	  [[ "$__random" == "true" ]] && echo -e -n "\n   Random Password (Leave Blank to Accept):\n\n        > $__default <\n\n"
+	  [[ "$__random" == "true" ]] \
+	    && echo -e -n "\n   \e[93m\e[1mRandom Password (Leave Blank to Accept):\n\n" \
+	    && echo -e -n "        \e[33m> \e[31m$__default \e[33m<\e[0\n\n"
       color white - bold ;
       echo -n "$__prompt__: " ; # prompt the user
       color - - clearAll ;
@@ -217,7 +268,9 @@ harvest() { # fig // prompt // confirm => 0/1
       local __length="$(expr length $__return)"  # what is the length
 
       # CHECK IF IT IS CLEAN
-      __CLEAN="${__return//[^a-zA-Z0-9 ]/}"
+      #local __CLEAN="${__return//[^a-zA-Z0-9]/}"
+      local __CLEAN="$__return"
+
       if [ ! "$__CLEAN" == "$__return" ] ;
       then
         __invalid="Input must only include: a-z A-Z 0-9 spaces" ; unset __valid
@@ -316,54 +369,4 @@ harvest() { # fig // prompt // confirm => 0/1
     fi
   done
   unset __prompt__ ; unset return__ ;  unset __confirm ; unset __question__ ;
-}
-
-add_salt() {
-	# default
-	local _default_length_=64
-
-	# some vars
-	[[ -n "$1" ]] && __len="$1" || __len="$_default_length_"
-	[[ -n "$2" ]] && local __salt="$2" || local __salt="default"
-	[[ -n "$3" ]] && local __stamp="$3"
-
-	if ! [ "$1" -eq "$1" ] 2> /dev/null
-	then
-        	# using default
-		local __len="$_default_length_"
-	else
-		declare -i local __len
-		__len="$1"
-	fi
-
-	#random delim char
-	if [ "$__salt" -eq 1 ] ; then
-		_d=$(cat /dev/urandom | tr -dc "!@#%" | fold -w 1 | head -n 1) \
-	else
-		_d=$(cat /dev/urandom | tr -dc "!@#$%&*_+?" | fold -w 1 | head -n 1)
-	fi
-
-	#make stamp
-	if [ -n "$__stamp" ] ;
-	then
-		case "$__stamp" in
-		  "date" ) local _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
-		       * ) local _shakerStamp="${_d}$__stamp" ;;
-		esac ;
-		local __len="$(( $__len - ${#_shakerStamp} ))"
-		[ "$__len" -lt 0 ] && __len=3 && _shakerStamp="${_shakerStamp:3}"
-	fi
-
-	# make salt
-	case "$__salt" in
-	  0 ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
-	  1 ) local _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%^&*()_+?><~" | fold -w "$__len" | head -n 1) ;;
-	  * ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
-	esac ;
-
-	# if __stamp is empty, then just add salt / otherwise, add salt and the shaker stamp
-	[ ! "$__stamp" ] && local __shaker="${_salt}" || local __shaker="${_salt}${_shakerStamp}"
-
-	# This is needed to return for variable assignment
-	echo "$__shaker"
 }

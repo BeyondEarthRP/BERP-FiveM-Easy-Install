@@ -1,7 +1,7 @@
 #!/bin/bash
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
     ## ---- FiveM ---- ##
 
@@ -9,7 +9,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
         echo "Get Packages"
             artifact="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/${artifact_build}/fx.tar.xz"
 
-            wget -P "$TFIVEM" $artifact
+            wget -P "$TFIVEM" "$artifact"
 
         echo "Extract Package"
             tar -xf "$TFIVEM/fx.tar.xz" --directory "$MAIN/"

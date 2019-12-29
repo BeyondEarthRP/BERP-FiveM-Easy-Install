@@ -1,19 +1,19 @@
 #!/bin/bash
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	echo "Creating base directory structure"
-	if [ ! -d $RESOURCES ]; then
-		mkdir $RESOURCES
+	if [ ! -d "$RESOURCES" ]; then
+		mkdir "$RESOURCES"
 	fi
-	if [ ! -d $ESX ]; then
-		mkdir $ESX
+	if [ ! -d "$ESX" ]; then
+		mkdir "$ESX"
 	fi
-	if [ ! -d $ESUI ]; then
-		mkdir $ESUI
+	if [ ! -d "$ESUI" ]; then
+		mkdir "$ESUI"
 	fi
-	if [ ! -d $ESSENTIAL ]; then
-		mkdir $ESSENTIAL
+	if [ ! -d "$ESSENTIAL" ]; then
+		mkdir "$ESSENTIAL"
 	fi
     cp -Rf "$SOURCE/__[LOADING-SCREENS]__/cyberload" "$GAME/resources/"
     cp -Rf "$SOURCE/[esx]" "$GAME/resources/"

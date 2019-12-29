@@ -19,7 +19,7 @@
 #
 # SUDO CHECK
 ##
-if [ $EUID != 0 ]; then
+if [ "$EUID" != 0 ]; then
     sudo "$0" "$@"
     exit $?
 fi
@@ -28,10 +28,14 @@ fi
 #
 # BUILD DEPLOYMENT ENVIRONMENT
 ##
-_BUILD="build" # If you changed the build folder name for some crazy reason, you need to change this too!
-_BUILD-ENV="build-env.sh"  # If this is also different, then this too... why the heck are you changing my file names tho?!
+APPMAIN="APPMAIN" # DONUT TOUCH!
+THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+[[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] \
+&& _BUILD="$THIS_SCRIPT_ROOT" ||  _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+_BUILD-ENV="build-env.sh"  # If this is different... why the heck are you changing my file names?!
+
 if [ -d "$_BUILD" ] && [ -d "$_BUILD" ]; then
-	. $_build/build-env.sh
+	. "$_build/$_BUILD-ENV"
 else
 while [ ! -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD-ENV" ];
 do
@@ -55,13 +59,13 @@ done
 #
 # JUST A BANNER
 ##
-. $BUILD/just-a-banner.sh
+. "$BUILD/just-a-banner.sh" HEADER
 
 #####################################################################
 #
 # ACCOUNT CREATION
 ##
-. $BUILD/create-srvaccount.sh
+. "$BUILD/create-srvaccount.sh" EXECUTE
 
 #####################################################################
 #
@@ -101,7 +105,7 @@ check_for_mysql() {
 stop_screen() {
   SCREEN_SESSION_NAME="fivem"
   echo "Quiting screen session '$SCREEN_SESSION_NAME' for FiveM (if applicable)"
-  su $SERVICE_ACCOUNT -c "screen -XS '$SCREEN_SESSION_NAME' quit"
+  su "$SERVICE_ACCOUNT" -c "screen -XS '$SCREEN_SESSION_NAME' quit"
 }
 ###
 # SLEEP ... nuf'said
@@ -113,24 +117,24 @@ sleep() {
 #   sleep 5
 #   sleep
 #
-  if [ -z $1 ]; then
+  if [ -z "$1" ]; then
     count="10"
   else
     count="$1"
   fi
-  ping -c $count 127.0.0.1 > /dev/null
+  ping -c "$count" 127.0.0.1 > /dev/null
 }
 #
 ###
 # invert (if set, unset // if unset, set to 1)
 #   BASH BOOLEAN
 invert() {
-  local __result=$1
-  if [ ${!__result} ]; then
-    eval unset $__result
+  local __result="$1"
+  if [ "${!__result}" ]; then
+    eval unset "$__result"
     #FALSE
   else
-    eval $__result=1
+    eval "$__result"=1
     #TRUE
   fi
 }
@@ -140,7 +144,7 @@ invert() {
 #
 # DO THE DEED - WAIT, IS THIS A NEW INSTALL, REDEPLOY, REBUILD, OR RESTORE?
 ##
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
 	#\> NEW INSTALLATION
 	echo "                                                                                      ";
 	echo "                                                                                      ";
@@ -161,7 +165,7 @@ if [ -z $1 ]; then
 	#	exit 0
 	#fi
 
-	. $SCRIPT_ROOT/build-dependancies.sh EXECUTE
+	. "$SCRIPT_ROOT/build-dependancies.sh" EXECUTE
 	echo "DEPENDANCIES BUILT!"
 	echo ""
 
@@ -169,28 +173,28 @@ if [ -z $1 ]; then
 	# CHECK FOR MYSQL
 	check_for_mysql
 
-	. $BUILD/build-fivem.sh EXECUTE
+	. "$BUILD/build-fivem.sh" EXECUTE
 	echo "FIVEM BUILT!"
 	echo ""
-	. $BUILD/build-txadmin.sh EXECUTE
+	. "$BUILD/build-txadmin.sh" EXECUTE
 	echo "TXADMIN BUILT!"
 	echo ""
-	. $BUILD/fetch-source.sh EXECUTE
+	. "$BUILD/fetch-source.sh" EXECUTE
 	echo "SOURCES FETCHED!"
 	echo ""
-	. $BUILD/create-database.sh EXECUTE
+	. "$BUILD/create-database.sh" EXECUTE
 	echo "DATABASE CREATED!"
 	echo ""
-	. $BUILD/build-config.sh EXECUTE
+	. "$BUILD/build-config.sh" EXECUTE
 	echo "CONFIG BUILT AND DEPLOYED!"
 	echo ""
-	. $BUILD/build-resources.sh EXECUTE
+	. "$BUILD/build-resources.sh" EXECUTE
 	echo "RESOURCES BUILT!"
 	echo ""
-	. $BUILD/build-vmenu.sh EXECUTE
+	. "$BUILD/build-vmenu.sh" EXECUTE
 	echo "VMENU BUILT!"
 	echo ""
-elif [ ! -z $1 ]; then
+elif [ ! -z "$1" ]; then
 
 	####
 	# CHECK FOR MYSQL
@@ -221,22 +225,22 @@ elif [ ! -z $1 ]; then
 		# STOP THE SCREEN SESSION
 		stop_screen
 
-		. $BUILD/build-fivem.sh EXECUTE
+		. "$BUILD/build-fivem.sh" EXECUTE
 		echo "FIVEM REBUILT!"
 		echo ""
-		. $BUILD/build-txadmin.sh EXECUTE
+		. "$BUILD/build-txadmin.sh" EXECUTE
 		echo "TXADMIN REBUILT!"
 		echo ""
-		. $BUILD/create-database.sh EXECUTE
+		. "$BUILD/create-database.sh" EXECUTE
 		echo "FRESH DATABASE RECREATED!"
 		echo ""
-		. $BUILD/build-config.sh EXECUTE
+		. "$BUILD/build-config.sh" EXECUTE
 		echo "CONFIG BUILT AND DEPLOYED!"
 		echo ""
-		. $BUILD/build-resources.sh EXECUTE
+		. "$BUILD/build-resources.sh" EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		. $BUILD/build-vmenu.sh EXECUTE
+		. "$BUILD/build-vmenu.sh" EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--rebuild" ] || [ "$1"=="-b" ]; then
@@ -263,13 +267,13 @@ elif [ ! -z $1 ]; then
 		# STOP THE SCREEN SESSION
 		stop_screen; #STOP THE SCREEN SESSION
 
-		. $BUILD/build-config.sh DEPLOY
+		. "$BUILD/build-config.sh" DEPLOY
 		echo "CONFIG REDEPLOYED!"
 		echo ""
-		. $BUILD/build-resources.sh EXECUTE
+		. "$BUILD/build-resources.sh" EXECUTE
 		echo "RESOURCES REBUILT!"
 		echo ""
-		. $BUILD/build-vmenu.sh EXECUTE
+		. "$BUILD/build-vmenu.sh" EXECUTE
 		echo "VMENU REBUILT!"
 		echo ""
 	elif [ "$1"=="--restore" ] || [ "$1"=="-oof" ]; then
@@ -331,11 +335,11 @@ fi
 #
 # INJECT PERSONAL CREDENTIALS INTO THE CONFIGURATION FILE
 ##
-if [ ! -f $GAME/server.cfg ]; then
+if [ ! -f "$GAME/server.cfg" ]; then
     echo "Server configuration not found! Woopsie... FAILED!"
 	exit 1
 fi
-mv $GAME/server.cfg{,.orig} #--> Renaming file to be processed
+mv "$GAME/server.cfg" "$GAME/server.cfg.orig" #--> Renaming file to be processed
 
 #-RCON Password Creation
 echo "Generating RCON Password."
@@ -348,30 +352,30 @@ echo "Generating RCON Password."
     rcon_actual="rcon_password \"${rcon_password}\""
 echo "Accepting original configuration; Injecting RCON configuration..."
     sed "s/${rcon_placeholder}/${rcon_actual}/" "$GAME/server.cfg.orig" > "$GAME/server.cfg.rconCfg"
-    rm -f $GAME/server.cfg.orig  #--> cleaning up; handing off a .rconCfg
+    rm -f "$GAME/server.cfg.orig"  #--> cleaning up; handing off a .rconCfg
 
 #-mySql Configuration
 echo "Accepting RCON config handoff; Injecting MySQL Connection String..."
     db_conn_placeholder="set mysql_connection_string \"server=localhost;database=essentialmode;userid=username;password=YourPassword\""
     db_conn_actual="set mysql_connection_string \"server=localhost;database=essentialmode;userid=$mysql_user;password=$mysql_password\""
     sed "s/$db_conn_placeholder/$db_conn_actual/" "$GAME/server.cfg.rconCfg" > "$GAME/server.cfg.dbCfg"
-    rm -f $GAME/server.cfg.rconCfg #--> cleaning up; handing off a .dbCfg
+    rm -f "$GAME/server.cfg.rconCfg" #--> cleaning up; handing off a .dbCfg
 
 #-Steam Key Injection into Config
 echo "Accepted MySql config handoff; Injecting Steam Key into config..."
     steamKey_placeholder="set steam_webApiKey \"SteamKeyGoesHere\""
     steamKey_actual="steam_webApiKey  \"${steam_webApiKey}\""
     sed "s/${steamKey_placeholder}/${steamKey_actual}/" "$GAME/server.cfg.dbCfg" > "$GAME/server.cfg.steamCfg"
-    rm -f $GAME/server.cfg.dbCfg #--> cleaning up; handing off a .steamCfg
+    rm -f "$GAME/server.cfg.dbCfg" #--> cleaning up; handing off a .steamCfg
 
 #-FiveM License Key Injection into Config
 echo "Accepting Steam config handoff; Injecting FiveM License into config..."
     sv_licenseKey_placeholder="sv_licenseKey LicenseKeyGoesHere"
     sv_licenseKey_actual="sv_licenseKey ${sv_licenseKey}"
     sed "s/${sv_licenseKey_placeholder}/${sv_licenseKey_actual}/" "$GAME/server.cfg.steamCfg" > "$GAME/server.cfg"
-    rm -f $GAME/server.cfg.steamCfg #--> cleaning up; handing off a server.cfg
+    rm -f "$GAME/server.cfg.steamCfg" #--> cleaning up; handing off a server.cfg
 
-if [ -f $GAME/server.cfg ]; then
+if [ -f "$GAME/server.cfg" ]; then
     echo "Server configuration file found."
 else
     echo "ERROR: Something went wrong during the configuration personalization..."
@@ -382,22 +386,22 @@ fi
 # GENERATE THE START SCRIPT
 ##
 STARTUP_SCRIPT="$MAIN/start-fivem.sh"
-cat <<EOF > $STARTUP_SCRIPT
+cat <<EOF > "$STARTUP_SCRIPT"
 #!/bin/bash
 echo "Starting FiveM..."
 screen -dmS "fivem" bash -c "trap 'echo gotsigint' INT; cd ${MAIN}/txAdmin; /usr/bin/node ${MAIN}/txAdmin/src/index.js default;  bash"
 #cd ${GAME} && bash ${MAIN}/run.sh +exec ${GAME}/server.cfg
 EOF
-chmod +x $STARTUP_SCRIPT
+chmod +x "$STARTUP_SCRIPT"
 
 ######################################################################
 #
 # THIS NEEDS TO BE (PRETTY MUCH) LAST! -- OWNING! ALL THE THINGS!
 ##
-chown -R $SERVICE_ACCOUNT:$SERVICE_ACCOUNT $MAIN
+chown -R "$SERVICE_ACCOUNT:$SERVICE_ACCOUNT" "$MAIN"
 
 #####################################################################
 #
 # STARTING THE SERVER
 ##
-su $SERVICE_ACCOUNT -c "${STARTUP_SCRIPT}"
+su "$SERVICE_ACCOUNT" -c "${STARTUP_SCRIPT}"

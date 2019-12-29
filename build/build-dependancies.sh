@@ -1,25 +1,25 @@
 #!/bin/bash
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-	while [ -z $DBPSWD ];
+	while [ -z "$DB_ROOT_PASSWORD" ];
 	do
 		_return="";read -p "Enter root account password for MySQL: " _return
 		echo ""
 		_confirm="";read -p "are you sure? " _confirm
 		if [ "$_confirm"=="y" ] || [ "$_confirm"=="yes" ];
 		then
-			DBPSWD=$_return
+			DB_ROOT_PASSWORD="$_return"
 		fi
 	done
-	
+
     # TEMP DIRECTORIES
-    mkdir $SOFTWARE
-    mkdir $TFIVEM
-    mkdir $TSESX
-    mkdir $TCCORE
-    mkdir $TESMOD
+    mkdir "$SOFTWARE"
+    mkdir "$TFIVEM"
+    mkdir "$TSESX"
+    mkdir "$TCCORE"
+    mkdir "$TESMOD"
 
     # Dependancies
     ########################
@@ -60,7 +60,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 	#### https://bertvv.github.io/notes-to-self/2015/11/16/automating-mysql_secure_installation/
 	##
 	mysql --user=root <<_EOF_
-UPDATE mysql.user SET Password=PASSWORD('${DBPSWD}') WHERE User='root';
+UPDATE mysql.user SET Password=PASSWORD('${DB_ROOT_PASSWORD}') WHERE User='root';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 DROP DATABASE IF EXISTS test;
@@ -83,14 +83,14 @@ _EOF_
 	# tar xvf phpMyAdmin-${VER}-all-languages.tar.gz
 	#
 	#' English Only Version:'
-	wget https://files.phpmyadmin.net/phpMyAdmin/${VER}/phpMyAdmin-${VER}-english.tar.gz
-	tar xvf phpMyAdmin-${VER}-english.tar.gz
+	wget "https://files.phpmyadmin.net/phpMyAdmin/${VER}/phpMyAdmin-${VER}-english.tar.gz"
+	tar xvf "phpMyAdmin-${VER}-english.tar.gz"
 
 	#- working
 	rm phpMyAdmin*.gz
 	sudo mv phpMyAdmin-* /usr/share/phpmyadmin
 	phpmyadmin_tmp=/var/lib/phpmyadmin/tmp
-	sudo mkdir -p $phpmyadmin_tmp
+	sudo mkdir -p "$phpmyadmin_tmp"
 	sudo chown -R www-data:www-data /var/lib/phpmyadmin
 	sudo mkdir /etc/phpmyadmin/
 
@@ -100,10 +100,10 @@ _EOF_
 
 	blowfish_secret_placeholder="\\\$cfg\['blowfish_secret'\] = ''; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
 	blowfish_secret_actual="\\\$cfg\['blowfish_secret'\] = '${blowfish_secret}'; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
-	sed "s/${blowfish_secret_placeholder}/${blowfish_secret_actual}/" $phpConfigSource > $phpConfig
+	sed "s/${blowfish_secret_placeholder}/${blowfish_secret_actual}/" "$phpConfigSource" > "$phpConfig"
 
-	echo "" >> $phpConfig
-	echo "\$cfg['TempDir'] = '$phpmyadmin_tmp';" >> $phpConfig
+	echo "" >> "$phpConfig"
+	echo "\$cfg['TempDir'] = '$phpmyadmin_tmp';" >> "$phpConfig"
 
 	echo ":: phpMyAdmin Apache Configuration"
 	apacheConfig=/etc/apache2/conf-enabled/phpmyadmin.conf

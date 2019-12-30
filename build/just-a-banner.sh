@@ -3,9 +3,12 @@
 #
 # JUST A BANNER
 ##
+[[ "$_BUILD" ]] && . "$_BUILD/fuct-worker.sh"
+[[ "$BUILD" ]] && . "$BUILD/fuct-worker.sh"
 
 if [ "$1" == WELCOME ] ; 
 then
+	color lightYellow - bold
 	cat <<EOF
                                                                   
                                                                   
@@ -15,20 +18,30 @@ then
    8 8888     ,88 8 8888         8 8888     ,88  8 8888     ,88   
    8 8888.   ,88' 8 888888888888 8 8888.   ,88'  8 8888.   ,88'   
    8 8888888888   8 8888         8 888888888P'   8 888888888P'    
+EOF
+	color yellow - bold
+	cat <<EOF
    8 8888    \`88. 8 8888         8 8888\`8b       8 8888           
    8 8888      88 8 8888         8 8888 \`8b.     8 8888           
    8 8888    ,88' 8 8888         8 8888   \`8b.   8 8888           
    8 888888888P   8 888888888888 8 8888     \`88. 8 8888           
    8 Beyond       8 Earth        8 Role          8 Play           
+EOF
+	color white - -
+	cat <<EOF
       __                 __             __                        
      |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _            
      |__)(-\\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\\/       
            /                                    |      /          
                                                                   
-            EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT               
+EOF
+	color red - bold
+	cat <<EOF
+           EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT               
                                                                   
                                                                   
 EOF
+	color - - clearAll
 fi
 
 if [ "$1" == NEW_INSTALL ] ; 

@@ -18,7 +18,7 @@ fi
 
 # LOADING FUNCTIONS
 . "$BUILD/fuct-env.sh"
-. "$BUILD/fuct-color.sh"
+. "$BUILD/fuct-worker.sh"
 
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
@@ -29,23 +29,18 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	initialize
 	define_runtime_env
 	check_for_config
-        import_system_config
-
-	if [ -d "${CONFIG%/*}" ]; then
+	#while [ ! "$__ready__" ] ;
+#	do
+	        import_system_config
 		import_env_config
-		define_configures
-		if [ "$_new_" != 0 ]; then
-			echo "_new_ :: $_new_"
-
-			### TO - DO ############
-			# LOOP THROUGH _all_new_ to display changes
-			# CONFIRM
-			build_env_config
+		if [ "$__INCOMPLETE_CONFIG__" ] && [ "${#__INCOMPLETE_CONFIG__[@]}" -gt 0 ] ;
+		then
+			color lightYellow - bold
+			echo -e "\n\nConfiguration is incomplete.  We should finish it before we deploy!\n"
+			. "$BUILD/quick-config.sh"
+			color - - clearAll
 		fi
-	else
-		define_configures
-		build_env_config
-	fi
+#	done
 
 	## ---- BUILD ENVIRONMENT ---- ##
 
@@ -67,17 +62,19 @@ elif [ ! -z "$1" ] && [ "$1" == "TEST-RUNTIME" ] || [ "$1" == "TEST-CONFIGURES" 
 	## ---- BUILD RUNTIME ONLY ---- ##
 
 	[[ "$1" == "TEST-RUNTIME" ]] && APPMAIN="TEST-RUNTIME"
-	[[ "$1" == "TEST-CONFIGURES" ]] & APPMAIN="TEST-CONSTRUCT"
+	[[ "$1" == "TEST-CONFIGURES" ]] & APPMAIN="TEST-CONFIGURES"
 
         __TEST__="1"
 
 	initialize
 	define_runtime_env
 	[[ "$APPMAIN" == "TEST-RUNTIME" ]] && check_for_config RUNTIME
+
 	[[ "$APPMAIN" == "TEST-CONFIGURES" ]] && check_for_config
         [[ ! "$__INVALID_CONFIG__" ]] && import_system_config
-	[[ ! "$__INVALID_CONFIG__" ]] && import_env_config
-        [[ ! "$__INVALID_CONFIG__" ]] && define_configures
+
+	#[[ ! "$__INVALID_CONFIG__" ]] && import_env_config
+        #[[ ! "$__INVALID_CONFIG__" ]] && define_configures
 
 
 	## ---- BUILD RUNTIME ONLY ---- ##

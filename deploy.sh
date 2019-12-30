@@ -21,7 +21,7 @@
 ##
 if [ "$EUID" != 0 ]; then
     sudo "$0" "$@"
-    exit $?
+    exit "$?"
 fi
 
 #####################################################################
@@ -32,60 +32,47 @@ APPMAIN="MAIN" # DONUT TOUCH!
 
 if [ ! "$BUILD" ] ;
 then
-  _BUILD="build" # If you changed this.... why?! btw, it is also hard coded in some of the files at the top (similar to this).
-  _BUILD_ENV="build-env.sh"  # If this is different... why the heck are you changing my file names?!
-
-  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-  [[ -d "$THIS_SCRIPT_ROOT/$_BUILD" ]] && _BUILD="$THIS_SCRIPT_ROOT/$_BUILD"
-  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "$_BUILD" ]] && _BUILD="$THIS_SCRIPT_ROOT"
-  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "$_BUILD" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-  unset THIS_SCRIPT_ROOT
+  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))" ;
+  [[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT/build" ]] && _BUILD="$THIS_SCRIPT_ROOT/build"
+  [[ ! "$_BUILD" ]] && [[ -d "$(dirname $THIS_SCRIPT_ROOT)/build" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)/build"
+  [[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT" ]] && _BUILD="$THIS_SCRIPT_ROOT"
+  unset THIS_SCRIPT_ROOT ;
 fi
 
-if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD_ENV" ] ; then
-
-	. "$_BUILD/$_BUILD_ENV" EXECUTE
-
-	[[ ! $CONFIG ]] && _FAILED=1 && echo "Config not found by deploy script. I'VE FAILED!" && exit 1
-
+if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ; then
         BUILD="$_BUILD"
+	unset _BUILD ;
 
-	[[ "$_BUILD" ]] && unset _BUILD
-	[[ "$_BUILD_ENV" ]] && unset _BUILD_ENV
-else
-    while [ ! -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD_ENV" ];
-    do
-	read -p "Where is the build folder located? [$_BUILD] " _BUILD
-	if [ -d "$_BUILD" ] && [ -f "$_BUILD/$_BUILD_ENV" ]; then
-		echo "Config found... You changed the build folder.  You need to change 'deploy.sh' as well, unless you like this prompt and want to see it always... I'm guessing you don't want that though."
-		echo ""
-		_FAILED=1
-	elif [ -d "$_BUILD" ]; then
-		echo "Could not find the folder: $_BUILD"
-		echo "Please verify the location and try again."
-		echo ""
-		_FAILED=1
-	elif [ -d "$_BUILD" ] && [ ! -f "$_BUILD/$_BUILD_ENV" ]; then
-		echo "Could not find the file '$_BUILD_ENV' in the folder: $_BUILD"
-		echo "Please verify that the file exists and you are entering the correct folder name."
-		echo ""
-		echo "If you've changed this for some crazy reason, you should consult 'deploy.sh' and change appropriately"
-		echo ""
-		_FAILED=1
+	#####################################################################
+	#
+	# JUST A BANNER
+	##
+	. "$BUILD/just-a-banner.sh" WELCOME
+
+	loading
+
+	. "$BUILD/build-env.sh" EXECUTE
+
+	[[ ! "$CONFIG" ]] && _FAILED=1 && color red - bold \
+	  && echo -e -n "FAILED!  (no config found)\n\n" \
+	  && color - - clearAll && exit 1
+
+
+	if [[ "$__status" != "NO_CONFIG" ]] ; then
+		color white - bold
+		echo "$__status"
+		color - - clearAll
 	fi
-    done
+
+else
+	echo "FAILED: Could not find the build folder."
 fi
 
 if [ "$_FAILED" == "1" ] ; then
 	exit 1
 fi
-
 #####################################################################
-#
-# JUST A BANNER
-##
-. "$BUILD/just-a-banner.sh" WELCOME
-
+. "$BUILD/build-env.sh" RUNTIME  # This time for deployment execution
 #####################################################################
 #
 # ACCOUNT CREATION
@@ -193,7 +180,7 @@ elif [ ! -z "$1" ]; then
 		###/
 		##/
 		#/
-		
+
 		####
 		# STOP THE SCREEN SESSION
 		stop_screen
@@ -294,11 +281,7 @@ mv "$GAME/server.cfg" "$GAME/server.cfg.orig" #--> Renaming file to be processed
 
 #-RCON Password Creation
 echo "Generating RCON Password."
-    Pass=`date +%s | sha256sum | base64 | head -c 64 ; echo`
-    DateStamp=`date +"@%B#%Y"`
-    rcon_password="$Pass$DateStamp"
-    echo "RCON: $rcon_password"
-    echo ""
+    salt_rcon
     rcon_placeholder="#rcon_password changeme"
     rcon_actual="rcon_password \"${rcon_password}\""
 echo "Accepting original configuration; Injecting RCON configuration..."

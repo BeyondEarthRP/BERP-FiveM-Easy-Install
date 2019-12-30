@@ -15,16 +15,6 @@ initialize() {
 }
 
 define_runtime_env() {
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-	#  PRIVLY_NAME  ::  CONFIG_NAME  ::  REPO_NAME  #
-	#///////////////////////////////////////////////#
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-	#  SCRIPT  ::  SCRIPT_ROOT  ::  SCRIPT_FULLPATH  ::  DB  ::  DB_BKUP_PATH  #
-	#//////////////////////////////////////////////////////////////////////////#
-	#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\#
-	#  SOURCE_ROOT  ::  SOURCE  ::  PRIVATE  ::  CONFIG  ::  TXADMIN_CACHE  ::  DB_BKUP_PATH  #
-	#/////////////////////////////////////////////////////////////////////////////////////////#
-
 	##########################################################################
 	# ALTER AT YOUR OWN RISK -- CONFIGURABLE (TECHNICALLY, BUT UNTESTED)
 	# If you change this and it doesn't work... sorry.  All up to you now!
@@ -70,9 +60,9 @@ define_runtime_env() {
 	# DISCOVER DATABASE BACKUPS
 	# THIS WILL FIND THE MOST RECENT BACKUP
 	# NEEDS TO RUN EACH ENVIRONMENT LOAD.
-	if [ -d "$DB_BKUP_PATH" ]; then
-		DB="$(ls -Art $DB_BKUP_PATH/ | tail -n 1)"
-		PATH_TO_DB="$DB_BKUP_PATH/$DB"
+	if [ -d "$DB_BACKUPS" ]; then
+		DB="$(ls -Art $DB_BACKUPS/ | tail -n 1)"
+		PATH_TO_DB="$DB_BACKUPS/$DB"
 	else
 		DB="null"
 		PATH_TO_DB="null"
@@ -86,28 +76,36 @@ check_for_config() {
 	#
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
-	echo "Looking for a BERP ingest config file..."
-	_CONFIG="$CONFIG"
-	_valid="$(cat $_CONFIG)"
+	[[ ! "$APPMAIN" == "MAIN" ]] && echo "Looking for a BERP ingestion config file..."
+	_CONFIG="$CONFIG" ; unset CONFIG
+	[[ -f "$_CONFIG" ]] && _valid="$(cat $_CONFIG)"
 	while [ -z "$CONFIG" ]; do
 	        if [ -f "$_CONFIG" ] && [ ! -z "$_valid" ] ;
                 then
-					echo "BERP injestion config found @ ${_CONFIG}"
-					echo "Preparing BERP to be deployed..."
-	                CONFIG="$_CONFIG"
-					[[ ! $BUILD ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
-					. "$BUILD/quick-config.sh"
+			__status="BERP injestion config found @ ${_CONFIG}"
+			[[ ! "$APPMAIN" == "MAIN" ]] && echo __status && echo "Preparing to deploy BERP..."
+
+			CONFIG="$_CONFIG"
+
+			[[ ! "$APPMAIN" == "MAIN" ]] && [[ ! "$BUILD" ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
+			#[[ "$APPMAIN" == "MAIN" ]] && . "$BUILD/quick-config.sh"
 	        else
-	       	        echo "No BERP ingestion config found..."
-					[[ ! $BUILD ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
-					. "$BUILD/quick-config.sh" CONFIGURE					
-			if [ -z "$1" ] ;
+			color lightYellow - bold
+	       	        echo "no BERP ingestion config... starting configurator!"
+			color - - clearAll
+
+			__status="NO_CONFIG"
+
+			[[ ! "$APPMAIN" == "MAIN" ]] && [[ ! "$BUILD" ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
+
+			[[ "$APPMAIN" == "TEST-CONFIGURES" ]] && . "$BUILD/quick-config.sh" CONFIGURE
+			if [ "$APPMAIN" == "MAIN" ] && [ ! "$1" ] ;
                         then
-				# EXECUTION LIKELY CAME FROM DEPLOY
+				# EXECUTION CAME FROM DEPLOY
 				echo -e "Entering quick configuration tool...\n"
-				echo "Welcome to the BERP deployer!"
-				echo "Let's create a new BERP injest config..."
-				. "$BUILD/quick-config.sh"
+				echo -e "Welcome to the BERP deployer!"
+				echo -e "Let's create a new BERP injest config..."
+				[[ "$APPMAIN" == "MAIN" ]] && . "$BUILD/quick-config.sh" CONFIGURE
 			else
                         	# OTHERWISE, WE PASSED IT RUNTIME ONLY
                         	__INVALID_CONFIG__="1"
@@ -127,51 +125,38 @@ import_system_config() {
 	echo "Reading config..."
 
 	local ALLFIGS=( \
-	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON RCON_PASSWORD \
+	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON_ENABLE RCON_PASSWORD \
 	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD RCON_PASSWORD_GEN \
-    RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM \
+	RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM \
 	)
 
-    # This is taking the above, appending jq_ to it... then reading it from below through the working part
-    # everything found is loading into memory.  this loads all my environment variables (figs)
+	# This is taking the above, appending jq_ to it... then reading it from below through the working part
+	# everything found is loading into memory.  this loads all my environment variables (figs)
 
 	jq_SERVICE_ACCOUNT=".sys.acct.user"
-    jq_SERVICE_PASSWORD=".sys.acct.password"
-    jq_MYSQL_USER=".sys.mysql.user"
-    jq_MYSQL_PASSWORD=".sys.mysql.password"
-    jq_DB_ROOT_PASSWORD=".sys.mysql.rootPassword"
-    jq_RCON=".sys.rcon.pref.enable"
-    jq_RCON_PASSWORD=".sys.rcon.password"
-    jq_RCON_PASSWORD_GEN=".sys.rcon.pref.randomlyGenerate"
-    jq_RCON_PASSWORD_LENGTH=".sys.rcon.pref.length"
-    jq_RCON_ASK_TO_CONFIRM=".sys.rcon.pref.confirm"
-    jq_BLOWFISH_SECRET=".sys.php.blowfishSecret"
-    jq_SV_LICENSEKEY=".sys.keys.fivemLicenseKey"
-    jq_STEAM_WEBAPIKEY=".sys.keys.steamWebApiKey"
-
+	jq_SERVICE_PASSWORD=".sys.acct.password"
+	jq_MYSQL_USER=".sys.mysql.user"
+	jq_MYSQL_PASSWORD=".sys.mysql.password"
+	jq_DB_ROOT_PASSWORD=".sys.mysql.rootPassword"
+	jq_RCON_ENABLE=".sys.rcon.enable"
+	jq_RCON_PASSWORD=".sys.rcon.password"
+	jq_RCON_PASSWORD_GEN=".sys.rcon.pref.randomlyGenerate"
+	jq_RCON_PASSWORD_LENGTH=".sys.rcon.pref.length"
+	jq_RCON_ASK_TO_CONFIRM=".sys.rcon.pref.confirm"
+	jq_BLOWFISH_SECRET=".sys.php.blowfishSecret"
+	jq_SV_LICENSEKEY=".sys.keys.fivemLicenseKey"
+	jq_STEAM_WEBAPIKEY=".sys.keys.steamWebApiKey"
 
 	read_figs "${ALLFIGS[@]}"
-
-	# TEMPORARY FOR COMPATABIBLITY (CONVERTING THESE TO UPPERS)
-	srvPassword="$SERVICE_PASSWORD" # ditto.
-	mysql_user="$MYSQL_USER" # i'm not going to continue typing ditto.
-	mysql_password="$MYSQL_PASSWORD"
-	steam_webApiKey="$STEAM_WEBAPIKEY"
-	sv_licenseKey="$SV_LICENSEKEY"
-	blowfish_secret="$BLOWFISH_SECRET"
-	rcon_password="$RCON_PASSWORD"
-	DBPSWD="$DB_ROOT_PASSWORD" # this one just needs to be more litteral
-    ASK_TO_CONFIRM="$RCON_ASK_TO_CONFIRM"
-
 }
 
 import_env_config() {
 
 	local ALLFIGS=( \
 	SERVER_NAME ARTIFACT_BUILD REPO_NAME SOURCE_ROOT SOURCE TXADMIN_BACKUP \
-    DB_BACKUPS SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
-    MAPS ESX ESEX ESUI ESSENTIAL ESMOD VEHICLES TXADMIN_BACKUP_FOLDER DB_BACKUP_FOLDER \
-    ) ;
+	DB_BACKUPS SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
+	MAPS ESX ESEXT ESUI ESSENTIAL ESMOD VEHICLES TXADMIN_BACKUP_FOLDER DB_BACKUP_FOLDER \
+	) ;
 
 	# .pref
 	jq_SERVER_NAME=".pref.serverName"
@@ -182,11 +167,11 @@ import_env_config() {
 	jq_SOURCE_ROOT=".env.sourceRoot"
 	jq_SOURCE=".env.source"
 
-    # .env.private
-	jq_TXADMIN_BACKUP=".env.private.txadminCache"
-	jq_TXADMIN_BACKUP_FOLDER=".env.private.txadminCacheFolder"	
-	jq_DB_BACKUPS=".env.private.dbBkupPath"
-	jq_DB_BACKUP_FOLDER=".env.private.dbBkupFolder"
+	# .env.private
+	jq_TXADMIN_BACKUP=".env.private.txadminBackup"
+	jq_TXADMIN_BACKUP_FOLDER=".env.private.txadminBackupFolder"
+	jq_DB_BACKUPS=".env.private.dbBackups"
+	jq_DB_BACKUP_FOLDER=".env.private.dbBackupFolder"
 
 	# .env.software
 	jq_SOFTWARE_ROOT=".env.software.softwareRoot"
@@ -200,7 +185,7 @@ import_env_config() {
 	jq_GAMEMODES=".env.install.gamemodes"
 	jq_MAPS=".env.install.maps"
 	jq_ESX=".env.install.esx"
-	jq_ESEX=".env.install.esext"
+	jq_ESEXT=".env.install.esext"
 	jq_ESUI=".env.install.esui"
 	jq_ESSENTIAL=".env.install.essential"
 	jq_ESMOD=".env.install.esmod"
@@ -208,17 +193,13 @@ import_env_config() {
 
 	read_figs "${ALLFIGS[@]}"
 
-	
-	# TEMPORARY FOR COMPATABILITY
-	DB_BKUP_PATH="$DB_BACKUPS"
-	TXADMIN_CACHE="$TXADMIN_BACKUP"
 	artifact_build="$ARTIFACT_BUILD"
 
 }
 
 # READS IN MY CONFIGURATION
 read_figs() {
-#	for _fig in "${ALLFIGS[@]}";
+    __CONFIG_UNFINISHED__=()
     for _fig in "$@";
     do
 	[[ ! "$CONFIG" ]] && echo "no config found by read_figs()... exiting" && exit 1
@@ -231,11 +212,15 @@ read_figs() {
 
 			[[ "$__invalid__" ]] && unset __invalid__
 
-			[[ "$_jsData" == "null" ]] && local __invalid__="1"
-			[[ -z "$_jsData" ]] && local __invalid__="1"
+			[[ "$_jsData" == "null" ]] && __invalid__="1"
+			[[ -z "$_jsData" ]] && __invalid__="1"
+			[[ ! "$_jsData" ]] && __invalid__="1"
 
-			[[ -z "$__invalid__" ]] && printf -v "$_fig" '%s' "${_jsData}"
+			[[ "$__invalid__" ]] && __CONFIG_UNFINISHED__+=("$_fig")
 			[[ "$__invalid__" ]] && unset __invalid__
+
+
+			[[ ! "$__invalid__" ]] && printf -v "$_fig" '%s' "${_jsData}"
                         unset _jsData ; unset _jq
 
 			color yellow - bold
@@ -253,6 +238,7 @@ read_figs() {
                 else
                         color red - bold
                         echo "Nothing set!"
+			#unset "${!_fig}"
                         color - - clearAll
                 fi
         done

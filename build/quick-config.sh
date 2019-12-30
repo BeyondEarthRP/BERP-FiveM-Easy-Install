@@ -1,5 +1,6 @@
 #!/bin/bash
 # -exabT
+
 ###################################################################
 # BEGIN BUILDING A NEW BERP BUILDER CONFIG INGEST FILE
 ###################################################################
@@ -14,21 +15,23 @@ then
   unset THIS_SCRIPT_ROOT
 fi
 ###################################################################
-[[ ! "$APPMAIN" ]] && APPMAIN="QUICK_DEPLOY" && . "$BUILD/build-env.sh" "RUNTIME"
+[[ "$1" == "CONFIGURE" ]] && __CONFIGURE__="1" || unset __CONFIGURE__
+if [ ! "$APPMAIN" ] ; then
+  APPMAIN="QUICK_CONFIG"
+  . "$BUILD/build-env.sh" "RUNTIME"
+  __CONFIGURE__="1"
+fi
 ####
 # If assumptions were correct, we should not fail!
 if [ -z "$CONFIG" ] && [ -z "$_CONFIG" ]; then
-	echo "No config file has been defined.  I'VE FAILED!"
-	exit 1
+  echo "No config file has been defined.  I'VE FAILED!"
+  exit 1
 fi
 [[ ! "$CONFIG" ]] && [[ "$_CONFIG" ]] && CONFIG="$_CONFIG"
-
-[[ "$1" == CONFIGURE ]] && __CONFIGURE__="1"
-
 #################################################################
 # DEFAULTS
-_SERVICE_ACCOUNT=fivem
-_MYSQL_USER=admin
+_SERVICE_ACCOUNT="fivem"
+_MYSQL_USER="admin"
 
 _STEAM_WEBAPIKEY=""
 _SV_LICENSEKEY=""
@@ -38,10 +41,10 @@ _RCON_PASSWORD_GEN=true
 _RCON_PASSWORD_LENGTH=64
 _RCON_ASK_TO_CONFIRM=false
 
-_TXADMIN_CACHE_FOLDER="data-txadmin"
+_TXADMIN_BACKUP_FOLDER="data-txadmin"
 _DB_BACKUP_FOLDER="data-mysql"
 _ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
-_SOFTWARE_ROOT="/var/software"	
+_SOFTWARE_ROOT="/var/software"
 _REPO_NAME="BERP-Source"
 
 _SERVER_NAME="Beyond Earth Roleplay (BERP)"
@@ -59,7 +62,7 @@ _SERVER_NAME="Beyond Earth Roleplay (BERP)"
 #>>>>>>>>>>>>>>>>>>>>>
 # INPUT A CONFIG ENTRY
 . "$BUILD/fuct-config.sh"
-[[ "$APPMAIN" == "QUICK_DEPLOY" ]] && . "$BUILD/fuct-worker.sh"
+. "$BUILD/fuct-worker.sh"
 
 ##################################################################
 # AND.... GO!
@@ -90,6 +93,8 @@ if [ "$__CONFIGURE__" ] && [ "$_confirm" == n ] ; then
 	exit 0
 else
 	harvest
+	define_configures
 	salt_rcon
 	cook_figs
+	[[ "$__CONFIGURE__" ]] && unset __CONFIGURE__
 fi

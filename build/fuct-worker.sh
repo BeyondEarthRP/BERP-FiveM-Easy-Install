@@ -142,94 +142,61 @@ add_salt() {
 
 	# This is needed to return for variable assignment
 	echo "$__shaker"
-	
+
 }
 
 salt_rcon() {
-	if [ "$RCON" == "true" ] ; then
+	if [ "$RCON_ENABLE" == "true" ] ; then
 		if [ "$RCON_PASSWORD_GEN" == "true" ] ; then
-			_RCON_PASSWORD="$( add_salt $RCON_PASSWORD_LENGTH 1 date )"
-			local __RCON_PASSWORD="$RCON_PASSWORD"
-			unset RCON_PASSWORD
-			
+
+			local _RCON_PASSWORD="$(add_salt $RCON_PASSWORD_LENGTH 1 date)"
+
 			if "$RCON_ASK_TO_CONFIRM" ; then
-				color lightYellow - bold
-				echo ""
-				echo "You may enter a custom rcon password, or just accept the randomly generated one."
-				echo ""
-				echo -e -n "Leave blank and hit enter to use this ("
-				color - - underline
-				echo -e -n "Recommended"
-				color - - noUnderline
-				echo -e "):"
-				color green - bold
-				echo "      $_RCON_PASSWORD"
-				color lightYellow - bold
-				echo ""
-				echo -e -n "Enter an RCON password ["
-				color red - underline
-				echo -e -n "leave blank to accept random"
-				color lightYellow - noUnderline
-				color - - bold
-				echo -e -n "]: " 
-				color - - clearAll
-				read RCON_PASSWORD
+				unset RCON_PASSWORD
+
+				while [ ! "$RCON_PASSWORD" ] ;
+				do
+					color lightYellow - bold
+					echo ""
+					echo "You may enter a custom rcon password, or just accept the randomly generated one."
+					echo ""
+					echo -e -n "Leave blank and hit enter to use this ("
+					color - - underline
+					echo -e -n "Recommended"
+					color - - noUnderline
+					echo -e "):\n"
+					color green - bold
+					echo "      $_RCON_PASSWORD"
+					color lightYellow - bold
+					echo ""
+					echo -e -n "Enter an RCON password ["
+					color red - underline
+					echo -e -n "leave blank to accept random"
+					color lightYellow - noUnderline
+					color - - bold
+					echo -e -n "]: "
+					color - - clearAll
+					read RCON_PASSWORD
+					echo ""
+				done
 			fi
-				
-			RCON_PASSWORD="${__RCON_PASSWORD:=$_RCON_PASSWORD}"
-			
-			if [[ "$_RCON_PASSWORD" ]] && [[ "$RCON_PASSWORD" == "$_RCON_PASSWORD" ]] ;
-			then
-				jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" $CONFIG > $CONFIG
-			fi
-			
-			if [[ "$__RCON_PASSWORD" ]] && [[ "$RCON_PASSWORD" == "$__RCON_PASSWORD" ]] ;
-			then
-				color red - bold
-				echo "Previously cached RCON password was used.  Auto-generated password didn't take for some reason."
-				color - - clearAll
-			fi
-			
-			[[ ! "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1
-			
+			[[ -z "$RCON_PASSWORD" ]] && RCON_PASSWORD="$_RCON_PASSWORD"
+
+			# WRITE THE CURRENT PASSWORD TO THE CONFIG
+			color white - bold
+			echo "Writing new RCON password to config..."
+			color - - clearAll
+			jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" "$CONFIG" > "$CONFIG"
+
+			[[ -z "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1
 		else
 			color red - bold
 			echo "You should make sure and change this password often!"
-			color - - clearAll			
+			color - - clearAll
 			RCON_PASSWORD="${RCON_PASSWORD:=$_RCON_PASSWORD}"
 		fi
-	fi	
-	
-}
-
-define_configures() {
-	#color red - bold
-	#echo -e "\nI'm all up in the defines, doin the configures!\n"
-	#color - - clearAll
-
-	if [ -z "$PRIVATE" ]; then
-		echo "Erp. Derp. Problems... I have no private! FAILED @ x0532!"
-		exit 1
 	fi
 
-	[[ $SOFTWARE_ROOT ]] \
-	  && TFIVEM="${TFIVEM:=$SOFTWARE_ROOT/fivem}" \
-	  || echo "Configures error @ SOFTWARE_ROOT" && exit 1
-	TFIVEM="${TCCORE:=$TFIVEM/citizenfx.core.server}"
-	
-	[[ $SERVICE_ACCOUNT ]] \
-	  && MAIN="${MAIN:=/home/$SERVICE_ACCOUNT}" \
-	  || echo "Configures error @ SERVICE_ACCOUNT" && exit 1
-		GAME="${GAME:=$MAIN/server-data}"
-			RESOURCES="${RESOURCES:=$GAME/resources}"
-				GAMEMODES="${GAMEMODES:=$RESOURCES/[gamemodes]}"
-					MAPS="${MAPS:=$GAMEMODES/[maps]}"
-				ESX="${ESX:=$RESOURCES/[esx]}"
-					ESEXT="${ESEXT:=$ESX/es_extended}"
-					ESUI="${ESUI:=$ESX/[ui]}"
-				ESSENTIAL="${ESSENTIAL:=$RESOURCES/[essential]}"
-					ESMOD="${ESMOD:=$ESSENTIAL/essentialmode}"
-				VEHICLES="${VEHICLES:=$RESOURCES/[vehicles]}"
 }
 
 # THIS STOPS A SCREEN SESSION.
@@ -268,4 +235,30 @@ invert() {
     eval "$__result"=1
     #TRUE
   fi
+}
+
+loading() {
+        color yellow - -
+	_1="$1"
+        echo -e -n "Loading"
+        COUNTER="${_1:=3}"
+        until [ "$COUNTER" -lt 0 ] ;
+        do
+                echo -e -n "."
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null
+                let "COUNTER-=1"
+
+        done
+        color lightYellow - bold && echo -e -n " Ready!\n\n" && color clear - unBold
 }

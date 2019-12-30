@@ -5,57 +5,8 @@
 #>> THESE ARE MINE <3
 #>>>>>>>>>>>>>>>>>>>>>
 # INPUT A CONFIG ENTRY
-add_salt() {
-	# default
-	local _default_length_=64
 
-	# some vars
-	[[ -n "$1" ]] && __len="$1" || __len="$_default_length_"
-	[[ -n "$2" ]] && local __salt="$2" || local __salt="default"
-	[[ -n "$3" ]] && local __stamp="$3"
-
-	if ! [ "$1" -eq "$1" ] 2> /dev/null
-	then
-        	# using default
-		local __len="$_default_length_"
-	else
-		declare -i local __len
-		__len="$1"
-	fi
-
-	#random delim char
-	if [ "$__salt" -eq 1 ] ; then
-		_d=$(cat /dev/urandom | tr -dc "!@#%" | fold -w 1 | head -n 1)
-	else
-		_d=$(cat /dev/urandom | tr -dc "!@#$%&*_+?" | fold -w 1 | head -n 1)
-	fi
-
-	#make stamp
-	if [ -n "$__stamp" ] ;
-	then
-		case "$__stamp" in
-		  "date" ) local _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
-		       * ) local _shakerStamp="${_d}$__stamp" ;;
-		esac ;
-		local __len="$(( $__len - ${#_shakerStamp} ))"
-		[ "$__len" -lt 0 ] && __len=3 && _shakerStamp="${_shakerStamp:3}"
-	fi
-
-	# make salt
-	case "$__salt" in
-	  0 ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
-	  1 ) local _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%&_+?~" | fold -w "$__len" | head -n 1) ;;
-	  * ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
-	esac ;
-
-	# if __stamp is empty, then just add salt / otherwise, add salt and the shaker stamp
-	[ ! "$__stamp" ] && local __shaker="${_salt}" || local __shaker="${_salt}${_shakerStamp}"
-
-	# This is needed to return for variable assignment
-	echo "$__shaker"
-}
-
-harvest() { # fig // prompt // confirm => 0/1
+pluck_fig() { # fig // prompt // confirm => 0/1
 
   [[ "$return__" ]] && unset return__ ; [[ "$__default" ]] && unset __default ;
   [[ "$__prompt__" ]] && unset __prompt___ ; [[ "$__prompt" ]] && unset __prompt ;
@@ -65,12 +16,14 @@ harvest() { # fig // prompt // confirm => 0/1
   [[ "$__p1" ]] && unset __p1 ; [[ "$__p1" ]] && unset __p1 ;
   [[ "$_p1" ]] && unset _p1 ; [[ "$_p2" ]] && unset _p2 ;
 
+  #local __prompt="$2" ;
+  local __prompt="$PROMPT" ; unset "$PROMPT"
+  
   local __fig_key="$1" ; 
-  local __prompt="$2" ;
-  local __verbose="$3" ;
-  local __random="$4" ;
-  local __min_len="$5" ;
-  local __max_len="$6" ;
+  local __verbose="$2" ;
+  local __random="$3" ;
+  local __min_len="$4" ;
+  local __max_len="$5" ;
   
   if [ "$__random" == "true" ] ; 
   then
@@ -369,4 +322,312 @@ harvest() { # fig // prompt // confirm => 0/1
     fi
   done
   unset __prompt__ ; unset return__ ;  unset __confirm ; unset __question__ ;
+  
 }
+
+harvest() {
+
+	# COLLECT ALL FIGS FROM USER AND PREPARE TO WRITE
+	
+	#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+	# FIG  dialog:default/display random MIN  MAX #
+	#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+
+	_all_new_=()	
+	
+	# SERVER_NAME
+	if [ "$__CONFIGURE__" ] || [ -z "$SERVER_NAME" ] ;
+	then
+		PROMPT="Enter the linux account to be used for FiveM"
+		pluck_fig "SERVICE_ACCOUNT" "0" -
+		_all_new_+="SERVER_NAME"
+	fi
+
+	# SERVICE_PASSWORD
+	if [ "$__CONFIGURE__" ] || [ -z "$SERVICE_PASSWORD" ] ;
+	then
+		PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
+		pluck_fig "SERVICE_PASSWORD" "s:n/y" true 9
+		_all_new_+="SERVICE_PASSWORD"
+	fi
+
+	# DB_ROOT_PASSWORD
+	if [ "$__CONFIGURE__" ] || [ -z "$DB_ROOT_PASSWORD" ] ;
+	then
+		PROMPT="Password for root account on MySQL"
+		pluck_fig "DB_ROOT_PASSWORD" "s:n/y" true 16
+		_all_new_+="DB_ROOT_PASSWORD"
+	fi
+
+	# MYSQL_USER
+	if [ "$__CONFIGURE__" ] || [ -z "$MYSQL_USER" ] ;
+	then
+		PROMPT="Enter MySql username for the essentialmode database"
+		pluck_fig "MYSQL_USER" "0" -
+		_all_new_+="MYSQL_USER"
+	fi
+
+	# MYSQL_PASSWORD
+	if [ "$__CONFIGURE__" ] || [ -z "$MYSQL_PASSWORD" ] ;
+	then
+		PROMPT=$(echo "Enter MySQL password for $MYSQL_USER")
+		pluck_fig "MYSQL_PASSWORD" "s:n/y" true 16 128
+		_all_new_+="MYSQL_PASSWORD"
+	fi
+	
+	# BLOWFISH_SECRET
+	if [ "$__CONFIGURE__" ] || [ -z "$BLOWFISH_SECRET" ] ;
+	then
+		PROMPT="Enter Blowfish Secret for PHP"
+		pluck_fig "BLOWFISH_SECRET" "s:n/y" true 16
+		_all_new_+="BLOWFISH_SECRET"
+	fi
+
+	# STEAM_WEBAPIKEY
+	if [ "$__CONFIGURE__" ] || [ -z "$STEAM_WEBAPIKEY" ] ;
+	then
+		PROMPT="Enter your Steam Web API Key"
+		pluck_fig "STEAM_WEBAPIKEY" "s:y/y" false
+		_all_new_+="STEAM_WEBAPIKEY"
+	fi
+
+	# SV_LICENSEKEY
+	if [ "$__CONFIGURE__" ] || [ -z "$SV_LICENSEKEY" ] ;
+	then
+		PROMPT="Enter your Cfx FiveM License"
+		pluck_fig "SV_LICENSEKEY" "s:y/y" false
+		_all_new_+="SV_LICENSEKEY"
+	fi
+
+	##########################################################################################
+	# RCON DETAILS
+	## THESE ARE NOT SETTINGS TO BE CHANGED- DOING SO WILL VOID THE MANUFACTURERS WARRANTY!
+
+	# RCON
+	if [ "$__CONFIGURE__" ] || [ -z "$RCON" ] ;
+		PROMPT="Enable RCON (probably not needed)?"
+		pluck_fig "RCON" 10 -
+		_all_new_+="RCON"
+	fi
+	if [ "$RCON" == "true" ] ;
+        then
+		
+		# RCON_PASSWORD_GEN
+		if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD_GEN" ] ;
+			PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
+			pluck_fig "RCON_PASSWORD_GEN" 10 -
+			_all_new_+="RCON_PASSWORD_GEN"
+		fi
+		if [ "$RCON_PASSWORD_GEN" == "true" ] ;
+		then
+		
+			# RCON_PASSWORD_LENGTH
+			if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD_LENGTH" ] ;
+				PROMPT="Number of characters to generate?"
+				pluck_fig "RCON_PASSWORD_LENGTH" 20 - 20 128
+				_all_new_+="RCON_PASSWORD_LENGTH"
+				
+			fi
+
+			# RCON_ASK_TO_CONFIRM
+			if [ "$__CONFIGURE__" ] || [ -z "$RCON_ASK_TO_CONFIRM" ] ;
+				PROMPT="(not recommended) Require manual approval of each randomly generated password"
+				pluck_fig "RCON_ASK_TO_CONFIRM" 11 -
+				_all_new_+="RCON_ASK_TO_CONFIRM"
+								
+			fi
+		else
+			# RCON_PASSWORD
+			if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD" ] ;
+			then
+				PROMPT="Enter RCON password:")
+				pluck_fig "RCON_PASSWORD" "s:n/y" true 30 128
+				_all_new_+="RCON_PASSWORD"
+			fi			
+        fi
+	fi
+
+	# TXADMIN_BACKUP_FOLDER
+	if [ "$__CONFIGURE__" ] || [ -z "$TXADMIN_BACKUP_FOLDER" ] ;
+		PROMPT="What name would you like for the txAdmin backup folder?"
+		pluck_fig "TXADMIN_BACKUP_FOLDER" "s:y/y"
+		_all_new_+="TXADMIN_BACKUP_FOLDER"
+				
+	fi
+
+	# DB_BACKUP_FOLDER
+	if [ "$__CONFIGURE__" ] || [ -z "$DB_BACKUP_FOLDER" ] ;	
+		PROMPT="What name would you like for the MySQL backup folder?"
+		pluck_fig "DB_BACKUP_FOLDER" "s:y/y"
+		_all_new_+="DB_BACKUP_FOLDER"
+
+	fi
+	
+	# ARTIFACT_BUILD
+	if [ "$__CONFIGURE__" ] || [ -z "$ARTIFACT_BUILD" ] ;
+		printf "\n" ; color red - bold ; color - - underline
+		echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**" ; printf "\e\[0\n\n"
+		color white - bold ; echo -e "What CFX Artifact Build would you like to use?" ; color - - clearAll
+
+		PROMPT="Enter CFX Build Artifact"
+		pluck_fig "ARTIFACT_BUILD" "s:y/y"
+		_all_new_+="ARTIFACT_BUILD"
+	fi
+	
+	# SOFTWARE_ROOT
+	if [ "$__CONFIGURE__" ] || [ -z "$SOFTWARE_ROOT" ] ;	
+	printf "\n" ; color yellow - bold ; color - - underline
+		echo -e -n "NOTE: This is not the repo.  It is basically a cache of temporary downloads."
+		printf "\e\[0\n"
+	
+		PROMPT="Where would you like to store the downloaded files?"
+		pluck_fig "SOFTWARE_ROOT" "s:y/y"
+		_all_new_+="SOFTWARE_ROOT"
+	fi
+		
+	# REPO_NAME
+	if [ "$__CONFIGURE__" ] || [ -z "$REPO_NAME" ] ;	
+		PROMPT="What would you like to name the B.E.R.P. Source Repository?"
+		pluck_fig "REPO_NAME" "s:y/y"
+		_all_new_+="REPO_NAME"
+	fi
+	
+	# SERVER_NAME
+	if [ "$__CONFIGURE__" ] || [ -z "$SERVER_NAME" ] ;
+		PROMPT="What would you like to name the server?"
+		pluck_fig "SERVER_NAME" "s:y/y" -
+		_all_new_+="SERVER_NAME"
+	fi
+	
+	# _all_new_+="TXADMIN_CACHE"
+	# let _new_++
+	
+	# if [ -z "$DB_BKUP_PATH" ]; then
+	# fi	
+	####
+	TXADMIN_BACKUP="$PRIVATE/$TXADMIN_BACKUP_FOLDER"
+	DB_BACKUPS="$PRIVATE/$DB_BACKUP_FOLDER"
+	CFX_BUILD="$(echo $ARTIFACT_BUILD | cut -f1 -d-)"
+	
+}
+
+cook_figs() {
+
+	# WRITE THE FIGS TO THE JSON FILE
+	
+	[[ ! "$CONFIG" ]] && echo "Config write failed.  No config definition discovered..." && exit 1
+	
+	##################################################################################
+	BASE_CONFIG="{}"
+	if [ ! -d "${CONFIG%/*}" ];
+	then
+		echo "No previous configuration found.  Building Privly folder & base config..."
+		mkdir "${CONFIG%/*}"
+		touch "$CONFIG"
+	else
+		if [ "$_all_new_" ] && [ "${#_all_new_[@]}" -ne 0 ] ; then
+			color lightYello - bold
+			echo -e "\nPrevious config found... Rebuilding with new config options...\n"			
+			echo "This will over-write the current config found at:"
+			echo ""
+			echo "        $CONFIG"
+			color red - bold
+			echo -e -n "\n  "
+			color - - underline
+			echo -e -n "Config items being added:"
+			color - - noUnderline
+			echo -e -n " \n"			
+			color lightRed - bold
+			for _cfug in "${_all_new_[@]}" ;
+			do
+				echo -e -n "$_cfug"
+				color gray - bold
+				echo -e -n " => "
+				color red -
+				echo -e -n "${!_cfug}"
+			done
+			
+			         color - - clearAll
+
+          color white - bold
+          echo -e "Last chance to cancel..."
+          color - - clearAll
+
+          while [ -z "$__confirmed__" ] ;
+          do
+            color white - bold
+            echo -n -e "Overwrite system config with above values? "
+            color lightYellow - bold
+            echo -n -e "(TYPE 'YES' TO CONTINUE)"
+            color white - bold
+            echo -n -e ":"
+            color - - clearAll
+
+            unset _confirm ;
+            read -n 3 _confirm ;
+            case "$_confirm" in
+              Yes | yes | YES ) __confirmed__="1" ; unset _confirm ;;
+                            * ) unset _confirm ;;
+            esac ;
+            if [ -z "$__confirmed__" ] ; then
+              color red - bold ;
+              echo -e "\nYou did not type 'YES' -- if you'd like to cancel, hit control-c" ; # Fired!
+              color - - clearAll ;
+            fi
+          done
+          color white - bold
+          echo -e "\nOkay, writing the config...\n"
+          color - - clearAll
+		fi
+	fi
+
+	echo "$BASE_CONFIG"																	| \
+	jq ". += {\"sys\":{}}"     	                                          	            | \
+	jq ".sys += {\"acct\":{}}"                                                     		| \
+		jq ".sys.acct += {\"user\":\"${SERVICE_ACCOUNT}\"}"                         	| \
+		jq ".sys.acct += {\"password\":\"${SERVICE_PASSWORD}\"}"                        | \
+	jq ".sys += {\"mysql\":{}}"                                                         | \
+		jq ".sys.mysql += {\"user\":\"${MYSQL_USER}\"}"                                 | \
+		jq ".sys.mysql += {\"password\":\"${MYSQL_PASSWORD}\"}"                         | \
+		jq ".sys.mysql += {\"rootPassword\":\"${DB_ROOT_PASSWORD}\"}"                   | \
+	jq ".sys += {\"rcon\":{}}"                                                          | \
+		jq ".sys.rcon += {\"password\":\"${RCON_PASSWORD}\"}"                           | \
+		jq ".sys.rcon += {\"pref\":{}}"                                                 | \
+			jq ".sys.rcon.pref += {\"enable\":\"${RCON}\"}"                             | \
+			jq ".sys.rcon.pref += {\"randomlyGenerate\":\"${RCON_PASSWORD_GEN}\"}"      | \
+			jq ".sys.rcon.pref += {\"length\":\"${RCON_PASSWORD_LENGTH}\"}"          	| \
+			jq ".sys.rcon.pref += {\"confirm\":\"${RCON_ASK_TO_CONFIRM}\"}"         	| \
+	jq ".sys += {\"php\":{}}"                                                           | \
+		jq ".sys.php += {\"blowfishSecret\":\"${BLOWFISH_SECRET}\"}"                    | \
+		jq ".sys += {\"keys\":{}}"                                                      | \
+			jq ".sys.keys += {\"fivemLicenseKey\":\"${SV_LICENSEKEY}\"}"                | \
+	        jq ".sys.keys += {\"steamWebApiKey\":\"${STEAM_WEBAPIKEY}\"}"               | \
+	jq ". += {\"pref\":{}}"                                            					| \
+	  jq ".pref += {\"serverName\":\"${SERVER_NAME}\"}"									| \
+	  jq ".pref += {\"artifactBuild\":\"${ARTIFACT_BUILD}\"}"							| \
+	  jq ".pref += {\"repoName\":\"${REPO_NAME}\"}"										| \
+	jq ". += {\"env\":{}}"																| \
+	  jq ".env += {\"sourceRoot\":\"${SOURCE_ROOT}\"}"									| \
+	  jq ".env += {\"source\":\"${SOURCE}\"}"											| \
+	  jq ".env += {\"private\":{}}"														| \
+	    jq ".env.private += {\"txadminCache\":\"$TXADMIN_CACHE\"}"						| \
+	    jq ".env.private += {\"dbBkupPath\":\"${DB_BKUP_PATH}\"}"						| \
+	  jq ".env += {\"software\":{}}"													| \
+	    jq ".env.software += {\"softwareRoot\":\"${SOFTWARE_ROOT}\"}"					| \
+	    jq ".env.software += {\"tfivem\":\"${TFIVEM}\"}"								| \
+	    jq ".env.software += {\"tccore\":\"${TCCORE}\"}"								| \
+	  jq ".env += {\"install\":{}}"														| \
+	    jq ".env.install += {\"main\":\"${MAIN}\"}"										| \
+	    jq ".env.install += {\"game\":\"${GAME}\"}"										| \
+	    jq ".env.install += {\"resources\":\"${RESOURCES}\"}"							| \
+	    jq ".env.install += {\"gamemodes\":\"${GAMEMODES}\"}"							| \
+	    jq ".env.install += {\"maps\":\"${MAPS}\"}"										| \
+	    jq ".env.install += {\"esx\":\"${ESX}\"}"										| \
+	    jq ".env.install += {\"esext\":\"${ESEXT}\"}"									| \
+	    jq ".env.install += {\"esui\":\"${ESUI}\"}"										| \
+	    jq ".env.install += {\"essential\":\"${ESSENTIAL}\"}"							| \
+	    jq ".env.install += {\"esmod\":\"${ESMOD}\"}"									| \
+	    jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}"								   > "$CONFIG"
+
+}
+

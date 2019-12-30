@@ -28,7 +28,7 @@ fi
 #
 # BUILD DEPLOYMENT ENVIRONMENT
 ##
-APPMAIN="APPMAIN" # DONUT TOUCH!
+APPMAIN="MAIN" # DONUT TOUCH!
 
 if [ ! "$BUILD" ] ;
 then
@@ -84,7 +84,7 @@ fi
 #
 # JUST A BANNER
 ##
-. "$BUILD/just-a-banner.sh"
+. "$BUILD/just-a-banner.sh" WELCOME
 
 #####################################################################
 #
@@ -126,44 +126,8 @@ check_for_mysql() {
 # OKAY, THESE MINE!
 ##
 ###
-# THIS STOPS A SCREEN SESSION.
-stop_screen() {
-  SCREEN_SESSION_NAME="fivem"
-  echo "Quiting screen session '$SCREEN_SESSION_NAME' for FiveM (if applicable)"
-  su "$SERVICE_ACCOUNT" -c "screen -XS '$SCREEN_SESSION_NAME' quit"
-}
-###
-# SLEEP ... nuf'said
-sleep() {
-# Hold up N seconds
-# Default (no args) is 10 seconds-ish
-#
-# usage:
-#   sleep 5
-#   sleep
-#
-  if [ -z "$1" ]; then
-    count="10"
-  else
-    count="$1"
-  fi
-  ping -c "$count" 127.0.0.1 > /dev/null
-}
-#
-###
-# invert (if set, unset // if unset, set to 1)
-#   BASH BOOLEAN
-invert() {
-  local __result="$1"
-  if [ "${!__result}" ]; then
-    eval unset "$__result"
-    #FALSE
-  else
-    eval "$__result"=1
-    #TRUE
-  fi
-}
-
+# worker functions
+. "$BUILD/fuct-worker.sh"
 
 #####################################################################
 #
@@ -171,18 +135,7 @@ invert() {
 ##
 if [ -z "$1" ]; then
 	#\> NEW INSTALLATION
-	echo "                                                                                      ";
-	echo "                                                                                      ";
-	echo "███╗   ██╗███████╗██╗    ██╗    ██╗███╗   ██╗███████╗████████╗ █████╗ ██╗     ██╗     ";
-	echo "████╗  ██║██╔════╝██║    ██║    ██║████╗  ██║██╔════╝╚══██╔══╝██╔══██╗██║     ██║     ";
-	echo "██╔██╗ ██║█████╗  ██║ █╗ ██║    ██║██╔██╗ ██║███████╗   ██║   ███████║██║     ██║     ";
-	echo "██║╚██╗██║██╔══╝  ██║███╗██║    ██║██║╚██╗██║╚════██║   ██║   ██╔══██║██║     ██║     ";
-	echo "██║ ╚████║███████╗╚███╔███╔╝    ██║██║ ╚████║███████║   ██║   ██║  ██║███████╗███████╗";
-	echo "╚═╝  ╚═══╝╚══════╝ ╚══╝╚══╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝";
-	echo "                                                                                      ";
-	echo "    you've got about 10 seconds to cancel this script (hit control-c two times!)      ";
-	echo "                                                                                      ";
-	echo "                                                                                      ";
+	. "$BUILD/just-a-banner.sh" NEW_INSTALL
 	sleep 15
 
 	### SAVING THIS BIT FOR ANOTHER SCRIPT ######
@@ -190,7 +143,6 @@ if [ -z "$1" ]; then
 	#	echo "Database root password already set"
 	#	exit 0
 	#fi
-
 
 	. "$BUILD/build-dependancies.sh" EXECUTE
 	echo "DEPENDANCIES BUILT!"
@@ -229,25 +181,19 @@ elif [ ! -z "$1" ]; then
 
 	if [ "$1" == "--redeploy" ] || [ "$1" == "-r" ]; then
 		#\> REDEPLOY
-		echo "                                                                  ";
-		echo "██████╗ ███████╗██████╗ ███████╗██████╗ ██╗      ██████╗ ██╗   ██╗";
-		echo "██╔══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗██║     ██╔═══██╗╚██╗ ██╔╝";
-		echo "██████╔╝█████╗  ██║  ██║█████╗  ██████╔╝██║     ██║   ██║ ╚████╔╝ ";
-		echo "██╔══██╗██╔══╝  ██║  ██║██╔══╝  ██╔═══╝ ██║     ██║   ██║  ╚██╔╝  ";
-		echo "██║  ██║███████╗██████╔╝███████╗██║     ███████╗╚██████╔╝   ██║   ";
-		echo "╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝   ";
-		echo "                                                                  ";
-		echo "        you've got about 10 seconds to cancel this script         ";
-		echo "                  (hit control-c two times!)                      ";
-		echo "                                                                  ";
-		echo "                                                                  ";
-		ping -c 15 127.0.0.1 > /dev/null
-		###
-		##### this assumes you've used my teardown script.
-		##### if you've done this on your own. sorry...
-		##### Use my script to tear down, next time.
-		###
+		. "$BUILD/just-a-banner.sh" REDEPLOY
+		sleep 15
 
+		#\
+		##\
+		###\
+		####\    this assumes you've used my teardown script.
+		#####>   if you've done this on your own. sorry...
+		####/    Use my script to tear down, next time.
+		###/
+		##/
+		#/
+		
 		####
 		# STOP THE SCREEN SESSION
 		stop_screen
@@ -272,18 +218,7 @@ elif [ ! -z "$1" ]; then
 		echo ""
 	elif [ "$1" == "--rebuild" ] || [ "$1" == "-b" ]; then
 		#\> REBUILD
-		echo "                                                    ";
-		echo "██████╗ ███████╗██████╗ ██╗   ██╗██╗██╗     ██████╗ ";
-		echo "██╔══██╗██╔════╝██╔══██╗██║   ██║██║██║     ██╔══██╗";
-		echo "██████╔╝█████╗  ██████╔╝██║   ██║██║██║     ██║  ██║";
-		echo "██╔══██╗██╔══╝  ██╔══██╗██║   ██║██║██║     ██║  ██║";
-		echo "██║  ██║███████╗██████╔╝╚██████╔╝██║███████╗██████╔╝";
-		echo "╚═╝  ╚═╝╚══════╝╚═════╝  ╚═════╝ ╚═╝╚══════╝╚═════╝ ";
-		echo "                                                    ";
-		echo " you've got about 10 seconds to cancel this script  ";
-		echo "           (hit control-c two times!)               ";
-		echo "                                                    ";
-		echo "                                                    ";
+		. "$BUILD/just-a-banner.sh" REBUILD
 		sleep 15
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
@@ -305,18 +240,7 @@ elif [ ! -z "$1" ]; then
 		echo ""
 	elif [ "$1" == "--restore" ] || [ "$1" == "-oof" ]; then
 		#\> RESTORE
-		echo "                                                          ";
-		echo "██████╗ ███████╗███████╗████████╗ ██████╗ ██████╗ ███████╗";
-		echo "██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝";
-		echo "██████╔╝█████╗  ███████╗   ██║   ██║   ██║██████╔╝█████╗  ";
-		echo "██╔══██╗██╔══╝  ╚════██║   ██║   ██║   ██║██╔══██╗██╔══╝  ";
-		echo "██║  ██║███████╗███████║   ██║   ╚██████╔╝██║  ██║███████╗";
-		echo "╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝";
-		echo "                                                          ";
-		echo "    you've got about 10 seconds to cancel this script     ";
-		echo "              (hit control-c two times!)                  ";
-		echo "                                                          ";
-		echo "                                                          ";
+		. "$BUILD/just-a-banner.sh" RESTORE
 		###
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.

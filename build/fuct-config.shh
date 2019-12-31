@@ -7,7 +7,7 @@
 # INPUT A CONFIG ENTRY
 
 pluck_fig() { # fig // prompt // confirm => 0/1
-#  sower "$1" "$2" "$3" "$4" "$5"
+  harvester "$1" "$2" "$3" "$4" "$5"
 #  [[ "$return__" ]] && unset return__ ; [[ "$__default" ]] && unset __default ;
 #  [[ "$__prompt__" ]] && unset __prompt___ ; [[ "$__prompt" ]] && unset __prompt ;
 #  [[ "$__verbose" ]] && unset __verbose ; [[ "$__min_len" ]] && unset __min_len ;
@@ -325,6 +325,59 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
 }
 
+harvester(){
+        [[ ! "$FIGTREE" ]] && echo "I need a fig tree to harvest..." && exit 1
+
+        local _figs=$(<"$FIGTREE" jq '. | keys[]')
+        _figs=($(echo "${_figs//\"/}" | tr '\n' ' '))
+
+        seeds=()
+        for fig in "${_figs[@]}"
+        do
+               local _seedpods=$(<"$FIGTREE" jq --arg fig "$fig" '.[$fig] | keys[]')
+               _seedpods=($(echo "${_seedpods//\"/}" | tr '\n' ' '))
+               for seedpod in "${_seedpods[@]}"
+               do
+			seed=$(<"$FIGTREE" jq --arg fig "$fig" --arg seedpod "$seedpod" '.[$fig][$seedpod]')
+
+			echo ".$fig.$seedpod = $seed"
+			printf -v "__$seedpod" '%s' "$seed"
+			echo $(echo echo \${__${seedpod}})
+
+			seeds+=("$seed")
+
+               done
+        done
+
+}
+
+figsower() {
+	[[ ! "$FIGTREE" ]] && echo "I need a fig tree to sow..." && exit 1
+
+	local _cfug="$1"
+
+	[[ ! -z "$2" ]] && local _vbose="$2" || local _vbose="null"
+	[[ ! -z "$3" ]] && local _rdom="$3"  || local _rdome="null"
+	[[ ! -z "$4" ]] && local _min="$4"   || local _min="null"
+	[[ ! -z "$5" ]] && local _max="$5"   || local _max="null"
+
+	local _figtree="$(cat ${FIGTREE})"
+	[[ -z "$_figtree" ]] && local _figroot="{}" \
+			     || local _figroot="$_figtree"
+
+	unset _figtree
+	_figtree="$( echo ${_figroot} | jq . )"
+	_figtree=$( echo ${_figtree} | jq --arg prompt "$PROMPT" --arg FIG "$_cfug" '.[$FIG].prompt=$prompt' )
+	_figtree=$( echo ${_figtree} | jq --arg verbose "$_vbose" --arg FIG "$_cfug" '.[$FIG].verbose=$verbose' )
+	_figtree=$( echo ${_figtree} | jq --arg random "$_rdom" --arg FIG "$_cfug" '.[$FIG].random=$random' )
+	_figtree=$( echo ${_figtree} | jq --arg min "$_min" --arg FIG "$_cfug" '.[$FIG].min=$min' )
+	_figtree=$( echo ${_figtree} | jq --arg max "$_max" --arg FIG "$_cfug" '.[$FIG].max=$max' )
+	[[ ! -z "$_figtree" ]] && ( echo "$_figtree" | jq . > "$FIGTREE" )
+
+	unset _figtree ; unset _cfug ; unset _prompt ;
+	unset _vbose ; unset _rdom ; unset _min ; unset _max ;
+}
+
 harvest() {
 	# COLLECT ALL FIGS FROM USER AND PREPARE TO WRITE
 
@@ -333,29 +386,28 @@ harvest() {
 	#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
 	[[ "$_all_new_" ]] && unset _all_new_ ; _all_new_=()
-
-	# SERVICE ACCOUNT
-	if [ "$__CONFIGURE__" ] || [ -z "$SERVICE_ACCOUNT" ] ;
+	# SERVER_NAME
+	if [ "$__CONFIGURE__" ] || [ ! "$SERVICE_ACCOUNT" ] ;
 	then
 		PROMPT="Enter the linux account to be used for FiveM"
 		pluck_fig "SERVICE_ACCOUNT" "0" -
 		_all_new_+=("SERVICE_ACCOUNT")
 	fi
-        [[ -z "$MAIN" ]] &&  MAIN="/home/${SERVICE_ACCOUNT}" && _all_new_+=("MAIN")
-        [[ -z "$GAME" ]] &&  GAME="${MAIN}/server-data" && _all_new_+=("GAME")
-        [[ -z "$RESOURCES" ]] &&  RESOURCES="${GAME}/resources" && _all_new_+=("RESOURCES")
-        [[ -z "$GAMEMODES" ]] &&  GAMEMODES="${RESOURCES}/[gamemodes]" && _all_new_+=("GAMEMODES")
-        [[ -z "$MAPS" ]] &&  MAPS="${GAMEMODES}/[maps]" && _all_new_+=("MAPS")
-        [[ -z "$ESX" ]] &&  ESX="${RESOURCES}/[esx]" && _all_new_+=("ESX")
-        [[ -z "$ESEXT" ]] &&  ESEXT="${ESX}/es_extended" && _all_new_+=("ESEXT")
-        [[ -z "$ESUI" ]] &&  ESUI="${ESX}/[ui]" && _all_new_+=("ESUI")
-        [[ -z "$ESSENTIAL" ]] &&  ESSENTIAL="${RESOURCES}/[essential]" && _all_new_+=("ESSENTIAL")
-        [[ -z "$ESMOD" ]] &&  ESMOD="${ESSENTIAL}/essentialmode" && _all_new_+=("ESMOD")
-        [[ -z "$VEHICLES" ]] &&  VEHICLES="${RESOURCES}/[vehicles]" && _all_new_+=("VEHICLES")
+        [[ -z "$MAIN" ]] &&  MAIN="/home/${SERVICE_ACCOUNT}"
+        [[ -z "$GAME" ]] &&  GAME="${MAIN}/server-data"
+        [[ -z "$RESOURCES" ]] &&  RESOURCES="${GAME}/resources"
+        [[ -z "$GAMEMODES" ]] &&  GAMEMODES="${RESOURCES}/[gamemodes]"
+        [[ -z "$MAPS" ]] &&  MAPS="${GAMEMODES}/[maps]"
+        [[ -z "$ESX" ]] &&  ESX="${RESOURCES}/[esx]"
+        [[ -z "$ESEXT" ]] &&  ESEXT="${ESX}/es_extended"
+        [[ -z "$ESUI" ]] &&  ESUI="${ESX}/[ui]"
+        [[ -z "$ESSENTIAL" ]] &&  ESSENTIAL="${RESOURCES}/[essential]"
+        [[ -z "$ESMOD" ]] &&  ESMOD="${ESSENTIAL}/essentialmode"
+        [[ -z "$VEHICLES" ]] &&  VEHICLES="${RESOURCES}/[vehicles]"
 
 
 	# SERVICE_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SERVICE_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$SERVICE_PASSWORD" ] ;
 	then
 		PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
 		pluck_fig "SERVICE_PASSWORD" "s:n/y" true 9
@@ -363,7 +415,7 @@ harvest() {
 	fi
 
 	# DB_ROOT_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$DB_ROOT_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$DB_ROOT_PASSWORD" ] ;
 	then
 		PROMPT="Password for root account on MySQL"
 		pluck_fig "DB_ROOT_PASSWORD" "s:n/y" true 16
@@ -371,7 +423,7 @@ harvest() {
 	fi
 
 	# MYSQL_USER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$MYSQL_USER" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$MYSQL_USER" ] ;
 	then
 		PROMPT="Enter MySql username for the essentialmode database"
 		pluck_fig "MYSQL_USER" "0" 0
@@ -379,7 +431,7 @@ harvest() {
 	fi
 
 	# MYSQL_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$MYSQL_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$MYSQL_PASSWORD" ] ;
 	then
 		PROMPT=$(echo "Enter MySQL password for $MYSQL_USER")
 		pluck_fig "MYSQL_PASSWORD" "s:n/y" true 16 128
@@ -387,7 +439,7 @@ harvest() {
 	fi
 
 	# BLOWFISH_SECRET
-	if [ "$__CONFIGURE__" ] ||  [ -z "$BLOWFISH_SECRET" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$BLOWFISH_SECRET" ] ;
 	then
 		PROMPT="Enter Blowfish Secret for PHP"
 		pluck_fig "BLOWFISH_SECRET" "s:n/y" true 16
@@ -395,7 +447,7 @@ harvest() {
 	fi
 
 	# STEAM_WEBAPIKEY
-	if [ "$__CONFIGURE__" ] ||  [ -z "$STEAM_WEBAPIKEY" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$STEAM_WEBAPIKEY" ] ;
 	then
 		PROMPT="Enter your Steam Web API Key"
 		pluck_fig "STEAM_WEBAPIKEY" "s:y/y" false
@@ -403,7 +455,7 @@ harvest() {
 	fi
 
 	# SV_LICENSEKEY
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SV_LICENSEKEY" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$SV_LICENSEKEY" ] ;
 	then
 		PROMPT="Enter your Cfx FiveM License"
 		pluck_fig "SV_LICENSEKEY" "s:y/y" false
@@ -415,16 +467,17 @@ harvest() {
 	## THESE ARE NOT SETTINGS TO BE CHANGED- DOING SO WILL VOID THE MANUFACTURERS WARRANTY!
 
 	# RCON
-	if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_ENABLE" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$RCON_ENABLE" ] ;
 	then
 		PROMPT="Enable RCON (probably not needed)?"
 		pluck_fig "RCON_ENABLE" 10 false
 		_all_new_+=("RCON_ENABLE")
 	fi
+	[[ "$RCON_ENABLE" == "true" ]] && RCON="$RCON_ENABLE"
 	if [ "$RCON_ENABLE" == "true" ] ;
         then
 		# RCON_PASSWORD_GEN
-		if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD_GEN" ] ;
+		if [ "$__CONFIGURE__" ] || [ ! "$RCON_PASSWORD_GEN" ] ;
 		then
 			PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
 			pluck_fig "RCON_PASSWORD_GEN" 10 false
@@ -434,7 +487,7 @@ harvest() {
 		then
 
 			# RCON_PASSWORD_LENGTH
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD_LENGTH" ] ;
+			if [ "$__CONFIGURE__" ] || [ ! "$RCON_PASSWORD_LENGTH" ] ;
 			then
 				PROMPT="Number of characters to generate?"
 				pluck_fig "RCON_PASSWORD_LENGTH" 20 false 20 128
@@ -443,7 +496,7 @@ harvest() {
 			fi
 
 			# RCON_ASK_TO_CONFIRM
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_ASK_TO_CONFIRM" ] ;
+			if [ "$__CONFIGURE__" ] || [ ! "$RCON_ASK_TO_CONFIRM" ] ;
 			then
 				PROMPT="(not recommended) Require manual approval of each randomly generated password"
 				pluck_fig "RCON_ASK_TO_CONFIRM" 11 false
@@ -453,7 +506,7 @@ harvest() {
 			RCON_PASSWORD="random"
 		else
 			# RCON_PASSWORD
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD" ] ;
+			if [ "$__CONFIGURE__" ] || [ ! "$RCON_PASSWORD" ] ;
 			then
 				PROMPT="Enter RCON password:"
 				pluck_fig "RCON_PASSWORD" "s:n/y" true 30 128
@@ -463,7 +516,7 @@ harvest() {
 	fi
 
 	# TXADMIN_BACKUP_FOLDER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$TXADMIN_BACKUP_FOLDER" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$TXADMIN_BACKUP_FOLDER" ] ;
 	then
 		PROMPT="What name would you like for the txAdmin backup folder?"
 		pluck_fig "TXADMIN_BACKUP_FOLDER" "s:y/y"
@@ -472,15 +525,16 @@ harvest() {
 	fi
 
 	# DB_BACKUP_FOLDER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$DB_BACKUP_FOLDER" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$DB_BACKUP_FOLDER" ] ;
 	then
 		PROMPT="What name would you like for the MySQL backup folder?"
 		pluck_fig "DB_BACKUP_FOLDER" "s:y/y"
 		_all_new_+=("DB_BACKUP_FOLDER")
+
 	fi
 
 	# ARTIFACT_BUILD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$ARTIFACT_BUILD" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$ARTIFACT_BUILD" ] ;
 	then
 		printf "\n" ; color red - bold ; color - - underline
 		echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**" ; printf "\e[0m\n\n"
@@ -492,7 +546,7 @@ harvest() {
 	fi
 
 	# SOFTWARE_ROOT
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SOFTWARE_ROOT" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$SOFTWARE_ROOT" ] ;
 	then
 	printf "\n" ; color yellow - bold ; color - - underline
 		echo -e -n "NOTE: This is not the repo.  It is basically a cache of temporary downloads."
@@ -502,12 +556,12 @@ harvest() {
 		pluck_fig "SOFTWARE_ROOT" "s:y/y"
 		_all_new_+=("SOFTWARE_ROOT")
 	fi
-	[[ -z "$TFIVEM" ]] && TFIVEM="${SOFTWARE_ROOT}/fivem" && _all_new_+=("TFIVEM")
-        [[ -z "TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server" && _all_new_+=("TCCORE")
+	[[ ! "$TFIVEM" ]] && TFIVEM="${SOFTWARE_ROOT}/fivem"
+        [[ ! "TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server"
 
 
 	# REPO_NAME
-	if [ "$__CONFIGURE__" ] ||  [ -z "$REPO_NAME" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$REPO_NAME" ] ;
 	then
 		PROMPT="What would you like to name the B.E.R.P. Source Repository?"
 		pluck_fig "REPO_NAME" "s:y/y"
@@ -515,22 +569,20 @@ harvest() {
 	fi
 
 	# SERVER_NAME
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SERVER_NAME" ] ;
+	if [ "$__CONFIGURE__" ] || [ ! "$SERVER_NAME" ] ;
 	then
 		PROMPT="What would you like to name the server?"
 		pluck_fig "SERVER_NAME" "s:y/y" false
 		_all_new_+=("SERVER_NAME")
 	fi
 
-	# TXADMIN_BACKUP
-	if [ "$__CONFIGURE__" ] || [ "$TXADMIN_BACKUP" != "$PRIVATE/$TXADMIN_BACKUP_FOLDER" ] ;
+	if [ "$TXADMIN_BACKUP" ] && [ "$TXADMIN_BACKUP" != "$PRIVATE/$TXADMIN_BACKUP_FOLDER" ] ;
 	then
 		TXADMIN_BACKUP="$PRIVATE/$TXADMIN_BACKUP_FOLDER"
 		_all_new_+=("TXADMIN_BACKUP")
 	fi
 
-	# DB_BACKUPS
-	if [ "$__CONFIGURE__" ] || [ "$DB_BACKUPS" != "$PRIVATE/$DB_BACKUP_FOLDER" ] ;
+	if [ "$DB_BACKUPS" ] && [ "$DB_BACKUPS" != "$PRIVATE/$DB_BACKUP_FOLDER" ] ;
 	then
 		DB_BACKUPS="$PRIVATE/$DB_BACKUP_FOLDER"
 		_all_new_+=("DB_BACKUPS")
@@ -556,14 +608,12 @@ cook_figs() {
         fi
 
 	##################################################################################
-	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$(cat $CONFIG)" ] ;
+	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ];
 	then
-		echo "No valid previous configuration was found.  Building base config..."
+		echo "No previous configuration found.  Building Privly folder & base config..."
 		[[ ! -d "${CONFIG%/*}" ]] && mkdir "${CONFIG%/*}"
-		BASE_CONFIG="{}"
 	else
-		echo "Config file identified and is not zero length..."
-		BASE_CONFIG="$(cat $CONFIG | jq .)"
+		echo "I found a config!"
 		if [ "$_all_new_" ] && [ "${#_all_new_[@]}" -gt 0 ] ;
 		then
 			color lightYellow - bold
@@ -572,7 +622,7 @@ cook_figs() {
 			echo ""
 			echo "        $CONFIG"
 			color red - bold
-			echo -e -n "\n\n"
+			echo -e -n "\n  "
 			color - - underline
 			echo -e -n "Config items being added:"
 			color - - noUnderline
@@ -623,28 +673,21 @@ cook_figs() {
 			__UNCHANGED__="1"
 		fi
 	fi
-	for _cfug in "${_all_new_[@]}" ;
-	do
-		color gray - bold
-		echo -e -n "Adding $_cfug => ${!_cfug}...\n"
-		plant_fig "BASE_CONFIG" "$_cfug"
-		color - - clearAll
-	done
 
-
-
-if [ 1 -eq 0 ] ; then
 	if [ ! "$__UNCHANGED__" ] ;
 	then
-
 											 		  BASE_CONFIG="{}"
 		echo "$BASE_CONFIG"											| \
-jq --arg SERVICE_ACCOUNT "$SERVICE_ACCOUNT" '.sys.acct.user=$SERVICE_ACCOUNT'                      	   		| \
-jq --arg SERVICE_PASSWORD "$SERVICE_PASSWORD" '.sys.acct.password=$SERVICE_PASSWORD'                    		| \
-jq --arg MYSQL_USER "$MYSQL_USER" '.sys.mysql.user=$MYSQL_USER'                                 	| \
-jq --arg MYSQL_PASSWORD "$MYSQL_PASSWORD" '.sys.mysql.password=$MYSQL_PASSWORD'                         	| \
-jq --arg DB_ROOT_PASSWORD "$DB_ROOT_PASSWORD" '.sys.mysql.rootPassword=$DB_ROOT_PASSWORD'                   	| \
-jq --arg RCON_ENABLE "$RCON_ENABLE" '.sys.rcon.enable'":RCON_ENABLE))}\"}"                                   	| \
+		jq ". += {\"sys\":{}}"     	                                          	       			| \
+			jq ".sys += {\"acct\":{}}"                                                  			| \
+				jq ".sys.acct += {\"user\":\"${SERVICE_ACCOUNT}\"}"                         		| \
+				jq ".sys.acct += {\"password\":\"${SERVICE_PASSWORD}\"}"                    		| \
+			jq ".sys += {\"mysql\":{}}"                                                             	| \
+				jq ".sys.mysql += {\"user\":\"${MYSQL_USER}\"}"                                 	| \
+				jq ".sys.mysql += {\"password\":\"${MYSQL_PASSWORD}\"}"                         	| \
+				jq ".sys.mysql += {\"rootPassword\":\"${DB_ROOT_PASSWORD}\"}"                   	| \
+			jq ".sys += {\"rcon\":{}}"                                                              	| \
+				jq ".sys.rcon += {\"enable\":\"${RCON_ENABLE))}\"}"                                   	| \
 				jq ".sys.rcon += {\"password\":\"${RCON_PASSWORD}\"}"                           	| \
 				jq ".sys.rcon += {\"pref\":{}}"                                                 	| \
 					jq ".sys.rcon.pref += {\"randomlyGenerate\":\"${RCON_PASSWORD_GEN}\"}"          | \
@@ -685,80 +728,5 @@ jq --arg RCON_ENABLE "$RCON_ENABLE" '.sys.rcon.enable'":RCON_ENABLE))}\"}"      
 				jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}"					   > "$CONFIG"
 
 	fi
-fi
 }
 
-
-plant_fig() {
-	local _crop="$1"
-	local _fig="$2"
-	local _jq="$(eval echo \$jq_${_crop})"
-
-	_yield=$( echo ${!_crop} |  jq --arg value "${!_fig}" --arg path "$_jq" '$path=$value' )
-	printf -v "$_crop" '%s' "$_yield"
-}
-
-
-
-
-
-
-
-
-########################################################################
-# SOME STUFF I AM TESTING -- NOT CURRENTLY IN USE OR PART OF ANY ACTION
-########################################################################
-
-harvester(){
-        [[ ! "$FIGTREE" ]] && echo "I need a fig tree to harvest..." && exit 1
-
-        local _figs=$(<"$FIGTREE" jq '. | keys[]')
-        _figs=($(echo "${_figs//\"/}" | tr '\n' ' '))
-
-        for fig in "${_figs[@]}"
-        do
-                echo -e "\n$fig"
-                local _seedpods=$(<"$FIGTREE" jq --arg fig "$fig" '.[$fig] | keys[]')
-                _seedpods=($(echo "${_seedpods//\"/}" | tr '\n' ' '))
-                for seedpod in "${_seedpods[@]}"
-                do
-                        _seed=$(<"$FIGTREE" jq --arg fig "$fig" --arg seedpod "$seedpod" '.[$fig][$seedpod]')
-                        seed="${_seed//\"/}"
-
-                        [[ ! -z "$seed" ]] && [[ "$seed" != "null" ]] && printf -v "__$seedpod" '%s' "$seed"
-
-                        echo "__$seedpod: $(eval echo \${__$seedpod})"
-                done
-
-                printf -v "PROMPT" '%s' "$__prompt"
-                pluck_fig "$fig" "${__verbose:=0}" "${__random:=false}" "${__min:=''}" "${__max:=''}"
-        done
-
-}
-
-figsower() {
-	[[ ! "$FIGTREE" ]] && echo "I need a fig tree to sow..." && exit 1
-
-	local _cfug="$1"
-
-	[[ ! -z "$2" ]] && local _vbose="$2" || local _vbose="null"
-	[[ ! -z "$3" ]] && local _rdom="$3"  || local _rdome="null"
-	[[ ! -z "$4" ]] && local _min="$4"   || local _min="null"
-	[[ ! -z "$5" ]] && local _max="$5"   || local _max="null"
-
-	local _figtree="$(cat ${FIGTREE})"
-	[[ -z "$_figtree" ]] && local _figroot="{}" \
-			     || local _figroot="$_figtree"
-
-	unset _figtree
-	_figtree="$( echo ${_figroot} | jq . )"
-	_figtree=$( echo ${_figtree} | jq --arg prompt "$PROMPT" --arg FIG "$_cfug" '.[$FIG].prompt=$prompt' )
-	_figtree=$( echo ${_figtree} | jq --arg verbose "$_vbose" --arg FIG "$_cfug" '.[$FIG].verbose=$verbose' )
-	_figtree=$( echo ${_figtree} | jq --arg random "$_rdom" --arg FIG "$_cfug" '.[$FIG].random=$random' )
-	_figtree=$( echo ${_figtree} | jq --arg min "$_min" --arg FIG "$_cfug" '.[$FIG].min=$min' )
-	_figtree=$( echo ${_figtree} | jq --arg max "$_max" --arg FIG "$_cfug" '.[$FIG].max=$max' )
-	[[ ! -z "$_figtree" ]] && ( echo "$_figtree" | jq . > "$FIGTREE" )
-
-	unset _figtree ; unset _cfug ; unset _prompt ;
-	unset _vbose ; unset _rdom ; unset _min ; unset _max ;
-}

@@ -5,9 +5,16 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
     ## ---- FiveM ---- ##
 
+    [[ -z "$SOFTWARE" ]] && "software folder location not defined." && exit 1
+    [[ -z "$TFIVEM" ]] && "tfivem folder location not defined." && exit 1
+    [[ -z "$TCCORE" ]] && "tccore folder location not defined." && exit 1
+    [[ -z "$MAIN" ]] && "main folder location not defined." && exit 1
+    [[ -z "$GAME" ]] && "game folder location not defined." && exit 1
+
+
     echo "FiveM - Base"
         echo "Get Packages"
-            artifact="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/${ARTIFACT_BUILD}/fx.tar.xz"
+            artifact="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/$ARTIFACT_BUILD/fx.tar.xz"
 
             wget -P "$TFIVEM" "$artifact"
 

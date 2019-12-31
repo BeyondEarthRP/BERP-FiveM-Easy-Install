@@ -49,13 +49,13 @@ if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ; then
 	##
 	. "$BUILD/just-a-banner.sh" WELCOME
 
-	loading
-
+	loading || true
+	echo "Building environment..."
 	. "$BUILD/build-env.sh" EXECUTE
 
 	[[ ! "$CONFIG" ]] && _FAILED=1 && color red - bold \
 	  && echo -e -n "FAILED!  (no config found)\n\n" \
-	  && color - - clearAll && exit 1
+	  && color - - clearAll && exit 1 || true
 
 
 	if [[ "$__status" != "NO_CONFIG" ]] ; then

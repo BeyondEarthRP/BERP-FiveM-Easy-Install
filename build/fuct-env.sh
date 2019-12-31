@@ -25,7 +25,6 @@ define_runtime_env() {
 	##########################################################################
 	# WHO THE HECK AM I?!
 	# GENERATE RUNTIME VARIABLES - NEEDS TO RUN EACH LOAD
-	SCRIPT=$(echo "$0" | rev | cut -f1 -d/ | rev)
 	if [ ! "$BUILD" ] ;
 	then
 		THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
@@ -35,12 +34,17 @@ define_runtime_env() {
 		unset THIS_SCRIPT_ROOT
 	fi
 
-	SCRIPT_ROOT="$(dirname $0)"
-	SCRIPT_FULLPATH="$0"
-	BUILD="$BUILD"
+        if [ ! -z "$BUILD" ] ;
+	then
+		SCRIPT=$(echo "$0" | rev | cut -f1 -d/ | rev)
+		SCRIPT_FULLPATH="$(readlink -f $0)"
+		SCRIPT_ROOT="$(dirname $(readlink -f ${BUILD}))"
 
-        [[ ! -d "$BUILD" ]] && \
-          echo "Could not find the build folder.  It should be right here next to me..." && exit 1
+		FIGTREE="${BUILD}/figtree.json"  && touch "$FIGTREE"
+	else
+        	echo "Could not find the build folder.  It should be right here next to me..."
+		exit 1
+	fi
 
 	##########################################################################
 	# WHERE THE HECK AM I?!!
@@ -62,10 +66,10 @@ define_runtime_env() {
 	# NEEDS TO RUN EACH ENVIRONMENT LOAD.
 	if [ -d "$DB_BACKUPS" ]; then
 		DB="$(ls -Art $DB_BACKUPS/ | tail -n 1)"
-		PATH_TO_DB="$DB_BACKUPS/$DB"
+		DB_BACKUPS="$DB_BACKUPS/$DB"
 	else
 		DB="null"
-		PATH_TO_DB="null"
+		DB_BACKUPS="null"
 	fi
 	# END DATABASE BACKUP DISCOVERY
 }
@@ -128,7 +132,7 @@ import_system_config() {
 	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON_ENABLE RCON_PASSWORD \
 	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD RCON_PASSWORD_GEN \
 	RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM \
-	)
+	) ;
 
 	# This is taking the above, appending jq_ to it... then reading it from below through the working part
 	# everything found is loading into memory.  this loads all my environment variables (figs)

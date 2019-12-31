@@ -93,7 +93,6 @@ if [ "$__CONFIGURE__" ] && [ "$_confirm" == n ] ; then
 	exit 0
 else
 	harvest
-	define_configures
 	salt_rcon
 	cook_figs
 	[[ "$__CONFIGURE__" ]] && unset __CONFIGURE__

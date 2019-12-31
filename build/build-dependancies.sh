@@ -3,16 +3,25 @@ if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-	while [ -z "$DB_ROOT_PASSWORD" ];
-	do
-		_return="";read -p "Enter root account password for MySQL: " _return
-		echo ""
-		_confirm="";read -p "are you sure? " _confirm
-		if [ "$_confirm" == "y" ] || [ "$_confirm" == "yes" ];
-		then
-			DB_ROOT_PASSWORD="$_return"
-		fi
-	done
+#	while [ -z "$DB_ROOT_PASSWORD" ];
+#	do
+#		_return="";read -p "Enter root account password for MySQL: " _return
+#		echo ""
+#		_confirm="";read -p "are you sure? " _confirm
+#		if [ "$_confirm" == "y" ] || [ "$_confirm" == "yes" ];
+#		then
+#			DB_ROOT_PASSWORD="$_return"
+#		fi
+#	done
+    [[ -z "$DB_ROOT_PASSWORD" ]] \
+        && echo "Root password not yet entered.  This should have already been done. Failed!" \
+        && exit 1
+
+    [[ -z "$SOFTWARE" ]] && "software folder location not defined." && exit 1
+    [[ -z "$TFIVEM" ]] && "tfivem folder location not defined." && exit 1
+    [[ -z "$TSESX" ]] && "tsesx folder location not defined." && exit 1
+    [[ -z "$TCCORE" ]] && "tccore folder location not defined." && exit 1
+    [[ -z "$TESMOD" ]] && "tesmod folder location not defined." && exit 1
 
     # TEMP DIRECTORIES
     mkdir "$SOFTWARE"

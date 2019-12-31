@@ -1,0 +1,128 @@
+{
+  "SERVICE_ACCOUNT": {
+    "prompt": "Enter the linux account to be used for FiveM",
+    "verbose": "0",
+    "random": "-",
+    "min": "null",
+    "max": "null"
+  },
+  "SERVICE_PASSWORD": {
+    "prompt": "Enter a password for fivem",
+    "verbose": "s:n/y",
+    "random": "true",
+    "min": "9",
+    "max": "null"
+  },
+  "DB_ROOT_PASSWORD": {
+    "prompt": "Password for root account on MySQL",
+    "verbose": "s:n/y",
+    "random": "true",
+    "min": "16",
+    "max": "null"
+  },
+  "MYSQL_USER": {
+    "prompt": "Enter MySql username for the essentialmode database",
+    "verbose": "0",
+    "random": "0",
+    "min": "null",
+    "max": "null"
+  },
+  "MYSQL_PASSWORD": {
+    "prompt": "Enter MySQL password for admin",
+    "verbose": "s:n/y",
+    "random": "true",
+    "min": "16",
+    "max": "128"
+  },
+  "BLOWFISH_SECRET": {
+    "prompt": "Enter Blowfish Secret for PHP",
+    "verbose": "s:n/y",
+    "random": "true",
+    "min": "16",
+    "max": "null"
+  },
+  "STEAM_WEBAPIKEY": {
+    "prompt": "Enter your Steam Web API Key",
+    "verbose": "s:y/y",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  },
+  "SV_LICENSEKEY": {
+    "prompt": "Enter your Cfx FiveM License",
+    "verbose": "s:y/y",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  },
+  "RCON_ENABLE": {
+    "prompt": "Enable RCON (probably not needed)?",
+    "verbose": "10",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  },
+  "RCON_PASSWORD_GEN": {
+    "prompt": "(recommended) Allow RCON Passwords to be randomly generated?",
+    "verbose": "10",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  },
+  "RCON_PASSWORD_LENGTH": {
+    "prompt": "Number of characters to generate?",
+    "verbose": "20",
+    "random": "false",
+    "min": "20",
+    "max": "128"
+  },
+  "RCON_ASK_TO_CONFIRM": {
+    "prompt": "(not recommended) Require manual approval of each randomly generated password",
+    "verbose": "11",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  },
+  "TXADMIN_BACKUP_FOLDER": {
+    "prompt": "What name would you like for the txAdmin backup folder?",
+    "verbose": "s:y/y",
+    "random": "",
+    "min": "null",
+    "max": "null"
+  },
+  "DB_BACKUP_FOLDER": {
+    "prompt": "What name would you like for the MySQL backup folder?",
+    "verbose": "s:y/y",
+    "random": "",
+    "min": "null",
+    "max": "null"
+  },
+  "ARTIFACT_BUILD": {
+    "prompt": "Enter CFX Build Artifact",
+    "verbose": "s:y/y",
+    "random": "",
+    "min": "null",
+    "max": "null"
+  },
+  "SOFTWARE_ROOT": {
+    "prompt": "Where would you like to store the downloaded files?",
+    "verbose": "s:y/y",
+    "random": "",
+    "min": "null",
+    "max": "null"
+  },
+  "REPO_NAME": {
+    "prompt": "What would you like to name the B.E.R.P. Source Repository?",
+    "verbose": "s:y/y",
+    "random": "",
+    "min": "null",
+    "max": "null"
+  },
+  "SERVER_NAME": {
+    "prompt": "What would you like to name the server?",
+    "verbose": "s:y/y",
+    "random": "false",
+    "min": "null",
+    "max": "null"
+  }
+}

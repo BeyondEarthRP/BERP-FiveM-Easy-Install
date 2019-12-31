@@ -188,7 +188,7 @@ salt_rcon() {
 			color - - clearAll
 			jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" "$CONFIG" > "$CONFIG"
 
-			[[ -z "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1
+			[[ -z "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1 || echo "RCON Password generated..." && true
 		else
 			color red - bold
 			echo "You should make sure and change this password often!"
@@ -245,18 +245,18 @@ loading() {
         until [ "$COUNTER" -lt 0 ] ;
         do
                 echo -e -n "."
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
-                ping -c 1 127.0.0.1 > /dev/null
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
+                ping -c 1 127.0.0.1 > /dev/null || true
                 let "COUNTER-=1"
 
         done

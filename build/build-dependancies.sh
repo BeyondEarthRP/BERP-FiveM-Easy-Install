@@ -107,8 +107,8 @@ _EOF_
 	phpConfigSource=/usr/share/phpmyadmin/config.sample.inc.php
 	phpConfig=/usr/share/phpmyadmin/config.inc.php
 
-	blowfish_secret_placeholder="\\\$cfg\['blowfish_secret'\] = ''; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
-	blowfish_secret_actual="\\\$cfg\['blowfish_secret'\] = '${blowfish_secret}'; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
+	blowfish_secret_placeholder="\\\$cfg\['BLOWFISH_SECRET'\] = ''; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
+	blowfish_secret_actual="\\\$cfg\['BLOWFISH_SECRET'\] = '${BLOWFISH_SECRET}'; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
 	sed "s/${blowfish_secret_placeholder}/${blowfish_secret_actual}/" "$phpConfigSource" > "$phpConfig"
 
 	echo "" >> "$phpConfig"

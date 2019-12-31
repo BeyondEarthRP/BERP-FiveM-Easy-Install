@@ -61,7 +61,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
   [[ "${__prompt__:=$__prompt}"  ]] && unset __prompt
   if [ ! -z "$__verbose" ] ;                                                                     # If the confirmation is enabled
   then                                                                        # check if the setting is a valid int (1 = on / 2 = off)
-    if [[ "$__verbose" =~ '^[0-9]+$' ]] ;                                                     # If this validation checks out okay
+    if [[ "$__verbose" =~ ^[0-9]+$ ]] ;                                                     # If this validation checks out okay
     then                                                      # this is a number, not a defininition string; Using the on/off assignment
       if [ "$__verbose" -eq 1 ] ;
       then                                                        # if it is set to 1, use quick settings- C:N
@@ -503,7 +503,7 @@ harvest() {
 		_all_new_+=("SOFTWARE_ROOT")
 	fi
 	[[ -z "$TFIVEM" ]] && TFIVEM="${SOFTWARE_ROOT}/fivem" && _all_new_+=("TFIVEM")
-        [[ -z "TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server" && _all_new_+=("TCCORE")
+        [[ -z "$TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server" && _all_new_+=("TCCORE")
 
 
 	# REPO_NAME
@@ -549,7 +549,7 @@ cook_figs() {
 	then
                 echo "Erp. Derp. Problems... I have no private! FAILED @ x0532!"
                 exit 1
-	elif [ -z "$$CONFIG" ] ;
+	elif [ -z "$CONFIG" ] ;
 	then
 		echo "Config write failed.  No config definition discovered..."
 		exit 1

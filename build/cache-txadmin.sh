@@ -1,31 +1,42 @@
 #!/bin/bash
-if [ ! "$BUILD" ] ;
+if [ -z "$BUILD" ] ;
 then
-  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
-  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
-  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-  unset THIS_SCRIPT_ROOT
+	APPMAIN="CACHE_TXADMIN" # DONUT TOUCH!
 
-  [[ ! "$BUILD" ]] && echo "Build folder not found.  cache-txadmin.sh has failed you!" && exit 1
-  . "$BUILD/build-env.sh" RUNTIME
+	if [ ! "$BUILD" ] ;
+	then
+		THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))" ;
+		[[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT/build" ]] && _BUILD="$THIS_SCRIPT_ROOT/build"
+		[[ ! "$_BUILD" ]] && [[ -d "$(dirname $THIS_SCRIPT_ROOT)/build" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)/build"
+		[[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT" ]] && _BUILD="$THIS_SCRIPT_ROOT"
+		unset THIS_SCRIPT_ROOT ;
+	fi
 
-  [[ ! "$MAIN" ]] && echo "Main folder not found.  cache-txadmin.sh has failed you!" && exit 1
-  [[ ! "$PRIVATE" ]] && echo "Privly folder not found.  cache-txadmin.sh has failed you!" && exit 1
+	if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ; then
+		BUILD="$_BUILD"
+		unset _BUILD ;
+		. "$BUILD/build-env.sh" RUNTIME
+	else
+		echo "build folder not found by $APPMAIN.  FAILED!"
+		exit 1
+	fi
 fi
 
+if [ -z "$SERVICE_ACCOUNT" ] ; 
+then
+        echo "SERVICE_ACCOUNT not defined. FAILED."
+		exit 1
+fi # just catch in case we dumb!
 
-if [ -z $SERVICE_ACCOUNT ]; then
-        # Hey, I'm tryin here!! this is the account used for fivem
-        SERVICE_ACCOUNT="fivem"  # Probably shouln't be happening (but okay)
-fi # just a catch all in case we dumb!
+
 if [ -z $MAIN ]; then
         MAIN="/home/${SERVICE_ACCOUNT}"
 fi
+
 echo ""
 echo "Backing up the txAdmin settings..."
-echo "cp -RfT \"${MAIN}/txAdmin/data\" \"${PRIVATE}/txAdmin_data\""
-cp -RfT "${MAIN}/txAdmin/data" "${SCRIPT_ROOT}/txAdmin_data"
+echo "cp -RfT \"${MAIN}/txAdmin/data\" \"${TXADMIN_BACKUP}\""
+cp -RfT "${MAIN}/txAdmin/data" "${TXADMIN_BACKUP}"
 echo "Done."
 echo ""
 

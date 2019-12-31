@@ -18,7 +18,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	if [ -z "$account" ]; then
 	        echo "creating server account..."
 	        adduser --home "/home/$SERVICE_ACCOUNT" --shell /bin/bash --gecos "FiveM Server, , ,  " --disabled-password "$SERVICE_ACCOUNT"
-	        echo "$SERVICE_ACCOUNT:$srvPassword" | chpasswd
+	        echo "$SERVICE_ACCOUNT:$SERVICE_PASSWORD" | chpasswd
 
 	        account=$(id -u "${SERVICE_ACCOUNT}")
 	        if [ ! -z "$account" ]; then

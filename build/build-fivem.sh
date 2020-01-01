@@ -5,11 +5,10 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
     ## ---- FiveM ---- ##
 
-    [[ -z "$SOFTWARE" ]] && "software folder location not defined." && exit 1
-    [[ -z "$TFIVEM" ]] && "tfivem folder location not defined." && exit 1
-    [[ -z "$TCCORE" ]] && "tccore folder location not defined." && exit 1
-    [[ -z "$MAIN" ]] && "main folder location not defined." && exit 1
-    [[ -z "$GAME" ]] && "game folder location not defined." && exit 1
+    [[ -z "$TFIVEM" ]] && echo "tfivem folder location not defined." && exit 1
+    [[ -z "$TCCORE" ]] && echo "tccore folder location not defined." && exit 1
+    [[ -z "$MAIN" ]] && echo "main folder location not defined." && exit 1
+    [[ -z "$GAME" ]] && echo "game folder location not defined." && exit 1
 
 
     echo "FiveM - Base"

@@ -26,7 +26,7 @@ fi
 
 #####################################################################
 #
-# BUILD DEPLOYMENT ENVIRONMENT
+# GENERATE DEPLOYMENT ENVIRONMENT
 ##
 APPMAIN="MAIN" # DONUT TOUCH!
 
@@ -39,7 +39,8 @@ then
   unset THIS_SCRIPT_ROOT ;
 fi
 
-if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ; then
+if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ;
+then
         BUILD="$_BUILD"
 	unset _BUILD ;
 
@@ -49,72 +50,41 @@ if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ; then
 	##
 	. "$BUILD/just-a-banner.sh" WELCOME
 
-	loading || true
-	echo "Building environment..."
+	color white - bold
+	echo -e -n "Building environment...\n"
+	color - - clearAll
 	. "$BUILD/build-env.sh" EXECUTE
 
-	[[ ! "$CONFIG" ]] && _FAILED=1 && color red - bold \
-	  && echo -e -n "FAILED!  (no config found)\n\n" \
+	[[ -z "$CONFIG" ]] && _FAILED=1 && color red - bold \
+	  && echo -e -n "FAILED: no config file definition.\n\n" \
 	  && color - - clearAll && exit 1 || true
 
 
-	if [[ "$__status" != "NO_CONFIG" ]] ; then
+	if [ "$__status" != "NO_CONFIG" ] ;
+	then
 		color white - bold
 		echo "$__status"
 		color - - clearAll
 	fi
 
 else
-	echo "FAILED: Could not find the build folder."
+	echo "FAILED: Build folder undefined."
 fi
 
-if [ "$_FAILED" == "1" ] ; then
+if [ "$_FAILED" == "1" ] ;
+then
 	exit 1
 fi
+echo -e "\n"
 #####################################################################
 . "$BUILD/build-env.sh" RUNTIME  # This time for deployment execution
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
+### BEGIN TO DO THINGS WITH STUFF ###################################
 #####################################################################
 #
 # ACCOUNT CREATION
 ##
 . "$BUILD/create-srvaccount.sh" EXECUTE
-
-#####################################################################
-#
-# A BIT OF FUNCTION
-##
-#### THE DATABASE STUFF BELOW CAME FROM BERT VAN VRECKEM... TY! VERY GOOD WORK!!
-#### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
-#### A non-interactive replacement for mysql_secure_installation
-####
-# Predicate that returns exit status 0 if the database root password
-# is set, a nonzero exit status otherwise.
-is_mysql_root_password_set() {
-  ! mysqladmin --user=root status > /dev/null 2>&1
-}
-
-####
-# Predicate that returns exit status 0 if the mysql(1) command is available,
-# nonzero exit status otherwise.
-is_mysql_command_available() {
-  which mysql > /dev/null 2>&1
-}
-
-####
-# CHECK FOR MYSQL
-check_for_mysql() {
-  if [ ! is_mysql_command_available ]; then
-    echo "The MySQL/MariaDB client mysql(1) is not installed."
-    exit 1
-  fi
-}
-
-####
-# OKAY, THESE MINE!
-##
-###
-# worker functions
-. "$BUILD/fuct-worker.sh"
 
 #####################################################################
 #
@@ -132,34 +102,33 @@ if [ -z "$1" ]; then
 	#fi
 
 	. "$BUILD/build-dependancies.sh" EXECUTE
-	echo "DEPENDANCIES BUILT!"
-	echo ""
+	echo -e "DEPENDANCIES BUILT!\n"
 
 	####
 	# CHECK FOR MYSQL
 	check_for_mysql
 
 	. "$BUILD/build-fivem.sh" EXECUTE
-	echo "FIVEM BUILT!"
-	echo ""
+	echo -e "FIVEM BUILT!\n"
+
 	. "$BUILD/build-txadmin.sh" EXECUTE
-	echo "TXADMIN BUILT!"
-	echo ""
+	echo -e "TXADMIN BUILT!\n"
+
 	. "$BUILD/fetch-source.sh" EXECUTE
-	echo "SOURCES FETCHED!"
-	echo ""
+	echo -e "SOURCES FETCHED!\n"
+
 	. "$BUILD/create-database.sh" EXECUTE
-	echo "DATABASE CREATED!"
-	echo ""
+	echo -e "DATABASE CREATED!\n"
+
 	. "$BUILD/build-config.sh" EXECUTE
-	echo "CONFIG BUILT AND DEPLOYED!"
-	echo ""
+	echo -e "CONFIG BUILT AND DEPLOYED!\n"
+
 	. "$BUILD/build-resources.sh" EXECUTE
-	echo "RESOURCES BUILT!"
-	echo ""
+	echo -e "RESOURCES BUILT!\n"
+
 	. "$BUILD/build-vmenu.sh" EXECUTE
-	echo "VMENU BUILT!"
-	echo ""
+	echo -e "VMENU BUILT!\n"
+
 elif [ ! -z "$1" ]; then
 
 	####
@@ -186,23 +155,23 @@ elif [ ! -z "$1" ]; then
 		stop_screen
 
 		. "$BUILD/build-fivem.sh" EXECUTE
-		echo "FIVEM REBUILT!"
-		echo ""
+		echo -e "FIVEM REBUILT!\n"
+
 		. "$BUILD/build-txadmin.sh" EXECUTE
-		echo "TXADMIN REBUILT!"
-		echo ""
+		echo -e "TXADMIN REBUILT!\n"
+
 		. "$BUILD/create-database.sh" EXECUTE
-		echo "FRESH DATABASE RECREATED!"
-		echo ""
+		echo -e "FRESH DATABASE RECREATED!\n"
+
 		. "$BUILD/build-config.sh" EXECUTE
-		echo "CONFIG BUILT AND DEPLOYED!"
-		echo ""
+		echo -e "CONFIG BUILT AND DEPLOYED!\n"
+
 		. "$BUILD/build-resources.sh" EXECUTE
-		echo "RESOURCES REBUILT!"
-		echo ""
+		echo -e "RESOURCES REBUILT!\n"
+
 		. "$BUILD/build-vmenu.sh" EXECUTE
-		echo "VMENU REBUILT!"
-		echo ""
+		echo -e "VMENU REBUILT!\n"
+
 	elif [ "$1" == "--rebuild" ] || [ "$1" == "-b" ]; then
 		#\> REBUILD
 		. "$BUILD/just-a-banner.sh" REBUILD
@@ -217,14 +186,14 @@ elif [ ! -z "$1" ]; then
 		stop_screen; #STOP THE SCREEN SESSION
 
 		. "$BUILD/build-config.sh" DEPLOY
-		echo "CONFIG REDEPLOYED!"
-		echo ""
+		echo -e "CONFIG REDEPLOYED!\n"
+
 		. "$BUILD/build-resources.sh" EXECUTE
-		echo "RESOURCES REBUILT!"
-		echo ""
+		echo -e "RESOURCES REBUILT!\n"
+
 		. "$BUILD/build-vmenu.sh" EXECUTE
-		echo "VMENU REBUILT!"
-		echo ""
+		echo -e "VMENU REBUILT!\n"
+
 	elif [ "$1" == "--restore" ] || [ "$1" == "-oof" ]; then
 		#\> RESTORE
 		. "$BUILD/just-a-banner.sh" RESTORE
@@ -232,24 +201,24 @@ elif [ ! -z "$1" ]; then
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.
 		###
-		echo "THIS IS NOT YET IMPLEMENTED. -sry!"
+		echo -e "THIS IS NOT YET IMPLEMENTED. -sry!\n"
 		exit 1
 		####
 		# STOP THE SCREEN SESSION
 		#stop_screen; #STOP THE SCREEN SESSION
 		#$BUILD/build-config.sh DEPLOY
-		#echo "CONFIG REDEPLOYED!"
-		#echo ""
+		#echo -e "CONFIG REDEPLOYED!\n"
+
 		#$BUILD/build-resources.sh EXECUTE
-		#echo "RESOURCES REBUILT!"
-		#echo ""
+		#echo -e "RESOURCES REBUILT!\n"
+
 		#$BUILD/build-vmenu.sh EXECUTE
-		#echo "VMENU REBUILT!"
-		#echo ""
-		#echo "Importing last database backup"
+		#echo -e "VMENU REBUILT!\n"
+
+		#echo -e "Importing last database backup...\n"
 		#mysql essentialmode -e "SOURCE $PATH_TO_DB"
-		#echo "backup imported."
-		#echo ""
+
+		#echo -e "backup imported.\n"
 	else
 	   echo "Valid options are:
 

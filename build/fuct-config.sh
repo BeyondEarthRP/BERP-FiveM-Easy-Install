@@ -6,17 +6,59 @@
 #>>>>>>>>>>>>>>>>>>>>>
 # INPUT A CONFIG ENTRY
 
-pluck_fig() { # fig // prompt // confirm => 0/1
-#  sower "$1" "$2" "$3" "$4" "$5"
-#  [[ "$return__" ]] && unset return__ ; [[ "$__default" ]] && unset __default ;
-#  [[ "$__prompt__" ]] && unset __prompt___ ; [[ "$__prompt" ]] && unset __prompt ;
-#  [[ "$__verbose" ]] && unset __verbose ; [[ "$__min_len" ]] && unset __min_len ;
-#  [[ "$__max_len" ]] && unset __max_len ; [[ "$__return" ]] && unset __return ;
-#  [[ "$__confirm" ]] && unset __confirm ; [[ "$__def_applied" ]] && unset __def_applied ;
-#  [[ "$__p1" ]] && unset __p1 ; [[ "$__p1" ]] && unset __p1 ;
-#  [[ "$_p1" ]] && unset _p1 ; [[ "$_p2" ]] && unset _p2 ;
+load_static_defaults() {
+#################################################################
+# DEFAULTS
+	_SERVICE_ACCOUNT="fivem"
+	_MYSQL_USER="admin"
 
-  #local __prompt="$2" ;
+	_STEAM_WEBAPIKEY=""
+	_SV_LICENSEKEY=""
+
+	_RCON=true
+	_RCON_PASSWORD_GEN=true
+	_RCON_PASSWORD_LENGTH=64
+	_RCON_ASK_TO_CONFIRM=false
+
+	_TXADMIN_BACKUP_FOLDER="data-txadmin"
+	_DB_BACKUP_FOLDER="data-mysql"
+	_ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
+	_SOFTWARE_ROOT="/var/software"
+	_REPO_NAME="BERP-Source"
+
+	_SERVER_NAME="Beyond Earth Roleplay (BERP)"
+}
+
+load_user_defaults() {
+
+        local DEFFIGS=(                                                               \
+                SERVICE_ACCOUNT         MYSQL_USER		RCON_ENABLE           \
+                STEAM_WEBAPIKEY         SV_LICENSEKEY                                 \
+                RCON_PASSWORD_GEN       RCON_PASSWORD_LENGTH                          \
+                RCON_ASK_TO_CONFIRM     SERVER_NAME             ARTIFACT_BUILD        \
+                REPO_NAME		SOURCE_ROOT		SOURCE	              \
+		TXADMIN_BACKUP		DB_BACKUPS                                    \
+                SOFTWARE_ROOT           TFIVEM                  TCCORE                \
+                MAIN                    GAME                    RESOURCES             \
+                GAMEMODES               MAPS                    ESX                   \
+                ESEXT                   ESUI                    ESSENTIAL             \
+                ESMOD                   VEHICLES                TXADMIN_BACKUP_FOLDER \
+                DB_BACKUP_FOLDER        		                              \
+        ) ;
+
+	for _deffig in "${DEFFIGS[@]}" ;
+	do
+		if [ -n "${!_deffig}" ] ;
+		 then
+			#echo "Loading ${_deffig} => ${!_deffig}"
+			local _defname="$(echo _${_deffig})"
+			printf -v "$_defname" '%s' "${!_deffig}"
+		fi
+	done
+
+}
+
+pluck_fig() { # fig // prompt // confirm => 0/1
   local __prompt="$PROMPT" ; unset PROMPT
 
   local __fig_key="$1" ;
@@ -27,8 +69,10 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
   if [ "$__random" == "true" ] ;
   then
-	local _pass="$(add_salt 64 1 date)"
-	printf -v "_${__fig_key}" '%s' "$_pass"
+	# if the random password was not generated externally, generate it
+	[[ -z "$__RANDOM_PASSWORD__" ]] && local _pass="$(add_salt 64 1 date)" \
+	  || local _pass="$__RANDOM_PASSWORD__"       # otherwise, use the one externally generated.
+	printf -v "_${__fig_key}" '%s' "$_pass"	      # Assign it for use later
   fi
                                                    # I got this working then realized i didn't need it/ or the above function. derp.
                                                  # declare -a local __prompt=("${!2}")  ## Just saving it here for future reference.
@@ -61,7 +105,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
   [[ "${__prompt__:=$__prompt}"  ]] && unset __prompt
   if [ ! -z "$__verbose" ] ;                                                                     # If the confirmation is enabled
   then                                                                        # check if the setting is a valid int (1 = on / 2 = off)
-    if [[ "$__verbose" =~ ^[0-9]+$ ]] ;                                                     # If this validation checks out okay
+    if [[ "$__verbose" =~ '^[0-9]+$' ]] ;                                                     # If this validation checks out okay
     then                                                      # this is a number, not a defininition string; Using the on/off assignment
       if [ "$__verbose" -eq 1 ] ;
       then                                                        # if it is set to 1, use quick settings- C:N
@@ -325,6 +369,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
 }
 
+
 harvest() {
 	# COLLECT ALL FIGS FROM USER AND PREPARE TO WRITE
 
@@ -450,8 +495,14 @@ harvest() {
 				_all_new_+=("RCON_ASK_TO_CONFIRM")
 
 			fi
+
 			RCON_PASSWORD="random"
+			_all_new_+=("RCON_PASSWORD")
+
 		else
+	                RCON_PASSWORD_LENGTH="$_RCON_PASSWORD_LENGTH"
+	                RCON_ASK_TO_CONFIRM="$_RCON_ASK_TO_CONFIRM"
+
 			# RCON_PASSWORD
 			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD" ] ;
 			then
@@ -460,6 +511,10 @@ harvest() {
 				_all_new_+=("RCON_PASSWORD")
 			fi
 	        fi
+	else  # RCON_ENABLE=false
+		RCON_PASSWORD_GEN="$_RCON_PASSWORD_GEN"
+		RCON_PASSWORD_LENGTH="$_RCON_PASSWORD_LENGTH"
+		RCON_ASK_TO_CONFIRM="$_RCON_ASK_TO_CONFIRM"
 	fi
 
 	# TXADMIN_BACKUP_FOLDER
@@ -543,8 +598,6 @@ harvest() {
 cook_figs() {
 
 	# WRITE THE FIGS TO THE JSON FILE
-	echo "Begin cookin some figs!"
-
         if [ -z "$PRIVATE" ] ;
 	then
                 echo "Erp. Derp. Problems... I have no private! FAILED @ x0532!"
@@ -555,147 +608,119 @@ cook_figs() {
 		exit 1
         fi
 
+	local _content=$(cat "$CONFIG" 2>/dev/null)
 	##################################################################################
-	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$(cat $CONFIG)" ] ;
+	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$_content" ] ;
 	then
-		echo "No valid previous configuration was found.  Building base config..."
+		[[ "$1" == "QUIETLY" ]] && loading 1 CONTINUE || echo "No valid previous configuration was found.  Building base config..."
 		[[ ! -d "${CONFIG%/*}" ]] && mkdir "${CONFIG%/*}"
+		[[ -f "$CONFIG" ]] && rm "$CONFIG"
 		BASE_CONFIG="{}"
 	else
-		echo "Config file identified and is not zero length..."
+		[[ "$1" == "QUIETLY" ]] && loading 1 CONTINUE || echo "Config file identified and is not zero length..."
+
 		BASE_CONFIG="$(cat $CONFIG | jq .)"
+
 		if [ "$_all_new_" ] && [ "${#_all_new_[@]}" -gt 0 ] ;
 		then
-			color lightYellow - bold
-			echo -e "\nPrevious config found... Rebuilding with new config options...\n"
-			echo "This will over-write the current config found at:"
-			echo ""
-			echo "        $CONFIG"
-			color red - bold
-			echo -e -n "\n\n"
-			color - - underline
-			echo -e -n "Config items being added:"
-			color - - noUnderline
-			echo -e -n " \n"
-			color lightRed - bold
-			for _cfug in "${_all_new_[@]}" ;
-			do
-				echo -e -n "$_cfug"
-				color gray - bold
-				echo -e -n " => "
-				color red -
-				echo -e -n "${!_cfug}\n"
-			done
-
-		        color - - clearAll
- 			color white - bold
-			echo -e "Last chance to cancel..."
-			color - - clearAll
-
-		        while [ -z "$__confirmed__" ] ;
-		        do
-				color white - bold
-			        echo -n -e "Overwrite system config with above values? "
-			        color lightYellow - bold
-			        echo -n -e "(TYPE 'YES' TO CONTINUE)"
-			        color white - bold
-				echo -n -e ":"
-				color - - clearAll
-
-				unset _confirm ;
-				read -n 3 _confirm ;
-				case "$_confirm" in
-			            Yes | yes | YES ) __confirmed__="1" ; unset _confirm ;;
-				                  * ) unset _confirm ;;
-				esac ;
-				if [ -z "$__confirmed__" ] ;
-				then
-					color red - bold ;
-					echo -e "\nYou did not type 'YES' -- if you'd like to cancel, hit control-c" ; # Fired!
-					color - - clearAll ;
-				fi
-			done
-			color white - bold
-			echo -e "\nOkay, writing the config...\n"
-			color - - clearAll
+			[[ "$1" == "QUIETLY" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG && printf "\n\n"
 		else
+			color white - bold
 			echo "No changes discovered."
+			color - - clearAll
 			__UNCHANGED__="1"
 		fi
 	fi
+
+	if [ -n "$_content" ] ;
+	then
+		printf "\n\n-------------------------\n    CURRENT CONFIG\n\n-------------------------\n"
+		jq . "$CONFIG"
+		printf "\n"
+	fi
+
+	identify_branches
+	[ "${#_all_new_[@]}" -gt 0 ] && printf "\nMaking these changes to the configuration...\n"
 	for _cfug in "${_all_new_[@]}" ;
 	do
-		color gray - bold
-		echo -e -n "Adding $_cfug => ${!_cfug}...\n"
 		plant_fig "BASE_CONFIG" "$_cfug"
-		color - - clearAll
 	done
 
+        if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$_content" ] ;
+        then
+		color lightYellow - bold
+		echo -e "\nPrevious config found... Rebuilding with new config options...\n"
+		echo -e "This will over-write the current config found at:\n"
+		echo -e "        $CONFIG\n\n"
+		color - - clearAll
 
+		display_array_title "red" "New or altered:"
+		display_array "red" "${_all_new_[@]}"
 
-if [ 1 -eq 0 ] ; then
-	if [ ! "$__UNCHANGED__" ] ;
-	then
+		color white - bold
+		echo -e "\nLast chance to cancel..."
+		color - - clearAll
 
-											 		  BASE_CONFIG="{}"
-		echo "$BASE_CONFIG"											| \
-jq --arg SERVICE_ACCOUNT "$SERVICE_ACCOUNT" '.sys.acct.user=$SERVICE_ACCOUNT'                      	   		| \
-jq --arg SERVICE_PASSWORD "$SERVICE_PASSWORD" '.sys.acct.password=$SERVICE_PASSWORD'                    		| \
-jq --arg MYSQL_USER "$MYSQL_USER" '.sys.mysql.user=$MYSQL_USER'                                 	| \
-jq --arg MYSQL_PASSWORD "$MYSQL_PASSWORD" '.sys.mysql.password=$MYSQL_PASSWORD'                         	| \
-jq --arg DB_ROOT_PASSWORD "$DB_ROOT_PASSWORD" '.sys.mysql.rootPassword=$DB_ROOT_PASSWORD'                   	| \
-jq --arg RCON_ENABLE "$RCON_ENABLE" '.sys.rcon.enable'":RCON_ENABLE))}\"}"                                   	| \
-				jq ".sys.rcon += {\"password\":\"${RCON_PASSWORD}\"}"                           	| \
-				jq ".sys.rcon += {\"pref\":{}}"                                                 	| \
-					jq ".sys.rcon.pref += {\"randomlyGenerate\":\"${RCON_PASSWORD_GEN}\"}"          | \
-					jq ".sys.rcon.pref += {\"length\":\"${RCON_PASSWORD_LENGTH}\"}"          	| \
-					jq ".sys.rcon.pref += {\"confirm\":\"${RCON_ASK_TO_CONFIRM}\"}"         	| \
-			jq ".sys += {\"php\":{}}"                                                               	| \
-				jq ".sys.php += {\"blowfishSecret\":\"${BLOWFISH_SECRET}\"}"                    	| \
-			jq ".sys += {\"keys\":{}}"                                                              	| \
-				jq ".sys.keys += {\"fivemLicenseKey\":\"${SV_LICENSEKEY}\"}"                    	| \
-			        jq ".sys.keys += {\"steamWebApiKey\":\"${STEAM_WEBAPIKEY}\"}"                   	| \
-		jq ". += {\"pref\":{}}"                                            					| \
-			jq ".pref += {\"serverName\":\"${SERVER_NAME}\"}"						| \
-		 	jq ".pref += {\"artifactBuild\":\"${ARTIFACT_BUILD}\"}"						| \
-			jq ".pref += {\"repoName\":\"${REPO_NAME}\"}"							| \
-		jq ". += {\"env\":{}}"											| \
-			jq ".env += {\"sourceRoot\":\"${SOURCE_ROOT}\"}"						| \
-			jq ".env += {\"source\":\"${SOURCE}\"}"								| \
-			jq ".env += {\"private\":{}}"									| \
-		  		jq ".env.private += {\"txadminBackupFolder\":\"$TXADMIN_BACKUP_FOLDER\"}"		| \
-				jq ".env.private += {\"txadminBackup\":\"$TXADMIN_BACKUP\"}"				| \
-				jq ".env.private += {\"dbBackupFolder\":\"${DB_BACKUP_FOLDER}\"}"			| \
-				jq ".env.private += {\"dbBackups\":\"${DB_BACKUPS}\"}"					| \
-			jq ".env += {\"software\":{}}"									| \
-				jq ".env.software += {\"softwareRoot\":\"${SOFTWARE_ROOT}\"}"				| \
-				jq ".env.software += {\"tfivem\":\"${TFIVEM}\"}"					| \
-				jq ".env.software += {\"tccore\":\"${TCCORE}\"}"					| \
-			jq ".env += {\"install\":{}}"									| \
-				jq ".env.install += {\"main\":\"${MAIN}\"}"						| \
-				jq ".env.install += {\"game\":\"${GAME}\"}"						| \
-				jq ".env.install += {\"resources\":\"${RESOURCES}\"}"					| \
-				jq ".env.install += {\"gamemodes\":\"${GAMEMODES}\"}"					| \
-				jq ".env.install += {\"maps\":\"${MAPS}\"}"						| \
-				jq ".env.install += {\"esx\":\"${ESX}\"}"						| \
-				jq ".env.install += {\"esext\":\"${ESEXT}\"}"						| \
-				jq ".env.install += {\"esui\":\"${ESUI}\"}"						| \
-				jq ".env.install += {\"essential\":\"${ESSENTIAL}\"}"					| \
-				jq ".env.install += {\"esmod\":\"${ESMOD}\"}"						| \
-				jq ".env.install += {\"vehicles\":\"${VEHICLES}\"}"					   > "$CONFIG"
-
+	        while [ -z "$__confirmed__" ] ;
+	        do
+			color white - bold
+		        echo -n -e "Overwrite system config with above values? "
+		        color lightYellow - bold
+		        echo -n -e "(TYPE 'YES' TO CONTINUE)"
+		        color white - bold
+			echo -n -e ":"
+			color - - clearAll
+			unset _confirm ;
+			read -n 3 _confirm ;
+			case "$_confirm" in
+		            Yes | yes | YES ) __confirmed__="1" ; unset _confirm ;;
+			                  * ) unset _confirm ;;
+			esac ;
+			if [ -z "$__confirmed__" ] ;
+			then
+				echo -e "\n\e[97mYou did not type 'YES' -- if you'd like to cancel, hit control-c\e[0m" ; # Fired!
+			fi
+		done
+		color white - bold
+		printf "\nOkay...\n"
+		color - - clearAll
 	fi
-fi
+
+
+	if [ -n "$BASE_CONFIG" ] ;
+	then
+		printf "\nWriting config to:\n"
+		color yellow -
+		printf "\t$CONFIG\n\n"
+		color - - clearAll
+		color red -
+		printf "\n\n-------------------------\n     NEW CONFIG\n\n-------------------------\n"
+		echo "$BASE_CONFIG" | jq .
+		echo "$BASE_CONFIG" | jq . > "$CONFIG"
+		printf "\nDONE!\n"
+		color - - clearAll
+	else
+		printf "FAILED AT CONFUGGER."
+		exit 1
+	fi
+
 }
 
 
 plant_fig() {
 	local _crop="$1"
 	local _fig="$2"
-	local _jq="$(eval echo \$jq_${_crop})"
+	local _path="$(eval echo \$jq_${_fig})"
 
-	_yield=$( echo ${!_crop} |  jq --arg value "${!_fig}" --arg path "$_jq" '$path=$value' )
-	printf -v "$_crop" '%s' "$_yield"
+	[[ -z "$__RUNTIME__" ]] && get_env_config_paths
+	[[ -z "$__RUNTIME__" ]] && get_system_config_paths
+
+	#_yield=$(echo -e "${!_crop}" |  jq --arg value "${!_fig}" --arg path "$_path" '$path=[$value]')
+
+	_fruit="${!_fig}"
+	_yield=$(eval echo \${$_crop} | jq $_path=\""$_fruit"\")
+
+	[[ -n "$_yield" ]] && printf -v "$_crop" '%s' "$_yield" || echo "error"
 }
 
 
@@ -737,6 +762,7 @@ harvester(){
 }
 
 figsower() {
+
 	[[ ! "$FIGTREE" ]] && echo "I need a fig tree to sow..." && exit 1
 
 	local _cfug="$1"

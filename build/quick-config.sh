@@ -16,66 +16,44 @@ then
 fi
 ###################################################################
 [[ "$1" == "CONFIGURE" ]] && __CONFIGURE__="1" || unset __CONFIGURE__
-if [ ! "$APPMAIN" ] ; then
-  APPMAIN="QUICK_CONFIG"
+if [ -z "$APPMAIN" ] ;
+then
+  APPMAIN="CONFIG" && __CONFIGURE__="1"
   . "$BUILD/build-env.sh" "RUNTIME"
-  __CONFIGURE__="1"
+elif [ -z "$__RUNTIME__" ] ;
+then
+	echo "Runtime not loaded... I'VE FAILED!"
+	exit 1
 fi
-####
+[[ "$APPMAIN" == "CONFIG" ]] && . "$BUILD/just-a-banner.sh" WELCOME
+##################################################################
 # If assumptions were correct, we should not fail!
 if [ -z "$CONFIG" ] && [ -z "$_CONFIG" ]; then
   echo "No config file has been defined.  I'VE FAILED!"
   exit 1
 fi
-[[ ! "$CONFIG" ]] && [[ "$_CONFIG" ]] && CONFIG="$_CONFIG"
-#################################################################
-# DEFAULTS
-_SERVICE_ACCOUNT="fivem"
-_MYSQL_USER="admin"
-
-_STEAM_WEBAPIKEY=""
-_SV_LICENSEKEY=""
-
-_RCON=true
-_RCON_PASSWORD_GEN=true
-_RCON_PASSWORD_LENGTH=64
-_RCON_ASK_TO_CONFIRM=false
-
-_TXADMIN_BACKUP_FOLDER="data-txadmin"
-_DB_BACKUP_FOLDER="data-mysql"
-_ARTIFACT_BUILD="1868-9bc0c7e48f915c48c6d07eaa499e31a1195b8aec"
-_SOFTWARE_ROOT="/var/software"
-_REPO_NAME="BERP-Source"
-
-_SERVER_NAME="Beyond Earth Roleplay (BERP)"
-
-##################################################################
-#
-#\    DEFINE A BIT OF FUNCTION
-#>\____________________
-#>> OBTAINED ELSEWHERE
-#>>>>>>>>>>>>>>>>>>>>>>
-
-#\
-#>\___________________
-#>> THESE ARE MINE
-#>>>>>>>>>>>>>>>>>>>>>
-# INPUT A CONFIG ENTRY
-. "$BUILD/fuct-config.sh"
-. "$BUILD/fuct-worker.sh"
+[[ -z "$CONFIG" ]] && [[ "$_CONFIG" ]] && CONFIG="$_CONFIG"
 
 ##################################################################
 # AND.... GO!
 unset _confirm
 
-while [[ "$__CONFIGURE__" ]] ;
+check_for_config
+if [ -n "$__INVALID_CONFIG__" ] ;
+then
+	__CONFIGURE__="1" ;
+	unset __INVALID_CONFIG__
+	load_static_defaults
+fi ;
+
+while [ -n "$__CONFIGURE__" ] ;
 do
   color red - bold
-  echo -e "We are about to create a configuration file to be used for deployment(s)."
+  echo -e "\nWe are about to create a new configuration."
 
   # read it; check for user input or use default value; ignore the new line (back up!)
   color white - bold
-  echo -e -n "Continue? \e[93m[Y/n]\e[39m: \e[s"
+  echo -e -n "Continue? \e[93m[Y/n]\e[39m: \e[0m"
   read -n 1 yn
   [[ ! -z "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D"
   color - - clearAll

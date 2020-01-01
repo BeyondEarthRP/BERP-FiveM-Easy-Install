@@ -6,15 +6,21 @@
 #>>>>>>>>>>>>>>>>>>>>>
 # FUNCTIONS TO BUILD OUT THE RUN TIME ENVIRONMENT
 initialize() {
+  [[ "$1" == "QUIETLY" ]] && loading 1 || echo "Initializing..."
   ####
   # THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
   jqGreet=$( dpkg-query -W -f='${Version}\n' jq ) # check for jq
   if [ -z "$jqGreet" ]; then # if not found
     apt update && apt -y upgrade && apt -y install jq # install it!
   fi
+  jqGreet=$( dpkg-query -W -f='${Version}\n' jq ) # check for jq
+  if [ -z "$jqGreet" ]; then # if not found
+	echo "Failed to discover jq and the installation attempt also failed."
+  fi
 }
 
 define_runtime_env() {
+	[[ "$1" != "QUIETLY" ]] && echo "Generating runtime environment..."
 	##########################################################################
 	# ALTER AT YOUR OWN RISK -- CONFIGURABLE (TECHNICALLY, BUT UNTESTED)
 	# If you change this and it doesn't work... sorry.  All up to you now!
@@ -64,7 +70,8 @@ define_runtime_env() {
 	# DISCOVER DATABASE BACKUPS
 	# THIS WILL FIND THE MOST RECENT BACKUP
 	# NEEDS TO RUN EACH ENVIRONMENT LOAD.
-	if [ -d "$DB_BACKUPS" ]; then
+	if [ -d "$DB_BACKUPS" ];
+	then
 		DB="$(ls -Art $DB_BACKUPS/ | tail -n 1)"
 		DB_BACKUPS="$DB_BACKUPS/$DB"
 	else
@@ -72,6 +79,8 @@ define_runtime_env() {
 		DB_BACKUPS="null"
 	fi
 	# END DATABASE BACKUP DISCOVERY
+
+	__RUNTIME__="1"
 }
 
 
@@ -80,87 +89,107 @@ check_for_config() {
 	#
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
-	[[ ! "$APPMAIN" == "MAIN" ]] && echo "Looking for a BERP ingestion config file..."
-	_CONFIG="$CONFIG" ; unset CONFIG
-	[[ -f "$_CONFIG" ]] && _valid="$(cat $_CONFIG)"
-	while [ -z "$CONFIG" ]; do
-	        if [ -f "$_CONFIG" ] && [ ! -z "$_valid" ] ;
-                then
-			__status="BERP injestion config found @ ${_CONFIG}"
-			[[ ! "$APPMAIN" == "MAIN" ]] && echo __status && echo "Preparing to deploy BERP..."
+	[[ -z "__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
+	[[ "$1" != "QUIETLY" ]] && echo "Looking for a configuration..."
 
-			CONFIG="$_CONFIG"
+	_content="$(cat $CONFIG 2> /dev/null)"
+	if [ -n "$CONFIG" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
+	then
+		__CONFIG__="Config file defined."
+		if [ -f "$CONFIG" ] ;
+        	then
+			__CONFIG__="Config file identified in file system."
+			if [ -z "${_content}" ] ;
+			then
+				rm "$CONFIG" && unset __CONFIG__
+				__INVALID_CONFIG__="Zero length config discovered"
+				[[ "$1" != "QUIETLY" ]] && echo "$__INVALID_CONFIG__"
 
-			[[ ! "$APPMAIN" == "MAIN" ]] && [[ ! "$BUILD" ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
-			#[[ "$APPMAIN" == "MAIN" ]] && . "$BUILD/quick-config.sh"
-	        else
-			color lightYellow - bold
-	       	        echo "no BERP ingestion config... starting configurator!"
-			color - - clearAll
-
-			__status="NO_CONFIG"
-
-			[[ ! "$APPMAIN" == "MAIN" ]] && [[ ! "$BUILD" ]] && echo "I tried to find my config, but I ended up with it stuck in a ceiling fan." && exit 1
-
-			[[ "$APPMAIN" == "TEST-CONFIGURES" ]] && . "$BUILD/quick-config.sh" CONFIGURE
-			if [ "$APPMAIN" == "MAIN" ] && [ ! "$1" ] ;
-                        then
-				# EXECUTION CAME FROM DEPLOY
-				echo -e "Entering quick configuration tool...\n"
-				echo -e "Welcome to the BERP deployer!"
-				echo -e "Let's create a new BERP injest config..."
-				[[ "$APPMAIN" == "MAIN" ]] && . "$BUILD/quick-config.sh" CONFIGURE
 			else
-                        	# OTHERWISE, WE PASSED IT RUNTIME ONLY
-                        	__INVALID_CONFIG__="1"
-				break ;
+				__CONFIG__="Configuration discovered @ ${CONFIG}"
+				unset __INVALID_CONFIG__
+			        [[ "$1" != "QUIETLY" ]] && echo "$__CONFIG__"
 			fi
+	        else
+			unset __CONFIG__
+                      	__INVALID_CONFIG__="No configuration file was discovered..."
+		        [[ "$1" != "QUIETLY" ]] && echo "$__INVALID_CONFIG__"
 	        fi
-	done
+	else
+		unset __CONFIG__
+                __INVALID_CONFIG__="No configuration file defined..."
+                [[ "$1" != "QUIETLY" ]] && echo "$__INVALID_CONFIG__"
+
+	fi
 }
 
 
-import_system_config() {
-
+collect_figs() {
+	[[ "$1" != "QUIETLY" ]] && echo -e "\nCollecting configuration..."
 	#####################################################################
 	#
 	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
 	##
-	echo "Reading config..."
 
-	local ALLFIGS=( \
-	SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD RCON_ENABLE RCON_PASSWORD \
-	STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD RCON_PASSWORD_GEN \
-	RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM \
+	BELCH_TITLE="B.E.R.P Belcher (FiveM Deployment Tool by Beyond Earth)"
+	BELCH_VERSION="version 1.0"
+	INSTALL_DATE="${_INSTALL_DATE:=$(date '+%d/%m/%Y %H:%M:%S')}"
+	CONFIG_TIMESTAMP="${_CONFIG_TIMESTAMP:=$(date '+%d/%m/%Y %H:%M:%S')}"
+
+
+	local ALLFIGS=(                                                               \
+		BELCH_TITLE             BELCH_VERSION           INSTALL_DATE          \
+		SERVICE_ACCOUNT         SERVICE_PASSWORD        MYSQL_USER            \
+		MYSQL_PASSWORD          RCON_ENABLE             RCON_PASSWORD         \
+		STEAM_WEBAPIKEY         SV_LICENSEKEY           BLOWFISH_SECRET       \
+		DB_ROOT_PASSWORD        RCON_PASSWORD_GEN       RCON_PASSWORD_LENGTH  \
+                RCON_ASK_TO_CONFIRM     SERVER_NAME             ARTIFACT_BUILD        \
+		REPO_NAME SOURCE_ROOT   SOURCE TXADMIN_BACKUP   DB_BACKUPS            \
+		SOFTWARE_ROOT           TFIVEM                  TCCORE                \
+		MAIN                    GAME                    RESOURCES             \
+		GAMEMODES               MAPS                    ESX                   \
+		ESEXT                   ESUI                    ESSENTIAL             \
+		ESMOD                   VEHICLES                TXADMIN_BACKUP_FOLDER \
+		DB_BACKUP_FOLDER        CONFIG_TIMESTAMP                              \
 	) ;
 
-	# This is taking the above, appending jq_ to it... then reading it from below through the working part
-	# everything found is loading into memory.  this loads all my environment variables (figs)
+	identify_branches
+	load_static_defaults
+	[[ "$1" == "QUIETLY" ]] && __QUIET_MODE__="1"
+	read_figs "${ALLFIGS[@]}"
+	[[ "$1" == "QUIETLY" ]] && unset __QUIET_MODE__
+	load_user_defaults
+}
 
+identify_branches() {
+	# .sys
+	jq_BELCH_TITLE=".sys.belch"
+	jq_BELCH_VERSION=".sys.version"
+	jq_INSTALL_DATE=".sys.installed"
+	jq_CONFIG_TIMESTAMP=".sys.configTimestamp"
+
+	# .sys.acct
 	jq_SERVICE_ACCOUNT=".sys.acct.user"
 	jq_SERVICE_PASSWORD=".sys.acct.password"
+
+	# .sys.mysql
 	jq_MYSQL_USER=".sys.mysql.user"
 	jq_MYSQL_PASSWORD=".sys.mysql.password"
 	jq_DB_ROOT_PASSWORD=".sys.mysql.rootPassword"
+
+	# .sys.rcon
 	jq_RCON_ENABLE=".sys.rcon.enable"
 	jq_RCON_PASSWORD=".sys.rcon.password"
 	jq_RCON_PASSWORD_GEN=".sys.rcon.pref.randomlyGenerate"
 	jq_RCON_PASSWORD_LENGTH=".sys.rcon.pref.length"
 	jq_RCON_ASK_TO_CONFIRM=".sys.rcon.pref.confirm"
+
+	# .sys.php
 	jq_BLOWFISH_SECRET=".sys.php.blowfishSecret"
+
+	# .sys.keys
 	jq_SV_LICENSEKEY=".sys.keys.fivemLicenseKey"
 	jq_STEAM_WEBAPIKEY=".sys.keys.steamWebApiKey"
-
-	read_figs "${ALLFIGS[@]}"
-}
-
-import_env_config() {
-
-	local ALLFIGS=( \
-	SERVER_NAME ARTIFACT_BUILD REPO_NAME SOURCE_ROOT SOURCE TXADMIN_BACKUP \
-	DB_BACKUPS SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES \
-	MAPS ESX ESEXT ESUI ESSENTIAL ESMOD VEHICLES TXADMIN_BACKUP_FOLDER DB_BACKUP_FOLDER \
-	) ;
 
 	# .pref
 	jq_SERVER_NAME=".pref.serverName"
@@ -194,57 +223,66 @@ import_env_config() {
 	jq_ESSENTIAL=".env.install.essential"
 	jq_ESMOD=".env.install.esmod"
 	jq_VEHICLES=".env.install.vehicles"
-
-	read_figs "${ALLFIGS[@]}"
-
-	artifact_build="$ARTIFACT_BUILD"
-
 }
 
 # READS IN MY CONFIGURATION
 read_figs() {
-    __CONFIG_UNFINISHED__=()
-    for _fig in "$@";
-    do
-	[[ ! "$CONFIG" ]] && echo "no config found by read_figs()... exiting" && exit 1
+	__CONFIG_UNFINISHED__=()
+	for _fig in "$@" ;
+	do
+		hush=( 										\
+			BELCH_TITLE	BELCH_VERSION	INSTALL_DATE	CONFIG_TIMESTAMP 	\
+		) ;
 
-            echo -n "Importing ${_fig} configuration"
+		# hush the above figs from displaying on screen (they are always set)
+		[[ "${hush[@]}" =~ "${_fig}" ]] && local __SILENT__="1" || unset __SILENT__
+
+		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;
+		then
+			color white - bold
+			[[ -f "$CONFIG" ]] && echo -n "Importing ${_fig} configuration"
+			color - - clearAll
+		fi
+
+		[[ -n "$__QUIET_MODE__" ]] && loading 1 CONTINUE
+
                 if [ -z "${!_fig}" ];
                 then
+			# identify branch name
                         local _jq="$(eval echo \$jq_${_fig})"
-                        local _jsData="$(jq -r $_jq $CONFIG)"
 
-			[[ "$__invalid__" ]] && unset __invalid__
+			[[ "$__INVALID__" ]] && unset __INVALID__  # CYA- PROBABLY REDUNDANT
 
-			[[ "$_jsData" == "null" ]] && __invalid__="1"
-			[[ -z "$_jsData" ]] && __invalid__="1"
-			[[ ! "$_jsData" ]] && __invalid__="1"
+			# if config is not defined, skip this and data is invalid
+                        [[ ! -f "$CONFIG" ]] && __INVALID__="1" || local _jsData="$(jq -r $_jq $CONFIG)"
 
-			[[ "$__invalid__" ]] && __CONFIG_UNFINISHED__+=("$_fig")
-			[[ "$__invalid__" ]] && unset __invalid__
+			# if data is null or blank, it is invalid
+			[[ "$_jsData" == "null" ]] || [[ -z "$_jsData" ]] && __INVALID__="1"
 
+			# track invalid figs in __CONFIG_UNFINISHED__ or write the configuration
+			[[ -n "$__INVALID__" ]] && __CONFIG_UNFINISHED__+=("$_fig") || printf -v "$_fig" '%s' "${_jsData}"
 
-			[[ ! "$__invalid__" ]] && printf -v "$_fig" '%s' "${_jsData}"
-                        unset _jsData ; unset _jq
+                fi
 
-			color yellow - bold
+		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;  # If this fig is not hushed
+		then
+			color white - bold
                         [[ "$__TEST__" ]] && [[ "${!_fig}" ]] && local __val="${!_fig}" || local __val="\"\""
-			[[ "$__TEST__" ]] &&  echo -e -n " => $_fig == $__val => "; unset __val || echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
+			[[ "$__TEST__" ]] &&  echo -e -n " => $_fig == $__val => " && unset __val \
+			  || [[ -f "$CONFIG" ]] && echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
 			color - - clearAll
+	                if [ ! -z "${!_fig}" ];
+	                then
+	                        color green - bold
+	                        [[ -f "$CONFIG" ]] && echo "Done."
+	                        color - - clearAll
+	                else
+	                        color red - bold
+	                        [[ -f "$CONFIG" ]] && echo "Nothing set!"
+	                        color - - clearAll
+	                fi
+		fi	# OTHERWISE, THIS FIGLET IS ALWAYS SET AT LOAD AND (AS SUCH) IS SILENT AT LOAD
 
-                fi
-
-                if [ ! -z "${!_fig}" ];
-                then
-                        color green - bold
-                        echo "Done."
-                        color - - clearAll
-                else
-                        color red - bold
-                        echo "Nothing set!"
-			#unset "${!_fig}"
-                        color - - clearAll
-                fi
+		unset __LOAD_QUIETLY__ ; unset __SILENT__ ; unset __INVALID__ ; unset _jsData ; unset _jq # clean up
         done
-        echo ""
 }

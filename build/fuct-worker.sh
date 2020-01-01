@@ -1,5 +1,35 @@
 #!/bin/bash
 # -exabT
+#####################################################################
+#
+# A BIT OF FUNCTION
+##
+#### THE DATABASE STUFF BELOW CAME FROM BERT VAN VRECKEM... TY! VERY GOOD WORK!!
+#### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
+#### A non-interactive replacement for mysql_secure_installation
+####
+# Predicate that returns exit status 0 if the database root password
+# is set, a nonzero exit status otherwise.
+is_mysql_root_password_set() {
+  ! mysqladmin --user=root status > /dev/null 2>&1
+}
+
+####
+# Predicate that returns exit status 0 if the mysql(1) command is available,
+# nonzero exit status otherwise.
+is_mysql_command_available() {
+  which mysql > /dev/null 2>&1
+}
+
+####
+# CHECK FOR MYSQL
+check_for_mysql() {
+  if [ ! is_mysql_command_available ]; then
+    echo "The MySQL/MariaDB client mysql(1) is not installed."
+    exit 1
+  fi
+}
+
 #\
 #>\___________________
 #>> THESE ARE MINE <3 Jay
@@ -114,9 +144,9 @@ add_salt() {
 
 	#random delim char
 	if [ "$__salt" -eq 1 ] ; then
-		_d=$(cat /dev/urandom | tr -dc "!@#%" | fold -w 1 | head -n 1)
+		_d=$(cat /dev/urandom | tr -dc "!@#" | fold -w 1 | head -n 1)
 	else
-		_d=$(cat /dev/urandom | tr -dc "!@#$%&*_+?" | fold -w 1 | head -n 1)
+		_d=$(cat /dev/urandom | tr -dc "!@#$&*_+?" | fold -w 1 | head -n 1)
 	fi
 
 	#make stamp
@@ -147,56 +177,82 @@ add_salt() {
 
 salt_rcon() {
 	if [ "$RCON_ENABLE" == "true" ] ; then
+		local _today=$(date +%Y-%m-%d)
+		local _last_set="$(cat $CONFIG | jq -r '.sys.rcon.password.timestamp')"
+		if [ -n "$_last_set" ] && [ "$_last_set" != "null" ] ;
+		then
+			local _d1=$(date -d "$_today" '+%s')
+			local _d2=$(date -d "$_last_set" '+%s')
+			local _since_set=$(( ("$_d1" - "$_d2")/(60*60*24) )) # in days
+			unset _d1 ; unset _d2 ;
+		else
+			unset _last_set
+		fi
+
 		if [ "$RCON_PASSWORD_GEN" == "true" ] ; then
 
-			local _RCON_PASSWORD="$(add_salt $RCON_PASSWORD_LENGTH 1 date)"
+			local __RANDOM_PASSWORD__="$(add_salt $RCON_PASSWORD_LENGTH 1 date)"
 
 			if "$RCON_ASK_TO_CONFIRM" ; then
 				unset RCON_PASSWORD
 
-				while [ ! "$RCON_PASSWORD" ] ;
+				while [ -z "$RCON_PASSWORD" ] ;
 				do
 					color lightYellow - bold
 					echo ""
-					echo "You may enter a custom rcon password, or just accept the randomly generated one."
+					echo "You may enter a custom RCON password, but we recommend you accept the randomly generated one."
 					echo ""
-					echo -e -n "Leave blank and hit enter to use this ("
-					color - - underline
-					echo -e -n "Recommended"
-					color - - noUnderline
-					echo -e "):\n"
-					color green - bold
-					echo "      $_RCON_PASSWORD"
-					color lightYellow - bold
-					echo ""
-					echo -e -n "Enter an RCON password ["
-					color red - underline
-					echo -e -n "leave blank to accept random"
-					color lightYellow - noUnderline
-					color - - bold
-					echo -e -n "]: "
-					color - - clearAll
-					read RCON_PASSWORD
-					echo ""
+					PROMPT="Enter RCON password"
+					pluck_fig "RCON_PASSWORD" "s:n/y" true 25 128
 				done
 			fi
-			[[ -z "$RCON_PASSWORD" ]] && RCON_PASSWORD="$_RCON_PASSWORD"
-
 			# WRITE THE CURRENT PASSWORD TO THE CONFIG
 			color white - bold
 			echo "Writing new RCON password to config..."
 			color - - clearAll
-			jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" "$CONFIG" > "$CONFIG"
+			cat "$CONFIG" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
 
 			[[ -z "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1 || echo "RCON Password generated..." && true
-		else
-			color red - bold
-			echo "You should make sure and change this password often!"
-			color - - clearAll
-			RCON_PASSWORD="${RCON_PASSWORD:=$_RCON_PASSWORD}"
+		elif [ -z "$RCON_PASSWORD" ] || [ "$RCON_PASSWORD" == "random" ] || [ "$_since_set" -ge 30 ] || [ -z "$_last_set" ] ;
+		then
+
+			# YOUR PASSWORD IS MORE THAN 30 DAYS OLD
+			[[ -n "$_last_set" ]] && color red - bold
+			[[ -n "$_last_set" ]] && [[ "$_since_set" -ge 30 ]] \
+			  && echo -e "\nYou last changed your RCON password on: $_last_set" \
+			  && echo -e "It has been $_since_set days since you last changed your RCON password.\n"
+
+			echo -e "You should make sure and change this password often\n"
+			[[ -n "$_last_set" ]] && color - - clearAll
+
+			_RCON_PASSWORD="$RCON_PASSWORD"
+			if [ -n "$_RCON_PASSWORD" ] && [ -n "$_last_set" ] ;
+			then
+				echo -e "Current password:\n${_RCON_PASSWORD}\n"
+				PROMPT="Keep using $_since_set day-old password? (not recommended)"
+				pluck_fig "__KEEP__" 11 false
+			fi
+
+			if [ -z "$__KEEP__" ] ;
+			then
+				PROMPT="Enter RCON password"
+				pluck_fig "RCON_PASSWORD" "s:n/y" true 25 128
+				cat "$CONFIG" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
+			else
+				printf "\n"
+				color yellow red bold
+				echo -e "This is not smart... but okay.\e[0m\n"
+
+				unset "__KEEP__"
+                                PROMPT="Do you want to silence this reminder for another 30 days? (really not recoomented)?"
+                                pluck_fig "__KEEP__" 11 false
+
+				[[ "$__KEEP__" == "true" ]] && printf "\n" && color yellow red bold \
+				  && echo -e "If you get hacked, don't cry to me. I hope it is a long password!" \
+				  && cat "$CONFIG" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
+			fi
 		fi
 	fi
-
 }
 
 # THIS STOPS A SCREEN SESSION.
@@ -205,6 +261,7 @@ stop_screen() {
   echo "Quiting screen session '$SCREEN_SESSION_NAME' for FiveM (if applicable)"
   su "$SERVICE_ACCOUNT" -c "screen -XS '$SCREEN_SESSION_NAME' quit"
 }
+
 ###
 # SLEEP ... nuf'said
 sleep() {
@@ -223,6 +280,7 @@ sleep() {
   ping -c "$count" 127.0.0.1 > /dev/null
 }
 #
+
 ###
 # invert (if set, unset // if unset, set to 1)
 #   BASH BOOLEAN
@@ -240,25 +298,54 @@ invert() {
 loading() {
         color yellow - -
 	_1="$1"
-        echo -e -n "Loading"
-        COUNTER="${_1:=3}"
+        [[ -z "$2" ]] && echo -e -n "Loading"
+        COUNTER="${_1:=1}"
         until [ "$COUNTER" -lt 0 ] ;
         do
                 echo -e -n "."
                 ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
-                ping -c 1 127.0.0.1 > /dev/null || true
                 let "COUNTER-=1"
 
         done
-        color lightYellow - bold && echo -e -n " Ready!\n\n" && color clear - unBold
+        [[ -n "$2" ]] && [[ "$2" == "END" ]] \
+	  && color lightYellow - bold \
+	  && echo -e -n " Ready!\n\n" \
+	  && color clear - unBold
+        [[ -n "$2" ]] && [[ "$2" == "CONFIG" ]] \
+	  && color lightYellow - bold \
+	  && echo -e -n " More configuration is needed...!\n\n" \
+	  && color clear - unBold
+	color - - clearAll
 }
+
+display_array_title() {
+	printf "\e[0m\e[1m"
+	[[ -n "$2" ]] && local _color="$1" || local _color="none"
+	[[ -n "$2" ]] && local _title="$2" || local _title="$1"
+	[[ -z "$_title" ]] && echo "no title definition.  can't be right..." && break
+
+        case "$_color" in
+  	      "red" ) printf "\e[31m" ;;
+            "green" ) printf "\e[32m" ;;
+           "yellow" ) printf "\e[33m" ;;
+	    "white" ) printf "\e[97m" ;;
+		  * ) printf "\e[37m" ;; # Gray
+	esac
+	printf "\t\e[4m${_title}\e[24m:\e[0m\n" # Underlined / places colon & clears all format at end
+}
+
+display_array() {
+	printf "\e[0m\e[37m"
+        for _item in "$@" ;
+        do
+	        case "$_item" in
+	  	      "red" ) printf "\e[31m" ;;
+	            "green" ) printf "\e[32m" ;;
+	           "yellow" ) printf "\e[33m" ;;
+		    "white" ) printf "\e[97m" ;;
+			  * ) echo -n -e "\t \xe2\x86\x92 $_item => ${!_item}\n" ;;
+		esac
+        done
+        printf "\e[0m\n"
+}
+

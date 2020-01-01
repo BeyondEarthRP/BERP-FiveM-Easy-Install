@@ -9,13 +9,11 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
     [[ -z "$SOFTWARE_ROOT" ]] && echo "software folder location not defined." && exit 1
     [[ -z "$TFIVEM" ]] && echo "tfivem folder location not defined." && exit 1
     [[ -z "$TCCORE" ]] && echo "tccore folder location not defined." && exit 1
-    [[ -z "$TESMOD" ]] && echo "tesmod folder location not defined." && exit 1
 
     # TEMP DIRECTORIES
     mkdir "$SOFTWARE_ROOT"
     mkdir "$TFIVEM"
     mkdir "$TCCORE"
-    mkdir "$TESMOD"
 
     # Dependancies
     ########################

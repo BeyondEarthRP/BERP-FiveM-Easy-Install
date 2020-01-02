@@ -51,12 +51,12 @@ then
 	. "$BUILD/just-a-banner.sh" WELCOME
 
 	color white - bold
-	echo -e -n "Building environment...\n"
+	echo -e -n "Building environment...\\\n"
 	color - - clearAll
 	. "$BUILD/build-env.sh" EXECUTE
 
 	[[ -z "$CONFIG" ]] && _FAILED=1 && color red - bold \
-	  && echo -e -n "FAILED: no config file definition.\n\n" \
+	  && echo -e -n "FAILED: no config file definition.\\\n\\\n" \
 	  && color - - clearAll && exit 1 || true
 
 
@@ -75,7 +75,7 @@ if [ "$_FAILED" == "1" ] ;
 then
 	exit 1
 fi
-echo -e "\n"
+echo -e "\\\n"
 #####################################################################
 . "$BUILD/build-env.sh" RUNTIME  # This time for deployment execution
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
@@ -102,32 +102,32 @@ if [ -z "$1" ]; then
 	#fi
 
 	. "$BUILD/build-dependancies.sh" EXECUTE
-	echo -e "DEPENDANCIES BUILT!\n"
+	echo -e "DEPENDANCIES BUILT!\\n"
 
 	####
 	# CHECK FOR MYSQL
 	check_for_mysql
 
 	. "$BUILD/build-fivem.sh" EXECUTE
-	echo -e "FIVEM BUILT!\n"
+	echo -e "FIVEM BUILT!\\n"
 
 	. "$BUILD/build-txadmin.sh" EXECUTE
-	echo -e "TXADMIN BUILT!\n"
+	echo -e "TXADMIN BUILT!\\n"
 
 	. "$BUILD/fetch-source.sh" EXECUTE
-	echo -e "SOURCES FETCHED!\n"
+	echo -e "SOURCES FETCHED!\\n"
 
 	. "$BUILD/create-database.sh" EXECUTE
-	echo -e "DATABASE CREATED!\n"
+	echo -e "DATABASE CREATED!\\n"
 
 	. "$BUILD/build-config.sh" EXECUTE
-	echo -e "CONFIG BUILT AND DEPLOYED!\n"
+	echo -e "CONFIG BUILT AND DEPLOYED!\\n"
 
 	. "$BUILD/build-resources.sh" EXECUTE
-	echo -e "RESOURCES BUILT!\n"
+	echo -e "RESOURCES BUILT!\\n"
 
 	. "$BUILD/build-vmenu.sh" EXECUTE
-	echo -e "VMENU BUILT!\n"
+	echo -e "VMENU BUILT!\\n"
 
 elif [ ! -z "$1" ]; then
 
@@ -155,22 +155,22 @@ elif [ ! -z "$1" ]; then
 		stop_screen
 
 		. "$BUILD/build-fivem.sh" EXECUTE
-		echo -e "FIVEM REBUILT!\n"
+		echo -e "FIVEM REBUILT!\\n"
 
 		. "$BUILD/build-txadmin.sh" EXECUTE
-		echo -e "TXADMIN REBUILT!\n"
+		echo -e "TXADMIN REBUILT!\\n"
 
 		. "$BUILD/create-database.sh" EXECUTE
-		echo -e "FRESH DATABASE RECREATED!\n"
+		echo -e "FRESH DATABASE RECREATED!\\n"
 
 		. "$BUILD/build-config.sh" EXECUTE
-		echo -e "CONFIG BUILT AND DEPLOYED!\n"
+		echo -e "CONFIG BUILT AND DEPLOYED!\\n"
 
 		. "$BUILD/build-resources.sh" EXECUTE
-		echo -e "RESOURCES REBUILT!\n"
+		echo -e "RESOURCES REBUILT!\\n"
 
 		. "$BUILD/build-vmenu.sh" EXECUTE
-		echo -e "VMENU REBUILT!\n"
+		echo -e "VMENU REBUILT!\\n"
 
 	elif [ "$1" == "--rebuild" ] || [ "$1" == "-b" ]; then
 		#\> REBUILD
@@ -186,13 +186,13 @@ elif [ ! -z "$1" ]; then
 		stop_screen; #STOP THE SCREEN SESSION
 
 		. "$BUILD/build-config.sh" DEPLOY
-		echo -e "CONFIG REDEPLOYED!\n"
+		echo -e "CONFIG REDEPLOYED!\\n"
 
 		. "$BUILD/build-resources.sh" EXECUTE
-		echo -e "RESOURCES REBUILT!\n"
+		echo -e "RESOURCES REBUILT!\\n"
 
 		. "$BUILD/build-vmenu.sh" EXECUTE
-		echo -e "VMENU REBUILT!\n"
+		echo -e "VMENU REBUILT!\\n"
 
 	elif [ "$1" == "--restore" ] || [ "$1" == "-oof" ]; then
 		#\> RESTORE
@@ -201,24 +201,24 @@ elif [ ! -z "$1" ]; then
 		##### THIS IS GOING TO OVER WRITE STUFF
 		##### YOU'VE BEEN (KIND OF) WARNED.
 		###
-		echo -e "THIS IS NOT YET IMPLEMENTED. -sry!\n"
+		echo -e "THIS IS NOT YET IMPLEMENTED. -sry!\\n"
 		exit 1
 		####
 		# STOP THE SCREEN SESSION
 		#stop_screen; #STOP THE SCREEN SESSION
 		#$BUILD/build-config.sh DEPLOY
-		#echo -e "CONFIG REDEPLOYED!\n"
+		#echo -e "CONFIG REDEPLOYED!\\n"
 
 		#$BUILD/build-resources.sh EXECUTE
-		#echo -e "RESOURCES REBUILT!\n"
+		#echo -e "RESOURCES REBUILT!\\n"
 
 		#$BUILD/build-vmenu.sh EXECUTE
-		#echo -e "VMENU REBUILT!\n"
+		#echo -e "VMENU REBUILT!\\n"
 
-		#echo -e "Importing last database backup...\n"
+		#echo -e "Importing last database backup...\\n"
 		#mysql essentialmode -e "SOURCE $PATH_TO_DB"
 
-		#echo -e "backup imported.\n"
+		#echo -e "backup imported.\\n"
 	else
 	   echo "Valid options are:
 

@@ -7,11 +7,11 @@ initialize() {
   [[ "$1" == "QUIETLY" ]] && loading 1 || echo "Initializing..."
   ####
   # THIS BIT IS NEEDED TO GET THE JSON CONFIG TO WORK
-  jqGreet=$( dpkg-query -W -f='${Version}\n' jq ) # check for jq
+  jqGreet=$( dpkg-query -W -f='${Version}\\n' jq ) # check for jq
   if [ -z "$jqGreet" ]; then # if not found
     apt update && apt -y upgrade && apt -y install jq # install it!
   fi
-  jqGreet=$( dpkg-query -W -f='${Version}\n' jq ) # check for jq
+  jqGreet=$( dpkg-query -W -f='${Version}\\n' jq ) # check for jq
   if [ -z "$jqGreet" ]; then # if not found
 	echo "Failed to discover jq and the installation attempt also failed."
   fi
@@ -51,8 +51,9 @@ load_user_defaults() {
 	
 	INCLUDE_PASSWORDS="true"  # I WOULDN'T, BUT YOUR CALL.
 	
-	[[ "$INCLUDE_PASSWORDS"="false" ]] || [[ -z "$INCLUDE_PASSWORDS" ]] 	&&	\
-	local DEFFIGS=(																\
+	local DEFFIGS
+	[[ "$INCLUDE_PASSWORDS" = "false" ]] || [[ -z "$INCLUDE_PASSWORDS" ]] 	&&	\
+	DEFFIGS=(																\
 		SERVICE_ACCOUNT         MYSQL_USER				RCON_ENABLE				\
 		STEAM_WEBAPIKEY         SV_LICENSEKEY			DB_BACKUP_FOLDER		\
 		RCON_PASSWORD_GEN       RCON_PASSWORD_LENGTH							\
@@ -67,8 +68,8 @@ load_user_defaults() {
 		REVIEW_CONFIGS			SHOW_ADVANCED									\
 	) ;
 	
-	[[ "$INCLUDE_PASSWORDS"="true" ]] 										&& 	\
-	local DEFIGS=(																\
+	[[ "$INCLUDE_PASSWORDS" = "true" ]] 										&& 	\
+	DEFFIGS=(																\
 		SERVICE_ACCOUNT         SERVICE_PASSWORD        MYSQL_USER				\
 		MYSQL_PASSWORD          RCON_ENABLE             RCON_PASSWORD			\
 		STEAM_WEBAPIKEY         SV_LICENSEKEY           BLOWFISH_SECRET			\
@@ -89,8 +90,8 @@ load_user_defaults() {
 	do
 		if [ -n "${!_deffig}" ] ;
 		 then
-			#echo "Loading ${_deffig} => ${!_deffig}"
-			local _defname="$(echo _${_deffig})"
+			local _defname
+			_defname="$(echo _${_deffig})"
 			printf -v "$_defname" '%s' "${!_deffig}"
 		fi
 	done
@@ -98,7 +99,7 @@ load_user_defaults() {
 }
 
 collect_figs() {
-	[[ "$1" != "QUIETLY" ]] && echo -e "\nCollecting configuration..."
+	[[ "$1" != "QUIETLY" ]] && echo -e "\\nCollecting configuration..."
 	#####################################################################
 	#
 	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
@@ -107,8 +108,8 @@ collect_figs() {
 	_INSTALL_DATE="$(date '+%d/%m/%Y %H:%M:%S')"
 	_CONFIG_TIMESTAMP="$(date '+%d/%m/%Y %H:%M:%S')"
 
-
-	local ALLFIGS=(																\
+	local ALLFIGS
+	ALLFIGS=(																\
 		BELCH_TITLE             BELCH_VERSION           INSTALL_DATE			\
 		SERVICE_ACCOUNT         SERVICE_PASSWORD        MYSQL_USER				\
 		MYSQL_PASSWORD          RCON_ENABLE             RCON_PASSWORD			\
@@ -220,7 +221,7 @@ define_runtime_env() {
 		unset THIS_SCRIPT_ROOT
 	fi
 
-        if [ ! -z "$BUILD" ] ;
+        if [ -n "$BUILD" ] ;
 	then
 		SCRIPT=$(echo "$0" | rev | cut -f1 -d/ | rev)
 		SCRIPT_FULLPATH="$(readlink -f $0)"
@@ -274,9 +275,10 @@ check_configuration() {
 	#
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
-	[[ -z "__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
+	[[ -z "$__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
 
-	local _content=$(cat "$CONFIG" 2> /dev/null)
+	local _content
+	_content=$(cat "$CONFIG" 2> /dev/null)
 	if [ -n "$CONFIG" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
 	then
 		__CONFIG__="Config file defined."
@@ -315,8 +317,13 @@ read_figs() {
 			BELCH_TITLE	BELCH_VERSION	INSTALL_DATE	CONFIG_TIMESTAMP 	\
 		) ;
 
-		# hush the above figs from displaying on screen (they are always set)
-		[[ "${hush[@]}" =~ "${_fig}" ]] && local __SILENT__="1" || unset __SILENT__
+		local __SILENT__ ; # hush the above figs from displaying on screen (they are always set)
+		if [[ " ${hush[@]} " =~ " ${_fig} " ]] ;
+		then
+			__SILENT__="1"
+		else
+			unset __SILENT__
+		fi
 
 		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;
 		then
@@ -329,16 +336,17 @@ read_figs() {
 
                 if [ -z "${!_fig}" ];
                 then
-			# identify branch name
-			local _jq="$(eval echo \$jq_${_fig})"
+			
+			local _jq ; # identify branch name
+			_jq="$(eval echo \$jq_${_fig})"
 
-			# identify default name
-			local _def="$(eval echo _${_fig})"
+			local _def ; # identify default name
+			_def="$(eval echo _${_fig})"
 
 			[[ "$__INVALID__" ]] && unset __INVALID__  # CYA- PROBABLY REDUNDANT
 
-			# if config is not defined, skip this and data is invalid
-                        [[ ! -f "$CONFIG" ]] && __INVALID__="1" || local _jsData="$(jq -r $_jq $CONFIG)"
+			local _jsData ; # if config is not defined, skip this and data is invalid
+            [[ ! -f "$CONFIG" ]] && __INVALID__="1" || _jsData="$(jq -r $_jq $CONFIG)"
 
 			# if data is null or blank, it is invalid
 			[[ "$_jsData" == "null" ]] || [[ -z "$_jsData" ]] && __INVALID__="1"
@@ -351,11 +359,12 @@ read_figs() {
 		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;  # If this fig is not hushed
 		then
 			color white - bold
-                        [[ "$__TEST__" ]] && [[ "${!_fig}" ]] && local __val="${!_fig}" || local __val="\"\""
+			local __val
+            [[ "$__TEST__" ]] && [[ "${!_fig}" ]] && __val="${!_fig}" || __val="\"\""
 			[[ "$__TEST__" ]] &&  echo -e -n " => $_fig == $__val => " && unset __val \
 			  || [[ -f "$CONFIG" ]] && echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
 			color - - clearAll
-	                if [ ! -z "${!_fig}" ];
+	                if [ -n "${!_fig}" ];
 	                then
 	                        color green - bold
 	                        [[ -f "$CONFIG" ]] && echo "Done."
@@ -447,7 +456,7 @@ harvest() {
 	# MYSQL_USER
 	if [ "$__CONFIGURE__" ] || [ -z "$MYSQL_USER" ] ;
 	then
-		echo -e "\e[91mThis should never be set to 'root' (it may not even work that way)\e[0m\n"
+		echo -e "\e[91mThis should never be set to 'root' (it may not even work that way)\e[0m\\n"
 		PROMPT="Enter a username for MySQL, that will own the essentialmode database"
 		pluck_fig "MYSQL_USER" "0" 0
 		_all_new_+=("MYSQL_USER")
@@ -582,8 +591,8 @@ harvest() {
 		# ARTIFACT_BUILD
 		if [ -n "$__CONFIGURE__" ] || [ -z "$ARTIFACT_BUILD" ] ;
 		then
-			printf "\n" ; color red - bold ; color - - underline
-			echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**\e[0m\n\n"
+			printf "\\n" ; color red - bold ; color - - underline
+			echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**\e[0m\\n\\n"
 			color white - bold ; echo -e "What CFX Artifact Build would you like to use?" ; color - - clearAll
 
 			PROMPT="Enter CFX Build Artifact"
@@ -594,8 +603,8 @@ harvest() {
 		# SOFTWARE_ROOT
 		if [ "$__CONFIGURE__" ] || [ -z "$SOFTWARE_ROOT" ] ;
 		then
-			printf "\n" ; color yellow - bold ; color - - underline
-			echo -e -n "NOTE: This is not the repo.  It's essentially just a cache of temporary downloads.\e[0m\n\n"
+			printf "\\n" ; color yellow - bold ; color - - underline
+			echo -e -n "NOTE: This is not the repo.  It's essentially just a cache of temporary downloads.\e[0m\\n\\n"
 
 			PROMPT="Where would you like to store the downloaded files?"
 			pluck_fig "SOFTWARE_ROOT" 0
@@ -652,30 +661,34 @@ harvest() {
 }
 
 pluck_fig() { # fig // prompt // confirm => 0/1
-  local __cached_prompt="$PROMPT"
-  local __prompt="$PROMPT" ; unset PROMPT
-  local __fig_key="$1" ;
-  local __verbose="$2" ;
-  local __random="$3" ;
-  local __min_len="$4" ;
-  local __max_len="$5" ;
+
+  local __cached_prompt ; local __prompt ; local __fig_key ; local __verbose
+  local __random ; local __min_len ; local __max_len
+	
+  __cached_prompt="$PROMPT"
+  __prompt="$PROMPT" ; unset PROMPT
+  __fig_key="$1" ;
+  __verbose="$2" ;
+  __random="$3" ;
+  __min_len="$4" ;
+  __max_len="$5" ;
 
   if [ "$__random" == "true" ] ;
   then
-	# if the random password was not generated externally, generate it
-	[[ -z "$__RANDOM_PASSWORD__" ]] && local _pass="$(add_salt 64 1 date)" \
-	  || local _pass="$__RANDOM_PASSWORD__"       # otherwise, use the one externally generated.
+	local _pass ; # if the random password was not generated externally, generate it
+	[[ -z "$__RANDOM_PASSWORD__" ]] && _pass="$(add_salt 64 1 date)" \
+	  || _pass="$__RANDOM_PASSWORD__"       # otherwise, use the one externally generated.
 	printf -v "_${__fig_key}" '%s' "$_pass"	      # Assign it for use later
   fi
                                                    # I got this working then realized i didn't need it/ or the above function. derp.
                                                  # declare -a local __prompt=("${!2}")  ## Just saving it here for future reference.
                                                                                          # arg_constructor __prompt  __default_input
 											# __verbose 20 switches these values below
-  if [ ! -z "$__min_len" ] && [ ! -z "$__max_len" ] && [ ! "$__verbose" == 20 ] ;  # if there both a min and max length
+  if [ -n "$__min_len" ] && [ -n "$__max_len" ] && [ ! "$__verbose" == 20 ] ;  # if there both a min and max length
   then                                        # it has a minimum & maximum length required- update the prompt to reflect requirement
     __prompt=$(echo -e "$__prompt (\e[93m\e[4mlength: $__min_len \e[2mto\e[22m $__max_len\e[24m\e[39m)")
                                                                                  # 20 will mean they are actually for somthing else.
-  elif [ ! -z "$__min_len" ] && [ -z "$__max_len" ] && [ ! "__verbose" == 20 ] ;                     # if there is only a min length
+  elif [ -n "$__min_len" ] && [ -z "$__max_len" ] && [ ! "__verbose" == 20 ] ;                     # if there is only a min length
   then                                                 # it has a minimum length required- update the prompt to reflrect requirement
     __prompt=$(echo -e "$__prompt (\e[93m\e[4mmin length: $__min_len\e[24m\e[39m)")
     unset __max_len
@@ -685,25 +698,26 @@ pluck_fig() { # fig // prompt // confirm => 0/1
     [[ "$__max_len" ]] && unset __max_len ;
   fi
 
-                                                     # Pull the default and update the prompt (if applicable)- otherwise, do nothing
-  local __default="$(eval echo \$_${__fig_key})"                                                         # Pick up the default value
+  local __default                                                   # Pull the default and update the prompt (if applicable)- otherwise, do nothing
+  __default="$(eval echo \$_${__fig_key})"                                                         # Pick up the default value
                                                                    # if it is blank, unset the var ; otherwise, add it to the prompt
-
-  [[ ! -z "$__default" ]] && [[ ! "$__random" == "true" ]] && [[ "$__verbose" != 10 ]] && [[ "$__verbose" != 11 ]] \
-  && local __prompt__=$(echo -e "$__prompt \e[32m[$__default]\e[39m")
+  local __prompt__
+  [[ -n "$__default" ]] && [[ ! "$__random" == "true" ]] && [[ "$__verbose" != 10 ]] && [[ "$__verbose" != 11 ]] \
+  && __prompt__=$(echo -e "$__prompt \e[32m[$__default]\e[39m")
 
   [[ -z "$__default" ]] && unset __default
 
                                                                   # Assign the prompt (with or without default value)- then clean up
   [[ "${__prompt__:=$__prompt}"  ]] && unset __prompt
 				# I store the previous prompt for use later if i need to reform a confirm questions with it.
-  if [ ! -z "$__verbose" ] ;                                       # If the confirmation is enabled
-  then                                         # check if the setting is a valid int (1 = on / 2 = off)
+  if [ -n "$__verbose" ] ;                                       # If the confirmation is enabled
+  then    # check if the setting is a valid int (1 = on / 2 = off)
+    local __verbose_prompt
     if [[ "$__verbose" =~ '^[0-9]+$' ]] ;                                                     # If this validation checks out okay
     then                                          # this is a number, not a defininition string; Using the on/off assignment
       if [ "$__verbose" -eq 1 ] ;
       then                                         # if it is set to 1, use quick settings- C:N
-		local __verbose_prompt="C:N"
+		__verbose_prompt="C:N"
       elif [ "$__verbose" -eq 10 ] || [ "$__verbose" -eq 11 ] ;
       then
         unset __verbose_prompt
@@ -714,36 +728,37 @@ pluck_fig() { # fig // prompt // confirm => 0/1
         unset __verbose
       fi
     else 								# because this is not a valid int, this prompt has param settings
-      local __verbose_prompt=$(echo "$__verbose" | cut -f1 -d/) # collect the prompt params
+      __verbose_prompt=$(echo "$__verbose" | cut -f1 -d/) # collect the prompt params
     fi
 
     if [ "$__verbose" == 10 ] || [ "$__verbose" == 11 ] || [ "$__verbose" == 20 ] ;
     then
-
-      local __prompt="$__prompt__"   # temporarily reassign the current ongoing prompt building
+	  local __prompt
+      __prompt="$__prompt__"   # temporarily reassign the current ongoing prompt building
       unset __prompt__    # unset for reassignment
 
       if [ "$__verbose" == 20 ] ;
       then
-        if [ ! -z "$__min_len" ] && [ ! -z "$__max_len" ] ; then
-          local _i="($__min_len to $__max_len)"  # build the prompt addition
-          local __i1="$__min_len"  # build a default value (using the min val)
-          local __i2="$__max_len"  # I guess this is redundant... oh well. easier to be consistent (i use this later)
-          local __i3=$(expr length "$__max_len")
+        if [ -n "$__min_len" ] && [ -n "$__max_len" ] ; then
+		  local _i ; local __i1 ; local __i2 ; local __i3
+          _i="($__min_len to $__max_len)"  # build the prompt addition
+          __i1="$__min_len"  # build a default value (using the min val)
+          __i2="$__max_len"  # I guess this is redundant... oh well. easier to be consistent (i use this later)
+          __i3=$(expr length "$__max_len")
         fi
-        local __prompt__="$__prompt $_i"  # build the new prompt and assign to prompt
+		local __prompt__ ; __prompt__="$__prompt $_i"  # build the new prompt and assign to prompt
       fi
 
       if [ "$__verbose" == 10 ] || [ "$__verbose" == 11 ] ;
       then
 	[[ "$__default" == "true" ]] && __verbose=10
 	[[ "$__default" == "false" ]] && __verbose=11
-
+		local _q ; local __q
         case "$__verbose" in   # if verbose
-          10 ) local _q="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; local __q=y ;;  # is 10, make Yes the default
-          11 ) local _q="\e[93m[N/\e[2my\e[22m]\e[39m" ; local __q=n ;;  # is 11, make No the default
+          10 ) _q="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; __q=y ;;  # is 10, make Yes the default
+          11 ) _q="\e[93m[N/\e[2my\e[22m]\e[39m" ; __q=n ;;  # is 11, make No the default
         esac;
-        local __prompt__="$__prompt $_q"  # build the new prompt and assign to prompt
+        local __prompt__ ; __prompt__="$__prompt $_q"  # build the new prompt and assign to prompt
       fi
       [[ "${__prompt__:=$__prompt}" ]]   # if for some reason, this didn't work... take the previous prompt back
       unset __prompt    # clean up
@@ -757,26 +772,30 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       # examples:  s:y/y   c:n/y   ... etc
 
       # Define the confirmation message
+	  local _p1 ; local _p2 ; local __p1 ; local __p2
+	  
       case $(echo "$__verbose_prompt" | cut -f1 -d:) in
-        [Ss]* ) local _p1="are you sure?" ; local __p1=s ;;
-        [Cc]* ) local _p1="Continue?" ; local __p1=c ;;
-            * ) local _p1="Continue?" ; local __p1=C ;;
+        [Ss]* ) _p1="are you sure?" ; __p1=s ;;
+        [Cc]* ) _p1="Continue?" ; __p1=c ;;
+            * ) _p1="Continue?" ; __p1=C ;;
       esac;
 
       case $(echo "$__verbose_prompt" | cut -f2 -d:) in
-        [Yy]* ) local _p2="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; local __p2=y ;;
-        [Nn]* ) local _p2="\e[93m[N/\e[2my\e[22m]\e[39m" ; local __p2=n ;;
-            * ) local _p2="\e[93m[N/\e[2my\e[22m]\e[39m" ; local __p2=N ;;
+        [Yy]* ) _p2="\e[93m[Y/\e[2mn\e[22m]\e[39m" ; __p2=y ;;
+        [Nn]* ) _p2="\e[93m[N/\e[2my\e[22m]\e[39m" ; __p2=n ;;
+            * ) _p2="\e[93m[N/\e[2my\e[22m]\e[39m" ; __p2=N ;;
       esac;
       # End confirmation message definition & building
 
       # if settings still both exist (this should), then I redefine the prompt settings (just in case catchall)
-      [[ ! -z "$__p1" ]] && [[ ! -z "$__p2" ]] && local __verbose_prompt="$__p1:$__p2" ;
+	  local __verbose_prompt
+      [[ -n "$__p1" ]] && [[ -n "$__p2" ]] && __verbose_prompt="$__p1:$__p2" ;
       # If both pieces of the prompt exist, assign the confirmation message to it's var
-      [[ ! -z "$_p1" ]] && [[ ! -z "$_p2" ]] && local __question__="$_p1 $_p2" ;
+	  local __question__
+      [[ -n "$_p1" ]] && [[ -n "$_p2" ]] && __question__="$_p1 $_p2" ;
 
       # get the user input feedback display setting or use the default (which is to not display input feedback)
-      local __verbose_display=$(echo "$__verbose" | cut -f2 -d/) ;
+      local __verbose_display ; __verbose_display=$(echo "$__verbose" | cut -f2 -d/) ;
       [[ "${__verbose_display}" == "n" ]] && unset __verbose_display ;  # display is enabled, otherwise unset var
     else  # just clean up
       [[ "$__verbose_prompt" ]] && unset __verbose_prompt ;
@@ -812,10 +831,11 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
         [[ "${yn:=$__q}" ]]  # check user input against default (if blank and has a default)
 
+		local __return
         case "$yn" in
-          [Yy]* ) local __return=true ; echo -e " Yes.\n" ;;
-          [Nn]* ) local __return=false ; echo -e " No.\n" ;;
-              * ) echo -e "\nPlease answer yes or no (or hit control-c to cancel)\n" ;;
+          [Yy]* ) __return=true ; echo -e " Yes.\\n" ;;
+          [Nn]* ) __return=false ; echo -e " No.\\n" ;;
+              * ) echo -e "\\nPlease answer yes or no (or hit control-c to cancel)\\n" ;;
         esac
 
       #### 20 #############################################
@@ -836,8 +856,8 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       # PROMPT THE USER
       ## -- standard prompt
 	  [[ "$__random" == "true" ]] \
-	    && printf "   \e[93m\e[1mRandom Password (Leave Blank to Accept):\n\n" \
-	    && echo -e -n "\t\e[33m> \e[31m$__default \e[33m<\e[0m\n\n"
+	    && printf "   \e[93m\e[1mRandom Password (Leave Blank to Accept):\\n\\n" \
+	    && echo -e -n "\t\e[33m> \e[31m$__default \e[33m<\e[0m\\n\\n"
       color white - bold ;
       echo -n "$__prompt__: " ; # prompt the user
       color - - clearAll ;
@@ -853,11 +873,11 @@ pluck_fig() { # fig // prompt // confirm => 0/1
     ###############################
     # Input Validation
     ##
-    if [ ! -z "$__return" ] && [ "$__return" != "true" ] && [ "$__return" != "false" ] ;
+    if [ -n "$__return" ] && [ "$__return" != "true" ] && [ "$__return" != "false" ] ;
     then  # if there is an input that is not zero length
       [[ "$__invalid" ]] && unset __invalid   # clear whatever setting may be set to __invalid (dusting off the equipment)
-      local __valid=1 # pre-validate the users input
-      local __length=$(expr length "$__return")  # what is the length
+      local __valid ; __valid=1 # pre-validate the users input
+      local __length ; __length=$(expr length "$__return")  # what is the length
 
       # NUMBER VALIDATION
       if [ "$__verbose" == 20 ] ; # this is a number input
@@ -877,13 +897,13 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       # LENGTH VALIDATION
       if [ "$__min_len" ] && [ ! "$__length" -ge "$__min_len" ] && [ ! "$__verbose" == 20 ] ;
       then
-        local __invalid="Minimum length required."    # invalidated user input with reason
+        local __invalid ; __invalid="Minimum length required."    # invalidated user input with reason
         unset __valid    # revoke validation
       fi
 
       if [ "$__max_len" ] && [ ! "$__length" -le "$__max_len" ] && [ ! "$__verbose" == 20 ] ;
       then
-        local __invalid="Too many characters entered."    # invalidate user input with reason
+        local __invalid ; __invalid="Too many characters entered."    # invalidate user input with reason
         unset __valid    # revoke validation
       fi
       unset __length    # clean up
@@ -893,7 +913,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 	__valid="1" ;
         unset __verbose_prompt
     else
-      local __invalid="No user input received from the console."  # invalidate user input with reason
+      local __invalid ; __invalid="No user input received from the console."  # invalidate user input with reason
       unset __valid   # revoke any potential validation
     fi  # done validating the users input
 
@@ -903,11 +923,11 @@ pluck_fig() { # fig // prompt // confirm => 0/1
     then # the input was found and validated
       if [ ! "$__verbose_prompt" ] ;  # If there is no confirmation prompt set (or this is true false statement)
       then # then it has been disabled.
-        local return__="$__return"  # do not confirm; set the value and move on.
+        local return__ ; return__="$__return"  # do not confirm; set the value and move on.
 
         [[ "$__return" != *$'\r'* ]] && printf "\r"
         [[ "$__verbose" != 2 ]] && [[ "$__return" != "true" ]] \
-          && [[ "$__return" != "false" ]] && echo -e "Using \"$return__\"...\n"
+          && [[ "$__return" != "false" ]] && echo -e "Using \"$return__\"...\\n"
         unset __return
 
         printf -v "${__fig_key}" '%s' "$return__"
@@ -921,10 +941,10 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 	  # Console display of input (for confirmation)
           if [ -n "$__verbose_display" ] ;
 	  then
-	    local _qref=$(echo "$__cached_prompt" | cut -f 3- -d" ")
+	    local _qref ; _qref=$(echo "$__cached_prompt" | cut -f 3- -d" ")
 	    echo -e -n "\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[999D"
-            echo -e -n "    \e[93m For the $_qref, you've entered:\e[0m\n\n"
-	    echo -e -n "\t\e[92m  $__return  \n\n"
+            echo -e -n "    \e[93m For the $_qref, you've entered:\e[0m\\n\\n"
+	    echo -e -n "\t\e[92m  $__return  \\n\\n"
 	  fi
 
           # echo the prompt with no newline; read the user input; backup 1 column (before newline)
@@ -937,21 +957,21 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
           [[ "${yn:=$__p2}" ]]  # check user input against default (if blank and has a default)
           case "$yn" in
-          [Yy]* ) local __confirm=y ; echo -e " Yes.\n" ;  break ;;
+          [Yy]* ) local __confirm ; __confirm=y ; echo -e " Yes.\\n" ;  break ;;
           [Nn]* ) unset __confirm ; break ;;
               * ) printf "\e[2B\e[999D\e[K\e[91mPlease answer yes or no (or hit control-c to cancel).\e[0m" ;;
           esac
         done
         if [ "$__confirm" ] ; then
-          local return__="$__return"
+          local return__ ; return__="$__return"
           unset __return
           printf -v "${__fig_key}" '%s' "$return__"
-	  printf "\n"
+	  printf "\\n"
         else
-	  [[ -n "$__RESET__" ]] && printf "\e[5A\n\e[KOkay, user input cleared... Let's try that again.\n"
-	  [[ -z "$__RESET__" ]] && local __RESET__="1" \
-            && printf "\n\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r" \
-            && printf "Okay, user input cleared... Let's try that again.\n"
+	  [[ -n "$__RESET__" ]] && printf "\e[5A\\n\e[KOkay, user input cleared... Let's try that again.\\n"
+	  [[ -z "$__RESET__" ]] && local __RESET__ ; __RESET__="1" \
+            && printf "\\n\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r" \
+            && printf "Okay, user input cleared... Let's try that again.\\n"
         fi
 
       fi
@@ -962,10 +982,10 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       ##
       color red - bold
       color - - underline
-      echo -e "\n\nERROR!\n"
+      echo -e "\\n\\nERROR!\\n"
       color - - noUnderline
       [[ "$__invalid" ]] && echo "$__invalid" && unset __invalid
-      echo -e "Input not valid.  Please try again.\n"
+      echo -e "Input not valid.  Please try again.\\n"
       color clear clear clearAll
     fi
   done
@@ -985,7 +1005,7 @@ cook_figs() {
 		exit 1
         fi
 
-	local _content=$(cat "$CONFIG" 2>/dev/null)
+	local _content ; _content=$(cat "$CONFIG" 2>/dev/null)
 	##################################################################################
 	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$_content" ] ;
 	then
@@ -1000,7 +1020,7 @@ cook_figs() {
 
 		if [ "$_all_new_" ] && [ "${#_all_new_[@]}" -gt 0 ] ;
 		then
-			[[ "$1" == "QUIETLY" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG && printf "\n\n"
+			[[ "$1" == "QUIETLY" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG && printf "\\n\\n"
 		else
 			color white - bold
 			echo "No changes discovered."
@@ -1020,13 +1040,13 @@ cook_figs() {
         if [ -d "${CONFIG%/*}" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
         then
 		color lightYellow - bold
-		echo -e "\nPrevious config found... Rebuilding with new config values...\n"
-		echo -e "This will over-write the current config found at:\n"
-		echo -e "        $CONFIG\n\n"
+		echo -e "\\nPrevious config found... Rebuilding with new config values...\\n"
+		echo -e "This will over-write the current config found at:\\n"
+		echo -e "        $CONFIG\\n\\n"
 		color - - clearAll
 
 		color white - bold
-		echo -e "\nLast chance to cancel..."
+		echo -e "\\nLast chance to cancel..."
 		color - - clearAll
 
 	        while [ -z "$__confirmed__" ] ;
@@ -1052,11 +1072,11 @@ cook_figs() {
 			esac ;
 			if [ -z "$__confirmed__" ] ;
 			then
-				echo -e "\n\e[97mYou did not type 'YES' -- if you'd like to cancel, hit control-c\e[0m" ; # Fired!
+				echo -e "\\n\e[97mYou did not type 'YES' -- if you'd like to cancel, hit control-c\e[0m" ; # Fired!
 			fi
 		done
 		color white - bold
-		printf "\nOkay...\n"
+		printf "\\nOkay...\\n"
 		color - - clearAll
 	fi
 	unset _content
@@ -1080,17 +1100,18 @@ ask_to_review() {
 	# $3 = (can be blank) Type of configuration (eg "new" configuraiton // "existing" configuration
 
 	[[ -z "$1" ]] && echo "Must include data to review" && exit 1 || local _data_holder="$1"
-	[[ -n "$3" ]] && local _type_name="$3"
+	[[ -n "$3" ]] && local _type_name ; _type_name="$3"
 
 	if [ "$REVIEW_CONFIGS" != "true" ] || [ -z "$REVIEW_CONFIGS" ] ;
 	then
+		local _head 
 		if [ -n "$_type_name" ] ;
 		then
 			PROMPT="Would you like to review the $_type_name configuration?"
-			local _head="${_type_name^^} CONFIGURATION"
+			_head="${_type_name^^} CONFIGURATION"
 		else
 			PROMPT="Would you like to review the configuration?"
-			local _head="CONFIGURATION"
+			_head="CONFIGURATION"
 		fi
 
 		pluck_fig "__REVIEW__" 11 false	
@@ -1102,10 +1123,10 @@ ask_to_review() {
 			until [ "$__READY__" == "true" ] ;
 			do
 				[[ -n "$2" ]] && [[ "$2" != "-" ]] && color "$2" - bold || color gray - bold
-				printf "\n---------------[ $_head ]---------------\n"
+				printf "\\n---------------[ $_head ]---------------\\n"
 				color - - clearAll
 				echo "${!_data_holder}" | jq .
-				printf "\n\n"
+				printf "\\n\\n"
 
 				PROMPT="Ready to continue? (Control-C to Cancel)"
 				pluck_fig "__READY__" 11 false
@@ -1124,14 +1145,15 @@ commit() {
 	#			      THIS WILL COMMIT THE CHANGE (FIRST VERIFYING IT IS NOT 0 LENGTH)
 	#			      THEN IT WILL VALIDATE THAT THE CHANGE TOOK SUCCESSFULLY.
 
-	[[ -n "$1" ]] && local _commit="$(eval echo \${$1})"
+	local _commit
+	[[ -n "$1" ]] && _commit="$(eval echo \${$1})"
 	if [ -n "$1" ] && [ -z "$_commit" ] ;
 	then
-		printf "\n\e[91m\e[4mNothing to commmit!\e[0m\n\n"
+		printf "\\n\e[91m\e[4mNothing to commmit!\e[0m\\n\\n"
 
 	elif [ -z "$CONFIG" ] ;
 	then
-		printf "\n\e[91m\e[4mNo config defined!\e[0m\n\n"
+		printf "\\n\e[91m\e[4mNo config defined!\e[0m\\n\\n"
 
 	elif [ -z "$1" ] ;
 	then
@@ -1139,12 +1161,12 @@ commit() {
                 if [ -n "$__INVALID_CONFIG__" ] ;
                 then
                         color red - bold
-                        printf "\nCONFIG CONTENT VALIDATION FAILED!\n"
+                        printf "\\nCONFIG CONTENT VALIDATION FAILED!\\n"
                         color - - clearAll
                 elif [ -n "$__CONFIG__" ] ;
                 then
 			color green - bold
-			printf "\nCONFIG CONTENT VALIDATION SUCCEEDED!\n"
+			printf "\\nCONFIG CONTENT VALIDATION SUCCEEDED!\\n"
 			color - - clearAll
                 fi
 	elif [ -n "$1" ] && [ -n "$_commit" ] && [ -n "$CONFIG" ] ;
@@ -1159,7 +1181,7 @@ commit() {
                 then
 			# OKAY TO ASSUME:
                         # 4) CONFIG AT DEFINED LOCATION IS CURRENTLY INVALID
-                        local __NEW__="1"
+                        local __NEW__ ; __NEW__="1"
 			# current config is invalid
 			# starting from scratch
 
@@ -1172,23 +1194,23 @@ commit() {
                           && echo "$__CONFIG__" && color - - clearAll
 
 			# CACHE THE CURRENT CONFIG
-			local _cached_config=$(cat "$CONFIG" 2>/dev/null)
+			local _cached_config ; _cached_config=$(cat "$CONFIG" 2>/dev/null)
 
 			# IF THE CURRENT CONFIG DIDNT CACHE (IT SHOULD, BUT OKAY) THEN CALL IT OUT
 			if [ -z "$_cached_config" ] ;
 			then
-				echo -e "\nCaching of current config has failed..."
-				echo -e "If we continue, there will be no reverting a failed commit.\n"
+				echo -e "\\nCaching of current config has failed..."
+				echo -e "If we continue, there will be no reverting a failed commit.\\n"
 				unset __CURRENT__
 				PROMPT="Are you sure you still want to continue?"
 				unset __CONTINUE__
 				pluck_fig "__CONTINUE__" 11 false
 				if [ -n "$__CONTINUE__" ] ;
 				then
-					echo -e "\n\t\e[91m\e[4mOkay, you've been warned.\e[0m\n"
+					echo -e "\\n\t\e[91m\e[4mOkay, you've been warned.\e[0m\\n"
 					unset __CONTINUE__
 				else
-					echo -e "\n\e[91mConfiguration cancelled by user... exiting!\e[0m\n"
+					echo -e "\\n\e[91mConfiguration cancelled by user... exiting!\e[0m\\n"
 					exit 1
 				fi
 			fi
@@ -1198,15 +1220,15 @@ commit() {
 		do
 
 			color yellow - bold
-			printf "\n      Writing config to:\n"
+			printf "\\n      Writing config to:\\n"
 			color yellow - dim
-			printf "      $CONFIG\n\n"
+			printf "      $CONFIG\\n\\n"
 			color - - clearAll
 
 			echo "$_commit" > "$CONFIG"   				  # WRITE THE CONFIG
 
 			unset _content					      # CYA-Probably overkill though
-			local _content=$(cat "$CONFIG" 2>/dev/null)    # READ IN THE REVISED CONFIG CONTENTS
+			local _content ; _content=$(cat "$CONFIG" 2>/dev/null)    # READ IN THE REVISED CONFIG CONTENTS
 
 			if [ -n "$_content" ] ;
 			then
@@ -1214,7 +1236,7 @@ commit() {
 				then
 					# SUCCESS!
 		                        color green - bold
-		                        printf "\nCONFIGURATION SAVED SUCCESSFULLY!\n"
+		                        printf "\\nCONFIGURATION SAVED SUCCESSFULLY!\\n"
 		                        color - - clearAll
 					ask_to_review "_content" "white" "saved"
 		                        unset _content
@@ -1237,14 +1259,14 @@ commit() {
 			then
 				# FAILED, BUT WE CAN GO BACK!
 		                color red - bold
-	        	        printf "\nFAILED TO SAVE CONFIGURATION!\n"
+	        	        printf "\\nFAILED TO SAVE CONFIGURATION!\\n"
 	                        color - - clearAll
 
 				color white - bold
 				echo "reverting..."
 				color - - clearAll
 				echo "$_cached_config" | jq . > "$CONFIG"
-				local _content=$(cat "$CONFIG" 2>/dev/null)
+				local _content ; _content=$(cat "$CONFIG" 2>/dev/null)
 				[[ -z "$_content" ]] \
 				  && echo "well, I tried to commit... but I got my privates stuck in a ceiling fan" \
 				  && echo "...I've failed.  I'm very sorry!" && exit 1
@@ -1256,13 +1278,13 @@ commit() {
 				# FAILED, NO RETURN!
 				echo "well, I tried to commit... but I got my privates stuck in a ceiling fan"
 				echo "If you are seeing this... I'm sorry.  You were warned though!"
-				echo -e "\nWe could try again, but I don't have much hope...\n"
+				echo -e "\\nWe could try again, but I don't have much hope...\\n"
 			else
 				# I HAVE NO IDEA WHY THIS WOULD EVER TRIGGER
 				echo "Configuration to commit configuration.  FAILED!"
 				exit 1
 			fi
-			printf "\n\n"
+			printf "\\n\\n"
 			PROMPT="Try again?" && unset __CONTINUE__
 			pluck_fig "__CONTINUE__" 10 false
 			[[ -z "$__CONTINUE__" ]] && break || unset __CONTINUE__
@@ -1272,9 +1294,9 @@ commit() {
 }
 
 plant_fig() {
-	local _crop="$1"
-	local _fig="$2"
-	local _path="$(eval echo \$jq_${_fig})"
+	local _crop ; _crop="$1"
+	local _fig ; _fig="$2"
+	local _path ; _path="$(eval echo \$jq_${_fig})"
 
 	[[ -z "$__RUNTIME__" ]] && identify_branches
 
@@ -1282,7 +1304,7 @@ plant_fig() {
 	_yield=$(eval echo \${$_crop} | jq $_path=\""$_fruit"\")
 
 	[[ -n "$_yield" ]] && printf -v "$_crop" '%s' "$_yield" \
-	  || echo "\n\e[97merror planting fig!\e[0m"
+	  || echo "\\n\e[97merror planting fig!\e[0m"
 }
 
 #-----[ CONFIGURES ]-----######################################################################
@@ -1293,17 +1315,17 @@ plant_fig() {
 
 salt_rcon() {
 	if [ "$RCON_ENABLE" == "true" ] ; then
-		local _today=$(date +%Y-%m-%d)
-		local _content=$(cat "$CONFIG" 2>/dev/null)
+		local _today ; _today=$(date +%Y-%m-%d)
+		local _content ; _content=$(cat "$CONFIG" 2>/dev/null)
 		if [ -n "$_content" ] ;
 		then
-			local _last_set=$(echo "$_content" | jq -r '.sys.rcon.password.timestamp' 2>/dev/null)
+			local _last_set ; _last_set=$(echo "$_content" | jq -r '.sys.rcon.password.timestamp' 2>/dev/null)
 		fi
 		if [ -n "$_last_set" ] && [ "$_last_set" != "null" ] ;
 		then
-			local _d1=$(date -d "$_today" '+%s')
-			local _d2=$(date -d "$_last_set" '+%s')
-			local _since_set=$(( ("$_d1" - "$_d2")/(60*60*24) )) # in days
+			local _d1 ; _d1=$(date -d "$_today" '+%s')
+			local _d2 ; _d2=$(date -d "$_last_set" '+%s')
+			local _since_set ; _since_set=$(( ("$_d1" - "$_d2")/(60*60*24) )) # in days
 			unset _d1 ; unset _d2 ;
 		else
 			unset _last_set
@@ -1311,7 +1333,7 @@ salt_rcon() {
 
 		if [ "$RCON_PASSWORD_GEN" == "true" ] ; then
 
-			local __RANDOM_PASSWORD__="$(add_salt $RCON_PASSWORD_LENGTH 1 date)"
+			local __RANDOM_PASSWORD__ ; __RANDOM_PASSWORD__="$(add_salt $RCON_PASSWORD_LENGTH 1 date)"
 
 			if "$RCON_ASK_TO_CONFIRM" ; then
 				unset RCON_PASSWORD
@@ -1339,16 +1361,16 @@ salt_rcon() {
 			# YOUR PASSWORD IS MORE THAN 30 DAYS OLD
 			[[ -n "$_last_set" ]] && color red - bold
 			[[ -n "$_last_set" ]] && [[ "$_since_set" -ge 30 ]] \
-			  && echo -e "\nYou last changed your RCON password on: $_last_set" \
-			  && echo -e "It has been $_since_set days since you last changed your RCON password.\n"
+			  && echo -e "\\nYou last changed your RCON password on: $_last_set" \
+			  && echo -e "It has been $_since_set days since you last changed your RCON password.\\n"
 
-			echo -e "You should make sure and change this password often\n"
+			echo -e "You should make sure and change this password often\\n"
 			[[ -n "$_last_set" ]] && color - - clearAll
 
 			_RCON_PASSWORD="$RCON_PASSWORD"
 			if [ -n "$_RCON_PASSWORD" ] && [ -n "$_last_set" ] ;
 			then
-				echo -e "Current password:\n${_RCON_PASSWORD}\n"
+				echo -e "Current password:\\n${_RCON_PASSWORD}\\n"
 				PROMPT="Keep using $_since_set day-old password? (not recommended)"
 				pluck_fig "__KEEP__" 11 false
 			fi
@@ -1363,9 +1385,9 @@ salt_rcon() {
 				done
 				commit_rcon_password
 			else
-				printf "\n"
+				printf "\\n"
 				color yellow red bold
-				echo -e "This is not smart... but okay.\e[0m\n"
+				echo -e "This is not smart... but okay.\e[0m\\n"
 
 				unset "__KEEP__"
                                 PROMPT="Do you want to silence this reminder for another 30 days? (really not recoomented)?"
@@ -1373,9 +1395,9 @@ salt_rcon() {
 
 				if [ "$__KEEP__" == "true" ] ;
 				then
-					 printf "\n"
+					 printf "\\n"
 					color yellow red bold
-					echo -e -n "If you get hacked, don't cry to me. I hope it is a long password!\e[0m\n"
+					echo -e -n "If you get hacked, don't cry to me. I hope it is a long password!\e[0m\\n"
 					commit_rcon_password "timestamp"
 				fi
 			fi
@@ -1388,12 +1410,13 @@ commit_rcon_password() {
 	# SO IF THIS VALIDATION FAILED, WE JUST SKIP THE ADDITION.  IT SHOULD GET ADDED
 	# WHEN THE QUICK CONFIG COMMITS ITS DATA.
 	[[ -z "$CONFIG" ]] && echo "No config defined. failed." && exit 1
-        local _content=$(cat "$CONFIG" 2>/dev/nul)
-	local _today=$(date +%Y-%m-%d)
+        local _content ; _content=$(cat "$CONFIG" 2>/dev/nul)
+	local _today ; _today="$(date +%Y-%m-%d)"
 
 	if [ -n "$_content" ] ;
 	then  # if there is no content in the file... we probably shouldn't be this far.  My assumption here atleast.
-		[[ -z "$1" ]] && local _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")
+		local _rev1
+		[[ -z "$1" ]] && _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")
 		if [ -n "$_rev1" ] ;
               	then
 			_revision=$(echo "$_rev1" | jq ".sys.rcon.password.timestamp=\"${_today}\"")
@@ -1434,19 +1457,20 @@ loading() {
         done
         [[ -n "$2" ]] && [[ "$2" == "END" ]] \
 	  && color gray - bold \
-	  && echo -e -n " Ready!\n\n" \
+	  && echo -e -n " Ready!\\n\\n" \
 	  && color clear - unBold
         [[ -n "$2" ]] && [[ "$2" == "CONFIG" ]] \
 	  && color lightYellow - bold \
-	  && echo -e -n " More configuration is needed!\n\n" \
+	  && echo -e -n " More configuration is needed!\\n\\n" \
 	  && color clear - unBold
 	color - - clearAll
 }
 
 display_array_title() {
 	printf "\e[0m\e[1m"
-	[[ -n "$2" ]] && local _color="$1" || local _color="none"
-	[[ -n "$2" ]] && local _title="$2" || local _title="$1"
+	local _color ; local _title
+	[[ -n "$2" ]] && _color="$1" || _color="none"
+	[[ -n "$2" ]] && _title="$2" || _title="$1"
 	[[ -z "$_title" ]] && echo "no title definition.  can't be right..." && exit 1
 
         case "$_color" in
@@ -1456,7 +1480,7 @@ display_array_title() {
 	    "white" ) printf "\e[97m" ;;
 		  * ) printf "\e[37m" ;; # Gray
 	esac
-	printf "\t\e[4m${_title}\e[24m:\e[0m\n" # Underlined / places colon & clears all format at end
+	printf "\t\e[4m${_title}\e[24m:\e[0m\\n" # Underlined / places colon & clears all format at end
 }
 
 display_array() {
@@ -1465,27 +1489,27 @@ display_array() {
         do
 		if [ -z "${!_item}" ] ;
 		then
-			local _detail="\t \xe2\x86\x92 $_item"
+			local _detail ; _detail="\t \xe2\x86\x92 $_item"
 		else
-			local _detail="\t $_item \xe2\x86\x92 ${!_item}"
+			local _detail ; _detail="\t $_item \xe2\x86\x92 ${!_item}"
 		fi
 	        case "$_item" in
 	  	      "red" ) printf "\e[31m" ;;
 	            "green" ) printf "\e[32m" ;;
 	           "yellow" ) printf "\e[33m" ;;
 		    "white" ) printf "\e[97m" ;;
-			  * ) echo -n -e "$_detail\n" ;;
+			  * ) echo -n -e "$_detail\\n" ;;
 		esac
         done
-        printf "\e[0m\n"
+        printf "\e[0m\\n"
 }
 
 color(){    # COLOR FOR ALL THE TERMS!
   [[ ! "$2" ]] || [[ "$2" == "0" ]] && __back="clear"
   [[ ! "$1" ]] || [[ "$1" == "0" ]] && __fore="clear"
-  local __fore="$1"
-  local __back="$2"
-  local __dcor="$3"
+  local __fore ; __fore="$1"
+  local __back ; __back="$2"
+  local __dcor ; __dcor="$3"
 
   if [ "$__fore" != "-" ] ;
   then
@@ -1558,19 +1582,20 @@ color(){    # COLOR FOR ALL THE TERMS!
 add_salt() {
 
 	# default
-	local _default_length_=64
+	local _default_length_ ; _default_length_="64"
 
 	# some vars
+	local __salt ; local __stamp ; local __len ; local _shakerStamp ; local _salt ; local __shaker
 	[[ -n "$1" ]] && __len="$1" || __len="$_default_length_"
-	[[ -n "$2" ]] && local __salt="$2" || local __salt="default"
-	[[ -n "$3" ]] && local __stamp="$3"
+	[[ -n "$2" ]] && __salt="$2" || __salt="default"
+	[[ -n "$3" ]] && __stamp="$3"
 
 	if ! [ "$1" -eq "$1" ] 2> /dev/null
 	then
         	# using default
-		local __len="$_default_length_"
+		__len="$_default_length_"
 	else
-		declare -i local __len
+		declare -i __len
 		__len="$1"
 	fi
 
@@ -1585,8 +1610,8 @@ add_salt() {
 	if [ -n "$__stamp" ] ;
 	then
 		case "$__stamp" in
-		  "date" ) local _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
-		       * ) local _shakerStamp="${_d}$__stamp" ;;
+		  "date" ) _shakerStamp="${_d}$(date +%B${_d}%Y)" ;;
+		       * ) _shakerStamp="${_d}$__stamp" ;;
 		esac ;
 		local __len="$(( $__len - ${#_shakerStamp} ))"
 		[ "$__len" -lt 0 ] && __len=3 && _shakerStamp="${_shakerStamp:3}"
@@ -1594,13 +1619,13 @@ add_salt() {
 
 	# make salt
 	case "$__salt" in
-	  0 ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
-	  1 ) local _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%&_+?~" | fold -w "$__len" | head -n 1) ;;
-	  * ) local _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	  0 ) _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
+	  1 ) _salt=$(cat /dev/urandom | tr -dc "a-zA-Z0-9!@#$%&_+?~" | fold -w "$__len" | head -n 1) ;;
+	  * ) _salt="$(date +%s | sha256sum | base64 | head -c ${__len}; echo)" ;;
 	esac ;
 
 	# if __stamp is empty, then just add salt / otherwise, add salt and the shaker stamp
-	[ ! "$__stamp" ] && local __shaker="${_salt}" || local __shaker="${_salt}${_shakerStamp}"
+	[ ! "$__stamp" ] && __shaker="${_salt}" || __shaker="${_salt}${_shakerStamp}"
 
 	# This is needed to return for variable assignment
 	echo "$__shaker"

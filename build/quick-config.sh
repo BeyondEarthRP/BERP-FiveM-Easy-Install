@@ -47,7 +47,7 @@ then
 fi ;
 
 color white - bold
-echo -e "\n\nWe are about to create a new configuration file."
+echo -e "\n\nWe are about to create or update a Belch configuration file."
 color - - clearAll
 
 while [ -n "$__CONFIGURE__" ] ;

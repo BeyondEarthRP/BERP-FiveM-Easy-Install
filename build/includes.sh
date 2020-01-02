@@ -275,7 +275,6 @@ check_configuration() {
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
 	##
 	[[ -z "__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
-	[[ "$1" != "QUIETLY" ]] && echo "Looking for a configuration..."
 
 	local _content=$(cat "$CONFIG" 2> /dev/null)
 	if [ -n "$CONFIG" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
@@ -1268,7 +1267,7 @@ salt_rcon() {
 		local _content=$(cat "$CONFIG" 2>/dev/null)
 		if [ -n "$_content" ] ;
 		then
-			local _last_set="$(cat $CONFIG | jq -r '.sys.rcon.password.timestamp')"
+			local _last_set=$(echo "$_content" | jq -r '.sys.rcon.password.timestamp' 2>/dev/null)
 		fi
 		if [ -n "$_last_set" ] && [ "$_last_set" != "null" ] ;
 		then
@@ -1390,7 +1389,7 @@ commit_rcon_password() {
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
 
 loading() {
-        color yellow - -
+        color white - -
 	_1="$1"
         [[ -z "$2" ]] && echo -e -n "Loading"
         COUNTER="${_1:=1}"
@@ -1402,12 +1401,12 @@ loading() {
 
         done
         [[ -n "$2" ]] && [[ "$2" == "END" ]] \
-	  && color lightYellow - bold \
+	  && color gray - bold \
 	  && echo -e -n " Ready!\n\n" \
 	  && color clear - unBold
         [[ -n "$2" ]] && [[ "$2" == "CONFIG" ]] \
 	  && color lightYellow - bold \
-	  && echo -e -n " More configuration is needed...!\n\n" \
+	  && echo -e -n " More configuration is needed!\n\n" \
 	  && color clear - unBold
 	color - - clearAll
 }
@@ -1432,12 +1431,18 @@ display_array() {
 	printf "\e[0m\e[37m"
         for _item in "$@" ;
         do
+		if [ -z "${!_item}" ] ;
+		then
+			local _detail="\t \xe2\x86\x92 $_item"
+		else
+			local _detail="\t $_item \xe2\x86\x92 ${!_item}"
+		fi
 	        case "$_item" in
 	  	      "red" ) printf "\e[31m" ;;
 	            "green" ) printf "\e[32m" ;;
 	           "yellow" ) printf "\e[33m" ;;
 		    "white" ) printf "\e[97m" ;;
-			  * ) echo -n -e "\t $_item \xe2\x86\x92 ${!_item}\n" ;;
+			  * ) echo -n -e "$_detail\n" ;;
 		esac
         done
         printf "\e[0m\n"

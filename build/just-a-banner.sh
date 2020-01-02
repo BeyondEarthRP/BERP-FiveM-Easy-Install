@@ -44,7 +44,7 @@ EOF
 	color - - clearAll
 fi
 
-if [ "$1" == BELCHER ] ; 
+if [ "$1" == "BELCHER" ] ; 
 then
 	echo "______  _____ ______  ______                 ";
 	echo "| ___ \\|  ___|| ___ \\ | ___ \\                ";
@@ -62,6 +62,7 @@ then
 	echo "\\____/\\____/\\_____/\\____/\\_| |_/\\____/\\_| \\_|";
 	echo "                                             ";
 	echo " BY: Beyond Earth (Made for Beyond Earth Roleplay)";
+	echo " " ;
 fi
 
 if [ "$1" == NEW_INSTALL ] ; 

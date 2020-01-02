@@ -69,7 +69,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 			display_array_title "Missing figlets"
 			display_array "${__CONFIG_UNFINISHED__[@]}"
 			echo -e -n ""
-			. "$BUILD/quick-config.sh"
+			. "$BUILD/quick-config.sh" UNFINISHED
 			color - - clearAll
 		fi
 		[[ -z "$__CONFIG_UNFINISHED__" ]] && __READY__="1"

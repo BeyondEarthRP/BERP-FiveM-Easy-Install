@@ -3,8 +3,6 @@
 #
 # JUST A BANNER
 ##
-[[ "$_BUILD" ]] && . "$_BUILD/fuct-worker.sh"
-[[ "$BUILD" ]] && . "$BUILD/fuct-worker.sh"
 
 if [ "$1" == WELCOME ] ; 
 then

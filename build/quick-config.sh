@@ -33,8 +33,8 @@ if [ -z "$CONFIG" ] && [ -z "$_CONFIG" ]; then
   exit 1
 fi
 [[ -z "$CONFIG" ]] && [[ "$_CONFIG" ]] && CONFIG="$_CONFIG"
-
 ##################################################################
+
 # AND.... GO!
 unset _confirm
 

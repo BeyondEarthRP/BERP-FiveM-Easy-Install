@@ -49,7 +49,7 @@ load_user_defaults() {
 
 	# PASSWORDS REMOVED FROM DEFAULTS (YOU CAN ADD THEM IF YOU LIKE
 	
-	INCLUDE_PASSWORDS="false"  # I WOULDN'T, BUT YOUR CALL.
+	INCLUDE_PASSWORDS="true"  # I WOULDN'T, BUT YOUR CALL.
 	
 	[[ "$INCLUDE_PASSWORDS"="false" ]] || [[ -z "$INCLUDE_PASSWORDS" ]] 	&&	\
 	local DEFFIGS=(																\
@@ -104,8 +104,8 @@ collect_figs() {
 	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
 	##
 
-	_INSTALL_DATE="${_INSTALL_DATE:=$(date '+%d/%m/%Y %H:%M:%S')}"
-	_CONFIG_TIMESTAMP="${_CONFIG_TIMESTAMP:=$(date '+%d/%m/%Y %H:%M:%S')}"
+	_INSTALL_DATE="$(date '+%d/%m/%Y %H:%M:%S')"
+	_CONFIG_TIMESTAMP="$(date '+%d/%m/%Y %H:%M:%S')"
 
 
 	local ALLFIGS=(																\
@@ -114,8 +114,8 @@ collect_figs() {
 		MYSQL_PASSWORD          RCON_ENABLE             RCON_PASSWORD			\
 		STEAM_WEBAPIKEY         SV_LICENSEKEY           BLOWFISH_SECRET			\
 		DB_ROOT_PASSWORD        RCON_PASSWORD_GEN       RCON_PASSWORD_LENGTH	\
-        RCON_ASK_TO_CONFIRM     SERVER_NAME     		ARTIFACT_BUILD			\
-		REPO_NAME 				SOURCE_ROOT   			SOURCE					\
+	        RCON_ASK_TO_CONFIRM     SERVER_NAME     		ARTIFACT_BUILD			\
+		REPO_NAME 		SOURCE_ROOT   			SOURCE					\
 		SOFTWARE_ROOT           TFIVEM                  TCCORE					\
 		MAIN                    GAME                    RESOURCES				\
 		GAMEMODES               MAPS                    ESX						\
@@ -332,6 +332,9 @@ read_figs() {
 			# identify branch name
 			local _jq="$(eval echo \$jq_${_fig})"
 
+			# identify default name
+			local _def="$(eval echo _${_fig})"
+
 			[[ "$__INVALID__" ]] && unset __INVALID__  # CYA- PROBABLY REDUNDANT
 
 			# if config is not defined, skip this and data is invalid
@@ -342,7 +345,7 @@ read_figs() {
 
 			# track invalid figs in __CONFIG_UNFINISHED__ or write the configuration
 			[[ -n "$__INVALID__" ]] && __CONFIG_UNFINISHED__+=("$_fig") || printf -v "$_fig" '%s' "${_jsData}"
-
+			[[ -n "$__INVALID__" ]] && [[ -n "${!_def}" ]] && printf -v "$_fig" '%s' "${!_def}"
                 fi
 
 		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;  # If this fig is not hushed
@@ -378,11 +381,25 @@ harvest() {
 	load_static_defaults
 	load_user_defaults
 
+	if [ -n "$__CONFIG_UNFINISHED__" ] ;
+	then
+		for _cfug in "${__CONFIG_UNFINISHED__[@]}" ;
+		do
+			if [[ ! " ${__CONFIG_UNFINISHED__[@]} " =~ " ${_cfug} " ]];
+			then
+				_all_new_+=("$_cfug")
+			fi
+		done
+	fi
+
 	[[ "$_all_new_" ]] && unset _all_new_ ; _all_new_=()
 
-	PROMPT="Would you like to see advanced configuration options? (probably not)"
-	pluck_fig "SHOW_ADVANCED" 11 false
-	_all_new_+=("SHOW_ADVANCED")
+        if [ "$__CONFIGURE__" ] || [ -z "$SHOW_ADVANCED" ] ;
+        then
+		PROMPT="Would you like to see advanced configuration options? (probably not)"
+		pluck_fig "SHOW_ADVANCED" 11 false
+		_all_new_+=("SHOW_ADVANCED")
+	fi
 
 	# SERVER_NAME
 	if [ "$__CONFIGURE__" ] || [ -z "$SERVER_NAME" ] ;
@@ -619,6 +636,18 @@ harvest() {
 	fi
 
 	CFX_BUILD="$(echo $ARTIFACT_BUILD | cut -f1 -d-)"
+
+        if [ -n "$__CONFIG_UNFINISHED__" ] ;
+        then
+                for _cfug in "${__CONFIG_UNFINISHED__[@]}" ;
+                do
+                        if [[ ! " ${__CONFIG_UNFINISHED__[@]} " =~ " ${_cfug} " ]];
+                        then
+                                _all_new_+=("$_cfug")
+                        fi
+                done
+        fi
+
 
 }
 
@@ -984,6 +1013,7 @@ cook_figs() {
 
 	for _cfug in "${_all_new_[@]}" ;
 	do
+		echo "Planting fig: $_cfug"
 		plant_fig "BASE_CONFIG" "$_cfug"
 	done
 
@@ -1359,6 +1389,8 @@ commit_rcon_password() {
 	# WHEN THE QUICK CONFIG COMMITS ITS DATA.
 	[[ -z "$CONFIG" ]] && echo "No config defined. failed." && exit 1
         local _content=$(cat "$CONFIG" 2>/dev/nul)
+	local _today=$(date +%Y-%m-%d)
+
 	if [ -n "$_content" ] ;
 	then  # if there is no content in the file... we probably shouldn't be this far.  My assumption here atleast.
 		[[ -z "$1" ]] && local _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")

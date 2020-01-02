@@ -2,8 +2,14 @@
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
+
+    [[ -z "$__RUNTIME__" ]] \
+      && printf "\nRuntime not loaded. This script requires Belch Runtime.\n$0...failed.\n\n" \
+      && exit 1
+
     VMENU_ROOT="$SOURCE/vMenu"
-    VMENU_PKG="vMenu-$($VMENU_ROOT/vmenu-version.sh).zip"
+    VMENU_FILE="$VMENU_ROOT/vmenu-version.sh"
+    VMENU_PKG="vMenu-${VMENU_FILE}.zip"
     VMENU="$VMENU_ROOT/$VMENU_PKG"
 
     if [ -f "$VMENU" ]; then

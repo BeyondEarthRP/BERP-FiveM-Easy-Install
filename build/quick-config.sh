@@ -38,7 +38,7 @@ fi
 # AND.... GO!
 unset _confirm
 
-check_for_config
+check_configuration
 if [ -n "$__INVALID_CONFIG__" ] ;
 then
 	__CONFIGURE__="1" ;
@@ -46,24 +46,27 @@ then
 	load_static_defaults
 fi ;
 
+color white - bold
+echo -e "\n\nWe are about to create a new configuration file."
+color - - clearAll
+
 while [ -n "$__CONFIGURE__" ] ;
 do
-  color red - bold
-  echo -e "\nWe are about to create a new configuration."
-
   # read it; check for user input or use default value; ignore the new line (back up!)
   color white - bold
-  echo -e -n "Continue? \e[93m[Y/n]\e[39m: \e[0m"
+  echo -e -n "Continue? \e[93m[Y/n]\e[39m: \e[s"
   read -n 1 yn
-  [[ ! -z "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D"
   color - - clearAll
+
+  [[ -z "$yn" ]] && printf "\e[u\e[1A\e[1D\e[s"
 
   [[ ! -z "${yn:=y}" ]]
   case "$yn" in
-    [Yy]* ) _confirm=y && echo -e " Yes, continue.\n" && break ;;
-    [Nn]* ) _confirm=n && echo -e " No, exit.\n" && break ;;
-    * ) echo -e "\nPlease answer yes or no (or hit control-c to cancel).\n" ;;
+    [Yy]* ) _confirm=y && printf "\e[u Yes, continue.\n\e[K\n\e[K" && break ;;
+    [Nn]* ) _confirm=n && printf "\e[u No, exit.\n\e[K\n\e[K" && break ;;
+        * ) printf "\e[1A\e[999D\e[K\e[97mWe are about to create a new configuration file. \e[91m(Answer with 'Yes' or 'No')\n\e[0m" ;;
   esac
+  printf "\e[s\e[1B\e[999D\e[K\e[u"
 done
 
 if [ "$__CONFIGURE__" ] && [ "$_confirm" == n ] ; then

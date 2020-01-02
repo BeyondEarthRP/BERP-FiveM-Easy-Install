@@ -178,7 +178,11 @@ add_salt() {
 salt_rcon() {
 	if [ "$RCON_ENABLE" == "true" ] ; then
 		local _today=$(date +%Y-%m-%d)
-		local _last_set="$(cat $CONFIG | jq -r '.sys.rcon.password.timestamp')"
+		local _content=$(cat "$CONFIG" 2>/dev/null)
+		if [ -n "$_content" ] ;
+		then
+			local _last_set="$(cat $CONFIG | jq -r '.sys.rcon.password.timestamp')"
+		fi
 		if [ -n "$_last_set" ] && [ "$_last_set" != "null" ] ;
 		then
 			local _d1=$(date -d "$_today" '+%s')
@@ -210,7 +214,7 @@ salt_rcon() {
 			color white - bold
 			echo "Writing new RCON password to config..."
 			color - - clearAll
-			cat "$CONFIG" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
+			commit_rcon_password
 
 			[[ -z "$RCON_PASSWORD" ]] && echo "RCON Password Generation Failed..." && exit 1 || echo "RCON Password generated..." && true
 		elif [ -z "$RCON_PASSWORD" ] || [ "$RCON_PASSWORD" == "random" ] || [ "$_since_set" -ge 30 ] || [ -z "$_last_set" ] ;
@@ -235,9 +239,13 @@ salt_rcon() {
 
 			if [ -z "$__KEEP__" ] ;
 			then
-				PROMPT="Enter RCON password"
-				pluck_fig "RCON_PASSWORD" "s:n/y" true 25 128
-				cat "$CONFIG" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
+				unset RCON_PASSWORD
+				while [ -z "$RCON_PASSWORD" ] ;
+				do
+					PROMPT="Enter RCON password"
+					pluck_fig "RCON_PASSWORD" "s:n/y" true 25 128
+				done
+				commit_rcon_password
 			else
 				printf "\n"
 				color yellow red bold
@@ -247,12 +255,43 @@ salt_rcon() {
                                 PROMPT="Do you want to silence this reminder for another 30 days? (really not recoomented)?"
                                 pluck_fig "__KEEP__" 11 false
 
-				[[ "$__KEEP__" == "true" ]] && printf "\n" && color yellow red bold \
-				  && echo -e "If you get hacked, don't cry to me. I hope it is a long password!" \
-				  && cat "$CONFIG" | jq ".sys.rcon.password.timestamp=\"${_today}\"" > "$CONFIG"
+				if [ "$__KEEP__" == "true" ] ;
+				then
+					 printf "\n"
+					color yellow red bold
+					echo -e -n "If you get hacked, don't cry to me. I hope it is a long password!\e[0m\n"
+					commit_rcon_password "timestamp"
+				fi
 			fi
 		fi
 	fi
+}
+
+commit_rcon_password() {
+	# IT IS ASSUMED THAT YOU MUST HAVE CONTENT IN THE FILE TO EVEN GET THIS FAR
+	# SO IF THIS VALIDATION FAILED, WE JUST SKIP THE ADDITION.  IT SHOULD GET ADDED
+	# WHEN THE QUICK CONFIG COMMITS ITS DATA.
+	[[ -z "$CONFIG" ]] && echo "No config defined. failed." && exit 1
+        local _content=$(cat "$CONFIG" 2>/dev/nul)
+	if [ -n "$_content" ] ;
+	then  # if there is no content in the file... we probably shouldn't be this far.  My assumption here atleast.
+		[[ -z "$1" ]] && local _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")
+		if [ -n "$_rev1"] ;
+              	then
+			_revision=$(echo "$_rev1" | jq ".sys.rcon.password.timestamp=\"${_today}\"")
+                      	unset _rev1
+		elif [ -n "$1" ] ;
+		then # IF $1 IS PASSED, ASSUME THIS IS ONLY A PASSWORD TIMESTAMP UPDATE
+			_revision=$(echo "$_content" | jq ".sys.rcon.password.timestamp=\"${_today}\"")
+		else
+                      	echo "failed while processing RCON password revision.  exiting."
+                	exit 1
+                fi
+        	[[ -n "$_revision" ]] && commit "_revision" && unset _revision
+
+		commit "_revision"
+        fi # OTHERWISE, SKIP THIS.  IT IS NOT NEEDED YET.
+	unset _content
 }
 
 # THIS STOPS A SCREEN SESSION.

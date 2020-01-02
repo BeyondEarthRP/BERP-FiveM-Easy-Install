@@ -32,7 +32,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	[[ "$APPMAIN" != "CONFIG" ]] && define_runtime_env QUIETLY || define_runtime_env
 
 	unset __INVALID_CONFIG__
-	check_for_config QUIETLY
+	check_configuration QUIETLY
 	[[ "$APPMAIN" != "CONFIG" ]] && [[ -n "$__INVALID_CONFIG__" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG
 	while [ -n "$__INVALID_CONFIG__" ] ;
 	do
@@ -41,7 +41,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 		      "CONFIG" ) printf "Preparing configuration wizard..." ;;
 		esac
 		unset __INVALID_CONFIG__
-		check_for_config
+		check_configuration
 	done
 	[[ "$APPMAIN" != "CONFIG" ]] && [[ -n "$__LOADING_STOPPED__" ]] \
 	  && printf "\n\n" && loading && unset __LOADING_STOPPED__
@@ -96,7 +96,7 @@ elif [ ! -z "$1" ] && [ "$1" == "RUNTIME" ]; then
 
 	initialize
 	define_runtime_env
-	check_for_config RUNTIME
+	check_configuration RUNTIME
 	[[ -z "$__INVALID_CONFIG__" ]] && collect_figs
 
 	## ---- BUILD RUNTIME ONLY ---- ##

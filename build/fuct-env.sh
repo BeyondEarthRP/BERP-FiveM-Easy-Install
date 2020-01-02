@@ -84,7 +84,7 @@ define_runtime_env() {
 }
 
 
-check_for_config() {
+check_configuration() {
 	#####################################################################
 	#
 	# CHECK FOR A CONFIGURAITON FILE, IF NOT FOUND THEN CREATE IT.
@@ -92,7 +92,7 @@ check_for_config() {
 	[[ -z "__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
 	[[ "$1" != "QUIETLY" ]] && echo "Looking for a configuration..."
 
-	_content="$(cat $CONFIG 2> /dev/null)"
+	local _content=$(cat "$CONFIG" 2> /dev/null)
 	if [ -n "$CONFIG" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
 	then
 		__CONFIG__="Config file defined."
@@ -121,6 +121,7 @@ check_for_config() {
                 [[ "$1" != "QUIETLY" ]] && echo "$__INVALID_CONFIG__"
 
 	fi
+	unset _content
 }
 
 

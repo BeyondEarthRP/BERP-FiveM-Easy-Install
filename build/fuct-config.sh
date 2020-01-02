@@ -15,10 +15,10 @@ load_static_defaults() {
 	_STEAM_WEBAPIKEY=""
 	_SV_LICENSEKEY=""
 
-	_RCON=true
-	_RCON_PASSWORD_GEN=true
-	_RCON_PASSWORD_LENGTH=64
-	_RCON_ASK_TO_CONFIRM=false
+	_RCON="true"
+	_RCON_PASSWORD_GEN="true"
+	_RCON_PASSWORD_LENGTH="64"
+	_RCON_ASK_TO_CONFIRM="false"
 
 	_TXADMIN_BACKUP_FOLDER="data-txadmin"
 	_DB_BACKUP_FOLDER="data-mysql"
@@ -59,8 +59,8 @@ load_user_defaults() {
 }
 
 pluck_fig() { # fig // prompt // confirm => 0/1
+  local __cached_prompt="$PROMPT"
   local __prompt="$PROMPT" ; unset PROMPT
-
   local __fig_key="$1" ;
   local __verbose="$2" ;
   local __random="$3" ;
@@ -103,6 +103,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
                                                                   # Assign the prompt (with or without default value)- then clean up
   [[ "${__prompt__:=$__prompt}"  ]] && unset __prompt
+				# I store the previous prompt for use later if i need to reform a confirm questions with it.
   if [ ! -z "$__verbose" ] ;                                                                     # If the confirmation is enabled
   then                                                                        # check if the setting is a valid int (1 = on / 2 = off)
     if [[ "$__verbose" =~ '^[0-9]+$' ]] ;                                                     # If this validation checks out okay
@@ -211,17 +212,17 @@ pluck_fig() { # fig // prompt // confirm => 0/1
         # PROMPT THE USER
         ##  -- yes/no question
         color white - bold ;
-        echo -e -n "$__prompt__: " && printf "\e[s" && read -n 1 yn ; # Prompt the user
+        printf "$__prompt__: \e[s" && read -n 1 yn ; # Prompt the user
 
-        [[ ! -z "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D" ;
+        [[ -n "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D" ;
         color - - clearAll ;
 
         [[ "${yn:=$__q}" ]]  # check user input against default (if blank and has a default)
 
         case "$yn" in
           [Yy]* ) local __return=true ; echo -e " Yes.\n" ;;
-          [Nn]* ) local __return=false ; echo -e " No.\n"  ;;
-              * ) echo -e "\nPlease answer yes or no (or hit control-c to cancel).\n" ;;
+          [Nn]* ) local __return=false ; echo -e " No.\n" ;;
+              * ) echo -e "\nPlease answer yes or no (or hit control-c to cancel)\n" ;;
         esac
 
       #### 20 #############################################
@@ -242,8 +243,8 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       # PROMPT THE USER
       ## -- standard prompt
 	  [[ "$__random" == "true" ]] \
-	    && echo -e -n "\n   \e[93m\e[1mRandom Password (Leave Blank to Accept):\n\n" \
-	    && echo -e -n "        \e[33m> \e[31m$__default \e[33m<\e[0m\n\n"
+	    && printf "   \e[93m\e[1mRandom Password (Leave Blank to Accept):\n\n" \
+	    && echo -e -n "\t\e[33m> \e[31m$__default \e[33m<\e[0m\n\n"
       color white - bold ;
       echo -n "$__prompt__: " ; # prompt the user
       color - - clearAll ;
@@ -251,7 +252,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
       read __return ; # read in the user's response to the prompt
     fi
 
-    if [[ ! -z "$__default" ]] ;
+    if [[ -n "$__default" ]] ;
     then       # if there is a default value,
       [[ "${__return:=$__default}" ]] ;    # read in input or use default value.
     fi                                    # otherwise, just use the input even if it is blank
@@ -263,15 +264,15 @@ pluck_fig() { # fig // prompt // confirm => 0/1
     then  # if there is an input that is not zero length
       [[ "$__invalid" ]] && unset __invalid   # clear whatever setting may be set to __invalid (dusting off the equipment)
       local __valid=1 # pre-validate the users input
-      local __length="$(expr length $__return)"  # what is the length
+      local __length=$(expr length "$__return")  # what is the length
 
       # NUMBER VALIDATION
       if [ "$__verbose" == 20 ] ; # this is a number input
       then
         if [ "$__return" -eq "$__return" ] 2> /dev/null    # check if user entered a valid integer
         then # This is a number
-          [[ ! "$__return" -ge "$__i1" ]] && __invalid="You've entered a number less than $__i1..." && unset __valid ;
-          [[ ! "$__return" -le "$__i2" ]] && __invalid="You've entered a number greater than $__i2..." && unset __valid ;
+          [[ "$__return" -le "$__i1" ]] && __invalid="You've entered a number less than $__i1..." && unset __valid ;
+          [[ "$__return" -ge "$__i2" ]] && __invalid="You've entered a number greater than $__i2..." && unset __valid ;
         else
           __invalid="This input requires you to enter a number."
           unset __valid ;
@@ -305,7 +306,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 
     # VALIDATION CHECK (DID THE ABOVE FLAG THIS? IF YES, INVALIDATE)
     [[ "$__return" ]] && [[ "$__invalid" ]] && unset __return  # if invalid, unset
-    if [ "$__return" ] && [ "$__valid" ] ;  # if there is an input that is not zero length
+    if [ "$__return" ] && [ "$__valid" ] ;  # if there is input that is not zero length
     then # the input was found and validated
       if [ ! "$__verbose_prompt" ] ;  # If there is no confirmation prompt set (or this is true false statement)
       then # then it has been disabled.
@@ -323,31 +324,41 @@ pluck_fig() { # fig // prompt // confirm => 0/1
         unset __confirm  # unsetting a var before i read in user input
         while true;
         do # loop while
-          [ ! -z "$__verbose_display" ] && echo -e "\n> $__return <\n"  # Console display of input (for confirmation)
+
+	  # Console display of input (for confirmation)
+          if [ -n "$__verbose_display" ] ;
+	  then
+	    local _qref=$(echo "$__cached_prompt" | cut -f 3- -d" ")
+	    echo -e -n "\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[1A\e[K\e[999D"
+            echo -e -n "    \e[93m For the $_qref, you've entered:\e[0m\n\n"
+	    echo -e -n "\t\e[92m  $__return  \n\n"
+	  fi
 
           # echo the prompt with no newline; read the user input; backup 1 column (before newline)
           color white
-          echo -e -n "$__question__: " && printf "\e[s" && read -n 1 yn
-          [[ ! -z "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D"
+          printf "$__question__: \e[s" && read -n 1 yn
           color - - clearAll
+
+          [[ -n "$yn" ]] && printf "\e[2D" || printf "\e[u\e[1A\e[1D"
+          [[ "$yn" == "n" ]] && printf "\e[2K\e[1A\r"
 
           [[ "${yn:=$__p2}" ]]  # check user input against default (if blank and has a default)
           case "$yn" in
           [Yy]* ) local __confirm=y ; echo -e " Yes.\n" ;  break ;;
-          [Nn]* ) echo -e " No.\n" ; break ;;
-              * ) echo -e "\nPlease answer yes or no (or hit control-c to cancel).\n" ;;
+          [Nn]* ) unset __confirm ; break ;;
+              * ) printf "\e[2B\e[999D\e[K\e[91mPlease answer yes or no (or hit control-c to cancel).\e[0m" ;;
           esac
         done
-
         if [ "$__confirm" ] ; then
           local return__="$__return"
-
           unset __return
-
           printf -v "${__fig_key}" '%s' "$return__"
-
+	  printf "\n"
         else
-          echo -e "\nOkay, user input cleared... Let's try that again.\n"
+	  [[ -n "$__RESET__" ]] && printf "\e[5A\n\e[KOkay, user input cleared... Let's try that again.\n"
+	  [[ -z "$__RESET__" ]] && local __RESET__="1" \
+            && printf "\n\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r\e[1A\e[2K\r" \
+            && printf "Okay, user input cleared... Let's try that again.\n"
         fi
 
       fi
@@ -377,7 +388,21 @@ harvest() {
 	# FIG  dialog:default/display random MIN  MAX #
 	#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 
+	load_static_defaults
+	load_user_defaults
+
 	[[ "$_all_new_" ]] && unset _all_new_ ; _all_new_=()
+
+	PROMPT="Would you like to see advanced configuration options? (probably not)"
+	pluck_fig "__ADVANCED__" 11 false
+
+	# SERVER_NAME
+	if [ "$__CONFIGURE__" ] || [ -z "$SERVER_NAME" ] ;
+	then
+		PROMPT="What would you like to name the FiveM server?"
+		pluck_fig "SERVER_NAME" 0
+		_all_new_+=("SERVER_NAME")
+	fi
 
 	# SERVICE ACCOUNT
 	if [ "$__CONFIGURE__" ] || [ -z "$SERVICE_ACCOUNT" ] ;
@@ -398,60 +423,60 @@ harvest() {
         [[ -z "$ESMOD" ]] &&  ESMOD="${ESSENTIAL}/essentialmode" && _all_new_+=("ESMOD")
         [[ -z "$VEHICLES" ]] &&  VEHICLES="${RESOURCES}/[vehicles]" && _all_new_+=("VEHICLES")
 
-
 	# SERVICE_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SERVICE_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$SERVICE_PASSWORD" ] ;
 	then
-		PROMPT=$(echo "Enter a password for $SERVICE_ACCOUNT")
+		PROMPT=$(echo "Enter a password for '$SERVICE_ACCOUNT' service account")
 		pluck_fig "SERVICE_PASSWORD" "s:n/y" true 9
 		_all_new_+=("SERVICE_PASSWORD")
 	fi
 
 	# DB_ROOT_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$DB_ROOT_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$DB_ROOT_PASSWORD" ] ;
 	then
-		PROMPT="Password for root account on MySQL"
+		PROMPT="Enter a password for the MySQL 'root' account"
 		pluck_fig "DB_ROOT_PASSWORD" "s:n/y" true 16
 		_all_new_+=("DB_ROOT_PASSWORD")
 	fi
 
 	# MYSQL_USER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$MYSQL_USER" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$MYSQL_USER" ] ;
 	then
-		PROMPT="Enter MySql username for the essentialmode database"
+		echo -e "\e[91mThis should never be set to 'root' (it may not even work that way)\e[0m\n"
+		PROMPT="Enter a username for MySQL, that will own the essentialmode database"
 		pluck_fig "MYSQL_USER" "0" 0
 		_all_new_+=("MYSQL_USER")
 	fi
 
 	# MYSQL_PASSWORD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$MYSQL_PASSWORD" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$MYSQL_PASSWORD" ] ;
 	then
-		PROMPT=$(echo "Enter MySQL password for $MYSQL_USER")
+		PROMPT=$(echo "Enter a password for '$MYSQL_USER' to access MySQL")
 		pluck_fig "MYSQL_PASSWORD" "s:n/y" true 16 128
 		_all_new_+=("MYSQL_PASSWORD")
 	fi
 
 	# BLOWFISH_SECRET
-	if [ "$__CONFIGURE__" ] ||  [ -z "$BLOWFISH_SECRET" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$BLOWFISH_SECRET" ] ;
 	then
-		PROMPT="Enter Blowfish Secret for PHP"
+		PROMPT="Enter a Blowfish Secret for the PHP config"
 		pluck_fig "BLOWFISH_SECRET" "s:n/y" true 16
 		_all_new_+=("BLOWFISH_SECRET")
 	fi
 
 	# STEAM_WEBAPIKEY
-	if [ "$__CONFIGURE__" ] ||  [ -z "$STEAM_WEBAPIKEY" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$STEAM_WEBAPIKEY" ] ;
 	then
-		PROMPT="Enter your Steam Web API Key"
-		pluck_fig "STEAM_WEBAPIKEY" "s:y/y" false
+		PROMPT="Enter your Steam Web-API key"
+		pluck_fig "STEAM_WEBAPIKEY" 0 false
 		_all_new_+=("STEAM_WEBAPIKEY")
 	fi
 
 	# SV_LICENSEKEY
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SV_LICENSEKEY" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$SV_LICENSEKEY" ] ;
 	then
-		PROMPT="Enter your Cfx FiveM License"
-		pluck_fig "SV_LICENSEKEY" "s:y/y" false
+		PROMPT="Enter your Cfx FiveM license key"
+		pluck_fig "SV_LICENSEKEY" 0 false
 		_all_new_+=("SV_LICENSEKEY")
 	fi
 
@@ -460,7 +485,7 @@ harvest() {
 	## THESE ARE NOT SETTINGS TO BE CHANGED- DOING SO WILL VOID THE MANUFACTURERS WARRANTY!
 
 	# RCON
-	if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_ENABLE" ] ;
+	if [ "$__CONFIGURE__" ] || [ -z "$RCON_ENABLE" ] ;
 	then
 		PROMPT="Enable RCON (probably not needed)?"
 		pluck_fig "RCON_ENABLE" 10 false
@@ -469,7 +494,7 @@ harvest() {
 	if [ "$RCON_ENABLE" == "true" ] ;
         then
 		# RCON_PASSWORD_GEN
-		if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD_GEN" ] ;
+		if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD_GEN" ] ;
 		then
 			PROMPT="(recommended) Allow RCON Passwords to be randomly generated?"
 			pluck_fig "RCON_PASSWORD_GEN" 10 false
@@ -478,17 +503,21 @@ harvest() {
 		if [ "$RCON_PASSWORD_GEN" == "true" ] ;
 		then
 
-			# RCON_PASSWORD_LENGTH
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD_LENGTH" ] ;
+			if [ "$__ADVANCED__" == "true" ] ;
 			then
-				PROMPT="Number of characters to generate?"
-				pluck_fig "RCON_PASSWORD_LENGTH" 20 false 20 128
-				_all_new_+=("RCON_PASSWORD_LENGTH")
-
+				# RCON_PASSWORD_LENGTH
+				if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD_LENGTH" ] ;
+				then
+					PROMPT="Number of characters to generate?"
+					pluck_fig "RCON_PASSWORD_LENGTH" 20 false 20 128
+					_all_new_+=("RCON_PASSWORD_LENGTH")
+				fi
+			else
+				RCON_PASSWORD_LENGTH="$_RCON_PASSWORD_LENGTH"
 			fi
 
 			# RCON_ASK_TO_CONFIRM
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_ASK_TO_CONFIRM" ] ;
+			if [ "$__CONFIGURE__" ] || [ -z "$RCON_ASK_TO_CONFIRM" ] ;
 			then
 				PROMPT="(not recommended) Require manual approval of each randomly generated password"
 				pluck_fig "RCON_ASK_TO_CONFIRM" 11 false
@@ -504,9 +533,9 @@ harvest() {
 	                RCON_ASK_TO_CONFIRM="$_RCON_ASK_TO_CONFIRM"
 
 			# RCON_PASSWORD
-			if [ "$__CONFIGURE__" ] ||  [ -z "$RCON_PASSWORD" ] ;
+			if [ "$__CONFIGURE__" ] || [ -z "$RCON_PASSWORD" ] ;
 			then
-				PROMPT="Enter RCON password:"
+				PROMPT="Enter the password for RCON access:"
 				pluck_fig "RCON_PASSWORD" "s:n/y" true 30 128
 				_all_new_+=("RCON_PASSWORD")
 			fi
@@ -517,66 +546,66 @@ harvest() {
 		RCON_ASK_TO_CONFIRM="$_RCON_ASK_TO_CONFIRM"
 	fi
 
-	# TXADMIN_BACKUP_FOLDER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$TXADMIN_BACKUP_FOLDER" ] ;
+	if [ "$__ADVANCED__" == "true" ] ;
 	then
-		PROMPT="What name would you like for the txAdmin backup folder?"
-		pluck_fig "TXADMIN_BACKUP_FOLDER" "s:y/y"
-		_all_new_+=("TXADMIN_BACKUP_FOLDER")
+		# TXADMIN_BACKUP_FOLDER
+		if [ "$__CONFIGURE__" ] || [ -z "$TXADMIN_BACKUP_FOLDER" ] ;
+		then
+			PROMPT="What name would you like for the txAdmin backup folder?"
+			pluck_fig "TXADMIN_BACKUP_FOLDER" 0
+			_all_new_+=("TXADMIN_BACKUP_FOLDER")
 
-	fi
+		fi
 
-	# DB_BACKUP_FOLDER
-	if [ "$__CONFIGURE__" ] ||  [ -z "$DB_BACKUP_FOLDER" ] ;
-	then
-		PROMPT="What name would you like for the MySQL backup folder?"
-		pluck_fig "DB_BACKUP_FOLDER" "s:y/y"
-		_all_new_+=("DB_BACKUP_FOLDER")
-	fi
+		# DB_BACKUP_FOLDER
+		if [ "$__CONFIGURE__" ] || [ -z "$DB_BACKUP_FOLDER" ] ;
+		then
+			PROMPT="What name would you like for the MySQL backup folder?"
+			pluck_fig "DB_BACKUP_FOLDER" "s:y/n"
+			_all_new_+=("DB_BACKUP_FOLDER")
+		fi
 
-	# ARTIFACT_BUILD
-	if [ "$__CONFIGURE__" ] ||  [ -z "$ARTIFACT_BUILD" ] ;
-	then
-		printf "\n" ; color red - bold ; color - - underline
-		echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**" ; printf "\e[0m\n\n"
-		color white - bold ; echo -e "What CFX Artifact Build would you like to use?" ; color - - clearAll
+		# ARTIFACT_BUILD
+		if [ -n "$__CONFIGURE__" ] || [ -z "$ARTIFACT_BUILD" ] ;
+		then
+			printf "\n" ; color red - bold ; color - - underline
+			echo -e -n "**ONLY DO THIS IF YOU KNOW HOW! OTHERWISE, JUST HIT ENTER**\e[0m\n\n"
+			color white - bold ; echo -e "What CFX Artifact Build would you like to use?" ; color - - clearAll
 
-		PROMPT="Enter CFX Build Artifact"
-		pluck_fig "ARTIFACT_BUILD" "s:y/y"
-		_all_new_+=("ARTIFACT_BUILD")
-	fi
+			PROMPT="Enter CFX Build Artifact"
+			pluck_fig "ARTIFACT_BUILD" 0
+			_all_new_+=("ARTIFACT_BUILD")
+		fi
 
-	# SOFTWARE_ROOT
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SOFTWARE_ROOT" ] ;
-	then
-	printf "\n" ; color yellow - bold ; color - - underline
-		echo -e -n "NOTE: This is not the repo.  It is basically a cache of temporary downloads."
-		printf "\e[0m\n"
+		# SOFTWARE_ROOT
+		if [ "$__CONFIGURE__" ] || [ -z "$SOFTWARE_ROOT" ] ;
+		then
+			printf "\n" ; color yellow - bold ; color - - underline
+			echo -e -n "NOTE: This is not the repo.  It's essentially just a cache of temporary downloads.\e[0m\n\n"
 
-		PROMPT="Where would you like to store the downloaded files?"
-		pluck_fig "SOFTWARE_ROOT" "s:y/y"
-		_all_new_+=("SOFTWARE_ROOT")
+			PROMPT="Where would you like to store the downloaded files?"
+			pluck_fig "SOFTWARE_ROOT" 0
+			_all_new_+=("SOFTWARE_ROOT")
+		fi
+
+
+		# REPO_NAME
+		if [ "$__CONFIGURE__" ] || [ -z "$REPO_NAME" ] ;
+		then
+			PROMPT="What would you like to name the B.E.R.P. Source Repository?"
+			pluck_fig "REPO_NAME" 0
+			_all_new_+=("REPO_NAME")
+		fi
+	else
+		TXADMIN_BACKUP_FOLDER="$_TXADMIN_BACKUP_FOLDER" && _all_new_+=("TXADMIN_BACKUP_FOLDER")
+		DB_BACKUP_FOLDER="$_DB_BACKUP_FOLDER" &&  _all_new_+=("DB_BACKUP_FOLDER")
+		ARTIFACT_BUILD="$_ARTIFACT_BUILD" &&  _all_new_+=("ARTIFACT_BUILD")
+		SOFTWARE_ROOT="$_SOFTWARE_ROOT" &&  _all_new_+=("SOFTWARE_ROOT")
+		REPO_NAME="$_REPO_NAME" &&  _all_new_+=("REPO_NAME")
 	fi
 	[[ -z "$TFIVEM" ]] && TFIVEM="${SOFTWARE_ROOT}/fivem" && _all_new_+=("TFIVEM")
         [[ -z "$TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server" && _all_new_+=("TCCORE")
         [[ -z "$TCCORE"  ]] && TCCORE="${TFIVEM}/citizenfx.core.server" && _all_new_+=("TCCORE")
-
-
-	# REPO_NAME
-	if [ "$__CONFIGURE__" ] ||  [ -z "$REPO_NAME" ] ;
-	then
-		PROMPT="What would you like to name the B.E.R.P. Source Repository?"
-		pluck_fig "REPO_NAME" "s:y/y"
-		_all_new_+=("REPO_NAME")
-	fi
-
-	# SERVER_NAME
-	if [ "$__CONFIGURE__" ] ||  [ -z "$SERVER_NAME" ] ;
-	then
-		PROMPT="What would you like to name the server?"
-		pluck_fig "SERVER_NAME" "s:y/y" false
-		_all_new_+=("SERVER_NAME")
-	fi
 
 	# TXADMIN_BACKUP
 	if [ "$__CONFIGURE__" ] || [ "$TXADMIN_BACKUP" != "$PRIVATE/$TXADMIN_BACKUP_FOLDER" ] ;
@@ -633,30 +662,20 @@ cook_figs() {
 		fi
 	fi
 
-	if [ -n "$_content" ] ;
-	then
-		printf "\n\n-------------------------\n    CURRENT CONFIG\n\n-------------------------\n"
-		jq . "$CONFIG"
-		printf "\n"
-	fi
-
 	identify_branches
-	[ "${#_all_new_[@]}" -gt 0 ] && printf "\nMaking these changes to the configuration...\n"
+
 	for _cfug in "${_all_new_[@]}" ;
 	do
 		plant_fig "BASE_CONFIG" "$_cfug"
 	done
 
-        if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$_content" ] ;
+        if [ -d "${CONFIG%/*}" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
         then
 		color lightYellow - bold
-		echo -e "\nPrevious config found... Rebuilding with new config options...\n"
+		echo -e "\nPrevious config found... Rebuilding with new config values...\n"
 		echo -e "This will over-write the current config found at:\n"
 		echo -e "        $CONFIG\n\n"
 		color - - clearAll
-
-		display_array_title "red" "New or altered:"
-		display_array "red" "${_all_new_[@]}"
 
 		color white - bold
 		echo -e "\nLast chance to cancel..."
@@ -664,6 +683,12 @@ cook_figs() {
 
 	        while [ -z "$__confirmed__" ] ;
 	        do
+			ask_to_review _content - "current"
+			ask_to_review BASE_CONFIG red "revised"
+
+			display_array_title "red" "New or altered values:"
+			display_array "red" "${_all_new_[@]}"
+
 			color white - bold
 		        echo -n -e "Overwrite system config with above values? "
 		        color lightYellow - bold
@@ -686,27 +711,213 @@ cook_figs() {
 		printf "\nOkay...\n"
 		color - - clearAll
 	fi
-
+	unset _content
 
 	if [ -n "$BASE_CONFIG" ] ;
 	then
-		printf "\nWriting config to:\n"
-		color yellow -
-		printf "\t$CONFIG\n\n"
-		color - - clearAll
-		color red -
-		printf "\n\n-------------------------\n     NEW CONFIG\n\n-------------------------\n"
-		echo "$BASE_CONFIG" | jq .
-		echo "$BASE_CONFIG" | jq . > "$CONFIG"
-		printf "\nDONE!\n"
-		color - - clearAll
+
+		commit "BASE_CONFIG"
 	else
-		printf "FAILED AT CONFUGGER."
+		printf "CONFUGGERING FAILED."
 		exit 1
 	fi
 
 }
 
+ask_to_review() {
+	# USAGE:
+	# $1 = NAME OF VAR THAT IS HOLDING REVIEW DATA (WITHOUT THE $)
+	# $2 = (can be skipped with a - [dash]) COLOR  (eg ask_to_review "data" - )
+	# $3 = (can be blank) Type of configuration (eg "new" configuraiton // "existing" configuration
+
+	[[ -z "$1" ]] && echo "Must include data to review" && exit 1 || local _data_holder="$1"
+	[[ -n "$3" ]] && local _type_name="$3"
+
+	pluck_fig "__REVIEW__" 11 false
+	if [ "$__REVIEW__" == "true" ] ;
+	then
+		if [ -n "$_type_name" ] ;
+		then
+			PROMPT="Would you like to review the $_type_name configuration?"
+			local _head="${_type_name^^} CONFIGURATION"
+		else
+			PROMPT="Would you like to review the configuration?"
+			local _head="CONFIGURATION"
+		fi
+
+		unset __REVIEW__
+		unset __READY__
+		until [ "$__READY__" == "true" ] ;
+		do
+			[[ -n "$2" ]] && [[ "$2" != "-" ]] && color "$2" - bold || color gray - bold
+			printf "\n---------------[ $_head ]---------------\n"
+			color - - clearAll
+			echo "${!_data_holder}" | jq .
+			printf "\n\n"
+
+			PROMPT="Ready to continue? (Control-C to Cancel)"
+			pluck_fig "__READY__" 11 false
+		done
+		unset __READY__
+	else
+		unset __REVIEW__
+	fi
+
+}
+
+commit() {
+	# USAGE:
+	# commit    		::    VALIDATION ONLY - JUST CHECKS FOR CONFIG CONTENT
+	# commit  COMMIT_NAME   ::    NEED TO USE THE NAME OF THE VAR, NOT THE ACTUAL VAR
+	#			      THIS WILL COMMIT THE CHANGE (FIRST VERIFYING IT IS NOT 0 LENGTH)
+	#			      THEN IT WILL VALIDATE THAT THE CHANGE TOOK SUCCESSFULLY.
+
+	[[ -n "$1" ]] && local _commit="$(eval echo \${$1})"
+	if [ -n "$1" ] && [ -z "$_commit" ] ;
+	then
+		printf "\n\e[91m\e[4mNothing to commmit!\e[0m\n\n"
+
+	elif [ -z "$CONFIG" ] ;
+	then
+		printf "\n\e[91m\e[4mNo config defined!\e[0m\n\n"
+
+	elif [ -z "$1" ] ;
+	then
+		check_configuration QUIETLY
+                if [ -n "$__INVALID_CONFIG__" ] ;
+                then
+                        color red - bold
+                        printf "\nCONFIG CONTENT VALIDATION FAILED!\n"
+                        color - - clearAll
+                elif [ -n "$__CONFIG__" ] ;
+                then
+			color green - bold
+			printf "\nCONFIG CONTENT VALIDATION SUCCEEDED!\n"
+			color - - clearAll
+                fi
+	elif [ -n "$1" ] && [ -n "$_commit" ] && [ -n "$CONFIG" ] ;
+	then
+		# OKAY TO ASSUME:
+		# 1) A COMMIT ATTEMPT IS BEING MADE
+		# 2) THE COMMIT IS NOT ZERO LENGTH
+		# 3) THERE IS A CONFIG FILE DEFINED
+
+		check_configuration QUIETLY
+                if [ -n "$__INVALID_CONFIG__" ] ;
+                then
+			# OKAY TO ASSUME:
+                        # 4) CONFIG AT DEFINED LOCATION IS CURRENTLY INVALID
+                        local __NEW__="1"
+			# current config is invalid
+			# starting from scratch
+
+                elif [ -n "$__CONFIG__" ] ;
+                then
+			# OKAY TO ASSUME:
+			# 4) CONFIG AT DEFINED LOCATION IS VALID
+
+                        [[ -z "$__QUIET_MODE__" ]] && color red - bold \
+                          && echo "$__CONFIG__" && color - - clearAll
+
+			# CACHE THE CURRENT CONFIG
+			local _cached_config=$(cat "$CONFIG" 2>/dev/null)
+
+			# IF THE CURRENT CONFIG DIDNT CACHE (IT SHOULD, BUT OKAY) THEN CALL IT OUT
+			if [ -z "$_cached_config" ] ;
+			then
+				echo -e "\nCaching of current config has failed..."
+				echo -e "If we continue, there will be no reverting a failed commit.\n"
+				unset __CURRENT__
+				PROMPT="Are you sure you still want to continue?"
+				unset __CONTINUE__
+				pluck_fig "__CONTINUE__" 11 false
+				if [ -n "$__CONTINUE__" ] ;
+				then
+					echo -e "\n\t\e[91m\e[4mOkay, you've been warned.\e[0m\n"
+					unset __CONTINUE__
+				else
+					echo -e "\n\e[91mConfiguration cancelled by user... exiting!\e[0m\n"
+					exit 1
+				fi
+			fi
+                fi
+
+		while true ;
+		do
+
+			color yellow - bold
+			printf "\n      Writing config to:\n"
+			color yellow - dim
+			printf "      $CONFIG\n\n"
+			color - - clearAll
+
+			echo "$_commit" > "$CONFIG"   				  # WRITE THE CONFIG
+
+			unset _content					      # CYA-Probably overkill though
+			local _content=$(cat "$CONFIG" 2>/dev/null)    # READ IN THE REVISED CONFIG CONTENTS
+
+			if [ -n "$_content" ] ;
+			then
+				if [ "$_commit" == "$_content" ] ;
+				then
+					# SUCCESS!
+		                        color green - bold
+		                        printf "\nCONFIGURATION SAVED SUCCESSFULLY!\n"
+		                        color - - clearAll
+					ask_to_review "_content" "white" "saved"
+		                        unset _content
+					break ;
+
+				elif [ "$_cached_config" == "$_content" ] ;
+		                then
+					# NO CHANGES? WEIRD, BUT OKAY- LET ME KNOW.
+					color yellow - bold
+					echo "CONFIGURATION APPEARS UNALTERED..."
+					color - - clearAll
+					ask_to_review "_cached_config" "red" "revised"
+					ask_to_review "_commit" "red" "revised"
+					ask_to_review "_content" "red" "committed"
+				else
+					echo "unknown data received during commit verification.  failed!"
+					exit 1
+				fi
+			elif [ -n "$_cached_config" ] ;
+			then
+				# FAILED, BUT WE CAN GO BACK!
+		                color red - bold
+	        	        printf "\nFAILED TO SAVE CONFIGURATION!\n"
+	                        color - - clearAll
+
+				color white - bold
+				echo "reverting..."
+				color - - clearAll
+				echo "$_cached_config" | jq . > "$CONFIG"
+				local _content=$(cat "$CONFIG" 2>/dev/null)
+				[[ -z "$_content" ]] \
+				  && echo "well, I tried to commit... but I got my privates stuck in a ceiling fan" \
+				  && echo "...I've failed.  I'm very sorry!" && exit 1
+				[[ -n "$_content" ]] && [[ "$_content" == "$_cached_config" ]] \
+				  && echo "Successfully reverted the configuration back to its original state."
+
+			elif [ -z "$_cached_config" ] ;
+                        then
+				# FAILED, NO RETURN!
+				echo "well, I tried to commit... but I got my privates stuck in a ceiling fan"
+				echo "If you are seeing this... I'm sorry.  You were warned though!"
+				echo -e "\nWe could try again, but I don't have much hope...\n"
+			else
+				# I HAVE NO IDEA WHY THIS WOULD EVER TRIGGER
+				echo "Configuration to commit configuration.  FAILED!"
+				exit 1
+			fi
+			printf "\n\n"
+			PROMPT="Try again?" && unset __CONTINUE__
+			pluck_fig "__CONTINUE__" 10 false
+			[[ -z "$__CONTINUE__" ]] && break || unset __CONTINUE__
+		done
+		unset _content
+	fi
+}
 
 plant_fig() {
 	local _crop="$1"
@@ -716,12 +927,11 @@ plant_fig() {
 	[[ -z "$__RUNTIME__" ]] && get_env_config_paths
 	[[ -z "$__RUNTIME__" ]] && get_system_config_paths
 
-	#_yield=$(echo -e "${!_crop}" |  jq --arg value "${!_fig}" --arg path "$_path" '$path=[$value]')
-
 	_fruit="${!_fig}"
 	_yield=$(eval echo \${$_crop} | jq $_path=\""$_fruit"\")
 
-	[[ -n "$_yield" ]] && printf -v "$_crop" '%s' "$_yield" || echo "error"
+	[[ -n "$_yield" ]] && printf -v "$_crop" '%s' "$_yield" \
+	  || echo "\n\e[97merror planting fig!\e[0m"
 }
 
 
@@ -789,3 +999,4 @@ figsower() {
 	unset _figtree ; unset _cfug ; unset _prompt ;
 	unset _vbose ; unset _rdom ; unset _min ; unset _max ;
 }
+

@@ -276,7 +276,7 @@ commit_rcon_password() {
 	if [ -n "$_content" ] ;
 	then  # if there is no content in the file... we probably shouldn't be this far.  My assumption here atleast.
 		[[ -z "$1" ]] && local _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")
-		if [ -n "$_rev1"] ;
+		if [ -n "$_rev1" ] ;
               	then
 			_revision=$(echo "$_rev1" | jq ".sys.rcon.password.timestamp=\"${_today}\"")
                       	unset _rev1
@@ -361,7 +361,7 @@ display_array_title() {
 	printf "\e[0m\e[1m"
 	[[ -n "$2" ]] && local _color="$1" || local _color="none"
 	[[ -n "$2" ]] && local _title="$2" || local _title="$1"
-	[[ -z "$_title" ]] && echo "no title definition.  can't be right..." && break
+	[[ -z "$_title" ]] && echo "no title definition.  can't be right..." && exit 1
 
         case "$_color" in
   	      "red" ) printf "\e[31m" ;;

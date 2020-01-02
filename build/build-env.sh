@@ -18,9 +18,7 @@ fi
 
 #####################################################################
 # IMPORT FUNCTIONS
-. "$BUILD/fuct-env.sh"
-. "$BUILD/fuct-config.sh"
-. "$BUILD/fuct-worker.sh"
+. "$BUILD/includes.sh"
 
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"

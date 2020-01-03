@@ -34,15 +34,14 @@ if [ ! "$BUILD" ] ;
 then
   THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))" ;
   [[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT/build" ]] && _BUILD="$THIS_SCRIPT_ROOT/build"
-  [[ ! "$_BUILD" ]] && [[ -d "$(dirname $THIS_SCRIPT_ROOT)/build" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)/build"
+  [[ ! "$_BUILD" ]] && [[ -d $(dirname "$THIS_SCRIPT_ROOT")/build ]] && _BUILD=$(dirname "$THIS_SCRIPT_ROOT")/build
   [[ ! "$_BUILD" ]] && [[ -d "$THIS_SCRIPT_ROOT" ]] && _BUILD="$THIS_SCRIPT_ROOT"
   unset THIS_SCRIPT_ROOT ;
 fi
 
 if [ -d "$_BUILD" ] && [ -f "$_BUILD/build-env.sh" ] ;
 then
-        BUILD="$_BUILD"
-	unset _BUILD ;
+        BUILD="$_BUILD" ; unset _BUILD ;
 
 	#####################################################################
 	#
@@ -51,13 +50,18 @@ then
 	. "$BUILD/just-a-banner.sh" WELCOME
 
 	color white - bold
-	echo -e -n "Building environment...\\\n"
+	echo -e -n "Building environment...\\n"
 	color - - clearAll
 	. "$BUILD/build-env.sh" EXECUTE
 
-	[[ -z "$CONFIG" ]] && _FAILED=1 && color red - bold \
-	  && echo -e -n "FAILED: no config file definition.\\\n\\\n" \
-	  && color - - clearAll && exit 1 || true
+	if [ -z "$CONFIG" ] ;
+	then
+	  _FAILED="1"
+	  color red - bold
+          echo -e -n "FAILED: no config file definition.\\n\\n"
+	  color - - clearAll
+          exit 1
+        fi
 
 
 	if [ "$__status" != "NO_CONFIG" ] ;
@@ -75,9 +79,9 @@ if [ "$_FAILED" == "1" ] ;
 then
 	exit 1
 fi
-echo -e "\\\n"
+echo -e "\\n"
 #####################################################################
-. "$BUILD/build-env.sh" RUNTIME  # This time for deployment execution
+#. "$BUILD/build-env.sh" RUNTIME  # This time for deployment execution
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
 ### BEGIN TO DO THINGS WITH STUFF ###################################
 #####################################################################
@@ -242,60 +246,22 @@ fi
 #
 # INJECT PERSONAL CREDENTIALS INTO THE CONFIGURATION FILE
 ##
-if [ ! -f "$GAME/server.cfg" ]; then
-    echo "Server configuration not found! Woopsie... FAILED!"
-	exit 1
-fi
-mv "$GAME/server.cfg" "$GAME/server.cfg.orig" #--> Renaming file to be processed
-
-#-RCON Password Creation
-echo "Generating RCON Password."
-    salt_rcon
-    rcon_placeholder="#rcon_password changeme"
-    rcon_actual="rcon_password \"${rcon_password}\""
-echo "Accepting original configuration; Injecting RCON configuration..."
-    sed "s/${rcon_placeholder}/${rcon_actual}/" "$GAME/server.cfg.orig" > "$GAME/server.cfg.rconCfg"
-    rm -f "$GAME/server.cfg.orig"  #--> cleaning up; handing off a .rconCfg
-
-#-mySql Configuration
-echo "Accepting RCON config handoff; Injecting MySQL Connection String..."
-    db_conn_placeholder="set mysql_connection_string \"server=localhost;database=essentialmode;userid=username;password=YourPassword\""
-    db_conn_actual="set mysql_connection_string \"server=localhost;database=essentialmode;userid=$mysql_user;password=$mysql_password\""
-    sed "s/$db_conn_placeholder/$db_conn_actual/" "$GAME/server.cfg.rconCfg" > "$GAME/server.cfg.dbCfg"
-    rm -f "$GAME/server.cfg.rconCfg" #--> cleaning up; handing off a .dbCfg
-
-#-Steam Key Injection into Config
-echo "Accepted MySql config handoff; Injecting Steam Key into config..."
-    steamKey_placeholder="set steam_webApiKey \"SteamKeyGoesHere\""
-    steamKey_actual="steam_webApiKey  \"${steam_webApiKey}\""
-    sed "s/${steamKey_placeholder}/${steamKey_actual}/" "$GAME/server.cfg.dbCfg" > "$GAME/server.cfg.steamCfg"
-    rm -f "$GAME/server.cfg.dbCfg" #--> cleaning up; handing off a .steamCfg
-
-#-FiveM License Key Injection into Config
-echo "Accepting Steam config handoff; Injecting FiveM License into config..."
-    sv_licenseKey_placeholder="sv_licenseKey LicenseKeyGoesHere"
-    sv_licenseKey_actual="sv_licenseKey ${sv_licenseKey}"
-    sed "s/${sv_licenseKey_placeholder}/${sv_licenseKey_actual}/" "$GAME/server.cfg.steamCfg" > "$GAME/server.cfg"
-    rm -f "$GAME/server.cfg.steamCfg" #--> cleaning up; handing off a server.cfg
-
-if [ -f "$GAME/server.cfg" ]; then
-    echo "Server configuration file found."
-else
-    echo "ERROR: Something went wrong during the configuration personalization..."
-fi
+personalize # the server.cfg with your personables and such.
 
 #####################################################################
 #
 # GENERATE THE START SCRIPT
 ##
 STARTUP_SCRIPT="$MAIN/start-fivem.sh"
+
+# MAKEY ANITY BITTY SRIP TO TAR TINGS!
 cat <<EOF > "$STARTUP_SCRIPT"
 #!/bin/bash
 echo "Starting FiveM..."
 screen -dmS "fivem" bash -c "trap 'echo gotsigint' INT; cd ${MAIN}/txAdmin; /usr/bin/node ${MAIN}/txAdmin/src/index.js default;  bash"
 #cd ${GAME} && bash ${MAIN}/run.sh +exec ${GAME}/server.cfg
 EOF
-chmod +x "$STARTUP_SCRIPT"
+chmod +x "$STARTUP_SCRIPT" # GIVE IT LIFE!!!
 
 ######################################################################
 #

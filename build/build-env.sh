@@ -35,19 +35,20 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 	while [ -n "$__INVALID_CONFIG__" ] ;
 	do
 		case "$APPMAIN" in
-			"MAIN" ) . "$BUILD/quick-config.sh" "CONFIGURE" ;;
 		      "CONFIG" ) printf "Preparing configuration wizard..." ;;
+			     * ) . "$BUILD/quick-config.sh" "CONFIGURE" ; break ;;
+
 		esac
 		unset __INVALID_CONFIG__
 		check_configuration
 	done
 	[[ "$APPMAIN" != "CONFIG" ]] && [[ -n "$__LOADING_STOPPED__" ]] \
-	  && printf "\n\n" && loading && unset __LOADING_STOPPED__
+	  && printf "\\n\\n" && loading && unset __LOADING_STOPPED__
 
 	while [ -z "$__READY__" ] ;
 	do
 		unset __CONFIG_UNFINISHED__
-
+		unset __SILENTLY_ACCEPT_DEFAULTS__
 		if [ "$APPMAIN" != "CONFIG" ] && [ -n "$__LOADING_STOPPED__" ] ;
 		then
            	        unset __LOADING_STOPPED__ && loading
@@ -64,23 +65,26 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 			[[ "$APPMAIN" != "CONFIG" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG
 
 			color lightYellow - bold
-			echo -e "\n\nConfiguration is incomplete. We should finish it before we deploy!\n"
+			echo -e "\\n\\nConfiguration is incomplete. We should finish it before we deploy!\\n"
 			color red - underline
+
 			display_array_title "Missing figlets"
+			__X__="1"  #  Sets the bullets to X for display_array
 			display_array "${__CONFIG_UNFINISHED__[@]}"
 			echo -e -n ""
+
 			. "$BUILD/quick-config.sh" UNFINISHED
 			color - - clearAll
 		fi
 		[[ -z "$__CONFIG_UNFINISHED__" ]] && __READY__="1"
 	done
 
-	[[ -n "$__LOADING_STOPPED__" ]] && printf "\n\n" && loading 1 && unset __LOADING_STOPPED__
+	[[ -n "$__LOADING_STOPPED__" ]] && printf "\\n\\n" && loading 1 && unset __LOADING_STOPPED__
 
 	if [ -n "$CONFIG" ] ;
 	then
 		loading 1 END
-		echo -e -n "\n\n\e[97m${__CONFIG__}\e[0m\n\n"
+		echo -e -n "\\n\\n\\e[97m${__CONFIG__}\\e[0m\\n\\n"
 	else
 		echo "something went unusually wrong here... I'VE FAILED!"
 		exit 1

@@ -11,9 +11,9 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
     [[ -z "$TCCORE" ]] && echo "tccore folder location not defined." && exit 1
 
     # TEMP DIRECTORIES
-    mkdir "$SOFTWARE_ROOT"
-    mkdir "$TFIVEM"
-    mkdir "$TCCORE"
+    [[ ! -d "$SOFTWARE_ROOT" ]] && mkdir "$SOFTWARE_ROOT"
+    [[ ! -d "$TFIVEM" ]] && mkdir "$TFIVEM"
+    [[ ! -d "$TCCORE" ]] && mkdir "$TCCORE"
 
     # Dependancies
     ########################

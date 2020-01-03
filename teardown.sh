@@ -15,7 +15,7 @@ fi
 su "$SERVICE_ACCOUNT" -c "screen -XS 'fivem' quit"
 deluser "$SERVICE_ACCOUNT"
 if [ -d "/home/$SERVICE_ACCOUNT" ]; then
-	rm -rf /home/"$SERVICE_ACCOUNT"
+	rm -rf /home/"${SERVICE_ACCOUNT:?}"
 fi
 rm -rf /var/software
 mysql -e "DROP DATABASE essentialmode;"

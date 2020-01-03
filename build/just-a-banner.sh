@@ -3,6 +3,15 @@
 #
 # JUST A BANNER
 ##
+if [ ! "$BUILD" ] ;
+then
+  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
+  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
+  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
+  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+  unset THIS_SCRIPT_ROOT
+fi
+. "$BUILD/includes.sh"
 
 if [ "$1" == WELCOME ] ; 
 then
@@ -29,7 +38,7 @@ EOF
 	cat <<EOF
       __                 __             __                        
      |__) _   _  _  _|  |_  _  _|_|_   |__)_ | _ _ | _            
-     |__)(-\\/(_)| )(_|  |__(_|| |_| )  | \(_)|(-|_)|(_|\\/       
+     |__)(-\\/(_)| )(_|  |__(_|| |_| )  | \\(_)|(-|_)|(_|\\/       
            /                                    |      /          
                                                                   
 EOF

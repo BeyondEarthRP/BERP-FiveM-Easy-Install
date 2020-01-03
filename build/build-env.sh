@@ -51,12 +51,14 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 		unset __SILENTLY_ACCEPT_DEFAULTS__
 		if [ "$APPMAIN" != "CONFIG" ] && [ -n "$__LOADING_STOPPED__" ] ;
 		then
-           	        unset __LOADING_STOPPED__ && loading
+			unset __LOADING_STOPPED__ && loading
 		elif [ "$APPMAIN" != "CONFIG" ] ;
 		then
 			loading 1 CONTINUE
+			#read_figs QUIETLY
 			collect_figs QUIETLY
 		else
+			#read_figs
 			collect_figs
 		fi
 

@@ -52,25 +52,39 @@ load_static_defaults() {
 
 identify_figs() {
 
-	ALLFIGS=(                                                                                                                 \
-                 "BELCH_TITLE" "BELCH_VERSION" "INSTALL_DATE" "SERVICE_ACCOUNT" "SERVICE_PASSWORD" "MYSQL_USER" "MYSQL_PASSWORD"  \
-                 "RCON_ENABLE" "RCON_PASSWORD" "STEAM_WEBAPIKEY" "SV_LICENSEKEY" "BLOWFISH_SECRET" "DB_ROOT_PASSWORD"             \
-                 "RCON_PASSWORD_GEN" "RCON_PASSWORD_LENGTH" "RCON_ASK_TO_CONFIRM" "SERVER_NAME" "ARTIFACT_BUILD" "REPO_NAME"      \
-                 "SOURCE_ROOT" "SOURCE" "SOFTWARE_ROOT" "TFIVEM" "TCCORE" "MAIN" "GAME" "RESOURCES" "GAMEMODES" "MAPS"            \
-                 "ESX" "ESEXT" "ESUI" "ESSENTIAL" "ESMOD" "VEHICLES" "TXADMIN_BACKUP_FOLDER" "TXADMIN_BACKUP"                     \
-                 "DB_BACKUP_FOLDER" "DB_BACKUPS" "CONFIG_TIMESTAMP" "REVIEW_CONFIGS" "SHOW_ADVANCED" "RCON_TIMESTAMP"             \
+	ALLFIGS=(                                                                                                       \
+                 BELCH_TITLE BELCH_VERSION INSTALL_DATE SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD  	\
+                 RCON_ENABLE RCON_PASSWORD STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD             	\
+                 RCON_PASSWORD_GEN RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM SERVER_NAME ARTIFACT_BUILD REPO_NAME      	\
+                 SOURCE_ROOT SOURCE SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES MAPS          		\
+                 ESX ESEXT ESUI ESSENTIAL ESMOD VEHICLES TXADMIN_BACKUP_FOLDER TXADMIN_BACKUP                     	\
+                 DB_BACKUP_FOLDER DB_BACKUPS CONFIG_TIMESTAMP REVIEW_CONFIGS SHOW_ADVANCED RCON_TIMESTAMP             	\
 	) ;
 
 	# DEFAULTS IS THE ABOVE MINUS THE BOTTOM (ESSENTIALLY, REMOVE PASSWORDS- FOR VISABLITY REASONS.)
-	PWDFIGS=(									                                          \
-                 "SERVICE_PASSWORD" "MYSQL_PASSWORD" "RCON_PASSWORD" "BLOWFISH_SECRET" "DB_ROOT_PASSWORD"                         \
+	PWDFIGS=(									                                \
+                 SERVICE_PASSWORD MYSQL_PASSWORD RCON_PASSWORD BLOWFISH_SECRET DB_ROOT_PASSWORD                         \
 	) ;
 
-	DEFFIGS=("${ALLFIGS[@]}")
+	DEFFIGS=( "${ALLFIGS[*]}" )
+
+	# REMOVE ANY THAT ARE PASSWORDS... FROM DEFAULTS THAT ARE
+	# VISUAL ON THE SCREEN, THEY ARE STILL ACCESSABLE AS VARS.
+
+	#####@1
+	#echo "=============================================="
 	for _pwdfug in "${PWDFIGS[@]}" ;
 	do
-		DEFFIGS=(${DEFFIGS[@]//*$_pwdfug*}) ;
+		#echo -e "\tremoving $_pwdfug"
+		DEFFIGS=( ${DEFFIGS[@]//*$_pwdfug*} ) ;
 	done
+	#echo "=============================================="
+	#color green - -
+	#for _dfig in "${DEFFIGS[@]}" ;
+	#do
+	#	#echo "DFIG: $_dfig"
+	#done
+	#color - - clearAll
 }
 
 identify_branches() {
@@ -143,24 +157,24 @@ identify_branches() {
 #####@2
 load_user_defaults() {
 
-	local _dflt ; local _dfigg ; local _dta
-
-	for _dfigg in "${DEFFIGS[@]}" ;
+	local _default_name; local _data
+	for _default in "${DEFFIGS[@]}" ;
 	do
+		echo "$_default"  ###@9
+		_default_name=$(echo _${_default}) ;
+		_data="$(eval echo \$$_default_name)" || true
 
-		_dflt="$(eval echo _$dfigg)"
-		if [ -z "${!_dfigg}" ] || [ "${_dfigg}" == "null" ] || [ -z "$_dfigg" ] ;
+		if [ -n "$_data" ] && [ "$_data" != "null" ] \
+		  && [ -n "$_default_name" ] ;
 		then
-			echo "N1: $_dfigg"
+			echo "default : $_default_name" ;
+			echo "data : $_data" ;
+		        printf -v "$_default_name" '%s' "$_data" ;
 		else
-			echo "Y1: $_dfigg"
-
-			_dta=${!dfigg}
-
-			echo "2: $_dta"
-			printf -v "$_dflt" '%s' "$_dta"
-		fi
+			DEFFIGS=( ${DEFFIGS[@]//*$_default*} )
+		fi ;
 	done
+	unset _default_name ; unset _data ;
 
 }
 
@@ -169,8 +183,7 @@ collect_figs() {
 	#####################################################################
 	#
 	# IMPORT THE DEPLOYMENT SCRIPT CONFIGURATION
-	##
-
+	#echo -e "\t#### I AM COLLECTING THE FIGS..."   ###@5
 	identify_branches
 	identify_figs
 	load_static_defaults
@@ -207,8 +220,6 @@ define_runtime_env() {
 		SCRIPT=$(echo "$0" | rev | cut -f1 -d/ | rev)
 		SCRIPT_FULLPATH="$(readlink -f $0)"
 		SCRIPT_ROOT="$(dirname $(readlink -f ${BUILD}))"
-
-		FIGTREE="${BUILD}/figtree.json"  && touch "$FIGTREE"
 	else
         	echo "Could not find the build folder.  It should be right here next to me..."
 		exit 1
@@ -259,7 +270,8 @@ check_configuration() {
 	##
 	[[ -z "$__RUNTIME__" ]] && echo "runtime environment not loaded. failed!" && exit 1
 
-	unset _content ; can_config "_content"
+	unset _content ;
+	can_config "_content" ;
 	if [ -n "$CONFIG" ] && [ -f "$CONFIG" ] && [ -n "$_content" ] ;
 	then
 		__CONFIG__="Config file defined."
@@ -293,6 +305,11 @@ check_configuration() {
 read_figs() {
 	__CONFIG_UNFINISHED__=()
 	__SILENTLY_ACCEPT_DEFAULTS__=()
+
+	can_config _jsd_ || echo "failed!" && exit 1
+	[[ -z "$__INVALID__" ]] && _jsData="$(echo $_jsd_ | jq -r $_jq)"
+
+
 	for _fig in "$@" ;
 	do
 		hush=( 										\
@@ -329,7 +346,11 @@ read_figs() {
 			[[ "$__INVALID__" ]] && unset __INVALID__  # CYA- PROBABLY REDUNDANT
 
 			local _jsData ; # if config is not defined, skip this and data is invalid
-			[[ ! -f "$CONFIG" ]] && __INVALID__="1" || _jsData="$(jq -r $_jq $CONFIG)"
+			[[ ! -f "$CONFIG" ]] && __INVALID__="1"
+
+						####################### IT WAS VALID A BIT AGO!
+			echo -e "jq :: $_jq"          ####@6
+				echo -e "\tjd >> $_jsData"
 
 			# if data is null or blank, it is invalid
 			[[ "$_jsData" == "null" ]] || [[ -z "$_jsData" ]] && __INVALID__="1"
@@ -337,27 +358,32 @@ read_figs() {
 			# track invalid figs in __CONFIG_UNFINISHED__ or write the configuration
 			if [ -n "$__INVALID__" ] && [ -z "$__SILENT__" ] ;
 			then
+				#echo "--->#1"
 				__CONFIG_UNFINISHED__+=("$_fig")
 
 			elif [ -n "$__INVALID__" ] && [ -n "$__SILENT__" ] ;
                         then
+				#echo "--->#2"
 				__SILENTLY_ACCEPT_DEFAULTS__+=("$_fig")
 
 			elif [ -z "$__INVALID__" ] && [ -n "${!_def}" ] ;
 			then
-				printf -v "$_fig" '%s' "${_jsData}"
+				#echo "--->#3"
+				echo -e "\tjd >> $_jsData"
+				printf -v "$_fig" '%s' "$_jsData"
 			fi
                 fi
 
 		if [ -z "$__SILENT__" ] && [ -z "$__QUIET_MODE__" ] ;  # If this fig is not hushed
 		then
 			color white - bold
-			local __val
-			[[ "$__TEST__" ]] && [[ "${!_fig}" ]] && __val="${!_fig}" || __val="\"\""
-			[[ "$__TEST__" ]] &&  echo -e -n " => $_fig == $__val => " && unset __val \
-			  || [[ -f "$CONFIG" ]] && echo -e -n "... " # DO OR DO NOT DISPLAY ON SCREEN
+			[[ -f "$CONFIG" ]] && echo -e -n "... "
 			color - - clearAll
-	                if [ -n "${!_fig}" ];
+
+			echo -e "\tlast: ${!_fig}"     ############### PROBLEM ALREADY APPEARS
+
+
+	                if [ -n "${!_fig}" ] ;
 	                then
 	                        color green - bold
 	                        [[ -f "$CONFIG" ]] && echo "Done."
@@ -495,7 +521,7 @@ harvest() {
 		then
 			echo -e "\\nWould you like the ability to review changes to config.json before saving them?"
 			echo -e "There will still be a confirmation prompt with some heads up info..."
-			echo -e "But this will allow for you to fully review the json file. (Advanced Users Will Like)\n"
+			echo -e "But this will allow for you to fully review the json file. (Advanced Users Will Like)\\n"
 			PROMPT="Allow full review of config.json before saving?"
 			pluck_fig "REVIEW_CONFIGS" 11
 			_all_new_+=("REVIEW_CONFIGS")
@@ -680,8 +706,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
   if [ "$__random" == "true" ] ;
   then
 	local _pass ; # if the random password was not generated externally, generate it
-	[[ -z "$__RANDOM_PASSWORD__" ]] && _pass="$(add_salt 64 1 date)" \
-	  || _pass="$__RANDOM_PASSWORD__"       # otherwise, use the one externally generated.
+	[[ -z "$__RANDOM_PASSWORD__" ]] && _pass="$(add_salt 64 1 date)" || _pass="$__RANDOM_PASSWORD__" # otherwise, use the one externally generated.
 	printf -v "_${__fig_key}" '%s' "$_pass"	      # Assign it for use later
   fi
                                                    # I got this working then realized i didn't need it/ or the above function. derp.
@@ -748,7 +773,7 @@ pluck_fig() { # fig // prompt // confirm => 0/1
           _i="($__min_len to $__max_len)"  # build the prompt addition
           __i1="$__min_len"  # build a default value (using the min val)
           __i2="$__max_len"  # I guess this is redundant... oh well. easier to be consistent (i use this later)
-          __i3=$(expr length "$__max_len")
+          __i3=$(echo "${#__max_len}")
         fi
 		local __prompt__ ; __prompt__="$__prompt $_i"  # build the new prompt and assign to prompt
       fi
@@ -997,19 +1022,28 @@ pluck_fig() { # fig // prompt // confirm => 0/1
 }
 
 can_config() {
+
 	# CAT THE FILE TO A CONTAINER VARIABLE
 	# USAGE: can_config "someVarWithoutADollarSignInQuotes"
 
-	local _can; _can="$1"
-	[[ -z "$CONFIG" ]] \
-	  && echo "Config canning has failed. No config defined. Sharp eges. Blood everywhere." \
-	  && exit 1
-	local _figers; _figers=$(cat "$CONFIG" 2>/dev/null)
-	if [ -n "$_figers" ] ;
+	local _can ;
+	_can="$1" ;
+
+	if [ -z "$CONFIG" ];
 	then
-		printf -v "${_can}" '%s' "$_figers"
+		echo "Config canning has failed. No config defined. Sharp eges. Blood everywhere." ;
+		exit 1 ;
 	fi
-	unset _figers
+
+	local _figers ;
+	_figers=$( cat "$CONFIG" 2>/dev/null ) ;
+
+	if [ -z "$_figers" ] ;
+	then
+		unset _figers ;
+	else
+		printf -v "$_can" '%s' "$_figers" ;
+	fi
 }
 
 jar_config() {
@@ -1021,8 +1055,8 @@ jar_config() {
 	[[ -z "$CONFIG" ]] \
 	  && echo "Config jarring has failed. No config defined. Broken glass. Blood everywhere." \
 	  && exit 1
-	local _figers; _figers=$(cat "$CONFIG" | jq . 2>/dev/null)
-	[[ -n "$_figers" ]] && printf -v "${_jar}" '%s' "$_figers"
+	local _figers; _figers=$(cat "$CONFIG" | jq -r . 2>/dev/null)
+	[[ -n "$_figers" ]] && printf -v "$_jar" '%s' "$_figers"
 	unset _figers
 }
 
@@ -1036,7 +1070,10 @@ rebottle() {
 	[[ -n "$1" ]] && local _wrap &&  _wrap="$1"
 
 	#unwrap and bottle
-	[[ -n "${!_wrap}" ]] && echo "${!_wrap}" | jq . > "$CONFIG"
+	if [ -n "${!_wrap}" ] ;
+	then
+		echo "${!_wrap}" | jq -r . > "$CONFIG"
+	fi
 }
 
 
@@ -1053,7 +1090,8 @@ cook_figs() {
 		exit 1
         fi
 
-	unset _content ; can_config "_content"  # will produce a conf catted out to _content
+	unset _content ;
+	can_config "_content"  # will produce a conf catted out to _content
 	##################################################################################
 	if [ ! -d "${CONFIG%/*}" ] || [ ! -f "$CONFIG" ] || [ -z "$_content" ] ;
 	then
@@ -1064,7 +1102,7 @@ cook_figs() {
 	else
 		[[ "$1" == "QUIETLY" ]] && loading 1 CONTINUE || echo "Config file identified and is not zero length..."
 
-		jar_config "BASE_CONFIG"
+		can_config "BASE_CONFIG"
 
 		if [ "$_all_new_" ] && [ "${#_all_new_[@]}" -gt 0 ] ;
 		then
@@ -1270,7 +1308,8 @@ commit() {
                           && echo "$__CONFIG__" && color - - clearAll
 
 			# CACHE THE CURRENT CONFIG
-			unset _cached_config ; can_config "_cached_config"
+			unset _cached_config ;
+			can_config "_cached_config" ;
 
 			# IF THE CURRENT CONFIG DIDNT CACHE (IT SHOULD, BUT OKAY) THEN CALL IT OUT
 			if [ -z "$_cached_config" ] ;
@@ -1292,6 +1331,7 @@ commit() {
 			fi
                 fi
 
+		can_config "_content"    # READ IN THE REVISED CONFIG CONTENTS
 		while true ;
 		do
 
@@ -1303,7 +1343,7 @@ commit() {
 
 			echo "$_commit" > "$CONFIG"   				  # WRITE THE CONFIG
 
-			unset _content	; can_config "_content"    # READ IN THE REVISED CONFIG CONTENTS
+			unset _content	;
 
 			if [ -n "$_content" ] ;
 			then
@@ -1343,11 +1383,13 @@ commit() {
 
 				rebottle "_cached_config"  # WRITES THE CONTENTS TO $CONFIG
 
-				local _content ; can_config "_content"
-				[[ -z "$_content" ]] \
+				unset _Ccontent ;
+				can_config "_Ccontent" ;
+
+				[[ -z "$_Ccontent" ]] \
 				  && echo "well, I tried to commit... but I got my privates stuck in a ceiling fan" \
 				  && echo "...I've failed.  I'm very sorry!" && exit 1
-				[[ -n "$_content" ]] && [[ "$_content" == "$_cached_config" ]] \
+				[[ -n "$_Ccontent" ]] && [[ "$_Ccontent" == "$_cached_config" ]] \
 				  && echo "Successfully reverted the configuration back to its original state."
 
 			elif [ -z "$_cached_config" ] ;
@@ -1384,7 +1426,7 @@ plant_fig() {
 	[[ -z "$__RUNTIME__" ]] && identify_branches
 
 	_fruit="${!_fig}"
-	_yield=$(eval echo \${$_crop} | jq $_path=\""$_fruit"\")
+	_yield=$(eval echo \${$_crop} | jq -r $_path=\""$_fruit"\")
 
 	[[ -n "$_yield" ]] && printf -v "$_crop" '%s' "$_yield" \
 	  || echo -e "\\n\\e[97merror planting fig!\\e[0m"
@@ -1458,7 +1500,10 @@ personalize() {
 salt_rcon() {
 	if [ "$RCON_ENABLE" == "true" ] ; then
 		local _today ; _today=$(date +%Y-%m-%d)
-		unset _content ; can_config "_content"
+
+		unset _content ;
+		can_config "_content" ;
+
 		if [ -n "$_content" ] ;
 		then
 			# reads in the timestamp or disregards if there is an error (i use that for condition set)
@@ -1571,32 +1616,29 @@ commit_rcon_password() {
 	# SO IF THIS VALIDATION FAILED, WE JUST SKIP THE ADDITION.  IT SHOULD GET ADDED
 	# WHEN THE QUICK CONFIG COMMITS ITS DATA.
 	[[ -z "$CONFIG" ]] && echo "No config defined. failed." && exit 1
-        unset _content ; can_config "_content"
+
+        unset _Rcontent ;
+	can_config "_Rcontent" ;
+
 	local _today ; _today="$(date +%Y-%m-%d)"
 
-	if [ -n "$_content" ] ;
+	if [ -n "$_Rcontent" ] ;
 	then  # if there is no content in the file... we probably shouldn't be this far.  My assumption here atleast.
 
 		# I USE TIMESTAMP (ABOVE) AS A VAR HERE- BUT ANTYHING BEING PASSED CAUSES IT NOT TO WRITE.
 		[[ -z "$1" ]] && local _rev1 # SO I DO IT WITH TIMESTAMP ABOVE BECAUSE I DON'T WANT THIS PART.
-		[[ -z "$1" ]] && _rev1=$(echo "$_content" | jq ".sys.rcon.password=\"${RCON_PASSWORD}\"")
+		[[ -z "$1" ]] && _rev1=$(echo "$_Rcontent" | jq -r ".sys.rcon.password=\"${RCON_PASSWORD}\"")
 
+		# IF $1 IS PASSED, ASSUME THIS IS ONLY A PASSWORD TIMESTAMP UPDATE
 		if [ -n "$_rev1" ] || [ -n "$1" ] ;
               	then
-			_revision=$(echo ${_rev1:=$_content} | jq --arg today $_today '.sys.rcon.timestamp=$today')
-
+			_revision=$(echo ${_rev1:=$_Rcontent} | jq -r --arg today $_today '.sys.rcon.timestamp=$today')
 			unset _rev1
-
 		else
                       	echo "failed while processing RCON password revision.  exiting."
                 	exit 1
                 fi
-
-
-		# IF $1 IS PASSED, ASSUME THIS IS ONLY A PASSWORD TIMESTAMP UPDATE
         	[[ -n "$_revision" ]] && commit "_revision" && unset _revision
-
-		commit "_revision"
         fi # OTHERWISE, SKIP THIS.  IT IS NOT NEEDED YET.
 	unset _content
 }
@@ -1814,8 +1856,7 @@ stop_screen() {    # THIS STOPS A SCREEN SESSION.
 
   SCREEN_SESSION_NAME="fivem"
   echo "Quiting screen session '$SCREEN_SESSION_NAME' for FiveM (if applicable)"
-  su "$SERVICE_ACCOUNT" -c "screen -XS '$SCREEN_SESSION_NAME' quit"
-  
+  su "$SERVICE_ACCOUNT" -c "screen -XS '$SCREEN_SESSION_NAME' quit"  
 }
 
 sleep() {

@@ -6,12 +6,12 @@
 if [ ! "$BUILD" ] ;
 then
   THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
-  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
-  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
+  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && _BUILD="$THIS_SCRIPT_ROOT/build"
+  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && _BUILD="$THIS_SCRIPT_ROOT"
+  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
   unset THIS_SCRIPT_ROOT
 fi
-. "$BUILD/includes.sh"
+. "$_BUILD/includes.sh"
 
 if [ "$1" == WELCOME ] ; 
 then
@@ -53,6 +53,7 @@ fi
 
 if [ "$1" == "BELCHER" ] ; 
 then
+	color cyan - bold
 	echo "______  _____ ______  ______                 ";
 	echo "| ___ \\|  ___|| ___ \\ | ___ \\                ";
 	echo "| |_/ /| |__  | |_/ / | |_/ /                ";
@@ -68,8 +69,10 @@ then
 	echo "| |_/ / |___| |___| \\__/\\| | | || |___| |\\ \\ ";
 	echo "\\____/\\____/\\_____/\\____/\\_| |_/\\____/\\_| \\_|";
 	echo "                                             ";
+	color white - bold
 	echo " BY: Beyond Earth (Made for Beyond Earth Roleplay)";
 	echo " " ;
+	color - - clearAll
 fi
 
 if [ "$1" == NEW_INSTALL ] ; 

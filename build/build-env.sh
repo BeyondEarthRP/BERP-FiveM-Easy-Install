@@ -7,14 +7,25 @@
 # BUILD OUT THE RUN TIME DETIALS
 ### check if I'm starting from the build directory...
 ### I assume this is correct.  It should be, let us see!
-if [ ! "$BUILD" ] ;
+if [ -z "$BUILD" ] ;
 then
-  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
-  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
-  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-  unset THIS_SCRIPT_ROOT
+  THIS_SCRIPT_ROOT=$(dirname $(readlink -f "$0")) ;
+  BUILDCHECK=()
+  BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../../build") ) || true
+  BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../build") )    || true
+  BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/build") )       || true
+  BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}") )             || true
+  unset THIS_SCRIPT_ROOT ;
+  for cf in "${BUILDCHECK[@]}" ;
+  do
+    if [ -d "$cf" ] && [ -f "${cf:?}/build-env.sh" ] ;
+    then
+        BUILD="$cf"
+    fi
+  done
 fi
+[[ -z "$BUILD" ]] && echo "Build folder undefined. Failed." && exit 1
+#-----------------------------------------------------------------------------------------------------------------------------------
 
 #####################################################################
 # IMPORT FUNCTIONS
@@ -26,22 +37,33 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
 	## ---- BUILD ENVIRONMENT ---- ##
 
-	[[ "$APPMAIN" != "CONFIG" ]] && initialize QUIETLY || initialize
-	[[ "$APPMAIN" != "CONFIG" ]] && define_runtime_env QUIETLY || define_runtime_env
-
+	if [ "$APPMAIN" != "CONFIG" ] ;
+	then
+		initialize QUIETLY
+		define_runtime_env QUIETLY
+	else
+		initialize
+		define_runtime_env
+	fi
 	unset __INVALID_CONFIG__
 	check_configuration QUIETLY
-	[[ "$APPMAIN" != "CONFIG" ]] && [[ -n "$__INVALID_CONFIG__" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG
+	if [ "$APPMAIN" != "CONFIG" ] && [ -n "$__INVALID_CONFIG__" ] ;
+	then
+		__LOADING_STOPPED__="1" && loading 1 CONFIG
+	fi
+
 	while [ -n "$__INVALID_CONFIG__" ] ;
 	do
 		case "$APPMAIN" in
 		      "CONFIG" ) printf "Preparing configuration wizard..." ;;
-			     * ) . "$BUILD/quick-config.sh" "CONFIGURE" ; break ;;
+			     * ) . "$BUILD/quick-config.sh" CONFIGURE ; break ;;
 
 		esac
 		unset __INVALID_CONFIG__
 		check_configuration
 	done
+	unset __INVALID_CONFIG__
+
 	[[ "$APPMAIN" != "CONFIG" ]] && [[ -n "$__LOADING_STOPPED__" ]] \
 	  && printf "\\n\\n" && loading && unset __LOADING_STOPPED__
 
@@ -55,14 +77,13 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 		elif [ "$APPMAIN" != "CONFIG" ] ;
 		then
 			loading 1 CONTINUE
-			#read_figs QUIETLY
 			collect_figs QUIETLY
+
 		else
-			#read_figs
 			collect_figs
 		fi
 
-		if [ "$__CONFIG_UNFINISHED__" ] && [ "${#__CONFIG_UNFINISHED__[@]}" -gt 0 ] ;
+		if [ -n "$__CONFIG_UNFINISHED__" ] && [ "${#__CONFIG_UNFINISHED__[@]}" -gt 0 ] ;
 		then
 			[[ "$APPMAIN" != "CONFIG" ]] && __LOADING_STOPPED__="1" && loading 1 CONFIG
 
@@ -77,6 +98,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
 			. "$BUILD/quick-config.sh" UNFINISHED
 			color - - clearAll
+
 		fi
 		[[ -z "$__CONFIG_UNFINISHED__" ]] && __READY__="1"
 	done
@@ -98,10 +120,19 @@ elif [ ! -z "$1" ] && [ "$1" == "RUNTIME" ]; then
 
 	## ---- BUILD RUNTIME ONLY ---- ##
 
-	initialize
-	define_runtime_env
-	check_configuration RUNTIME
-	[[ -z "$__INVALID_CONFIG__" ]] && collect_figs
+	if [ -z "$2" ] ;
+	then
+		initialize
+		define_runtime_env
+		check_configuration RUNTIME
+		[[ -z "$__INVALID_CONFIG__" ]] && collect_figs
+	else
+		initialize QUIETLY
+		define_runtime_env QUIETLY
+		check_configuration QUIETLY
+		[[ -z "$__INVALID_CONFIG__" ]] && collect_figs QUIETLY || loading 1 CONFIG
+		[[ -z "$__INVALID_CONFIG__" ]] && loading 1 END
+	fi
 
 	## ---- BUILD RUNTIME ONLY ---- ##
 

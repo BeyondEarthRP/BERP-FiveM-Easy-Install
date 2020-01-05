@@ -13,7 +13,7 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
     echo "FiveM - Base"
         echo "Get Packages"
-            artifact="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/$ARTIFACT_BUILD/fx.tar.xz"
+            artifact="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/${ARTIFACT_BUILD:?}/fx.tar.xz"
 
             wget -P "$TFIVEM" "$artifact"
 

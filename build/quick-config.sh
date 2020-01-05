@@ -12,14 +12,25 @@ then # GO LOOK FOR IT
 	# WITH THIS RUNTIME CLAUSE.  ALSO, THIS CODE NEEDS TO BE MORE CONCISE.
 	# TO DOS FOR ANOTHER DAY I GUESS.
 
-	if [ ! "$BUILD" ] ;
+	if [ -z "$BUILD" ] ;
 	then
-	  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-	  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && BUILD="$THIS_SCRIPT_ROOT/build"
-	  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$THIS_SCRIPT_ROOT"
-	  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-	  unset THIS_SCRIPT_ROOT
+		THIS_SCRIPT_ROOT=$(dirname $(readlink -f "$0")) ;
+		BUILDCHECK=()
+		BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../../build") ) || true
+		BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../build") )    || true
+		BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/build") )       || true
+		BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}") )             || true
+		unset THIS_SCRIPT_ROOT ;
+		for cf in "${BUILDCHECK[@]}" ;
+		do
+			if [ -d "$cf" ] && [ -f "${cf:?}/build-env.sh" ] ;
+			then
+				BUILD="$cf"
+			fi
+		done
 	fi
+	[[ -z "$BUILD" ]] && echo "Build folder undefined. Failed." && exit 1
+	#-----------------------------------------------------------------
 	###################################################################
 	[[ "$1" == "CONFIGURE" ]] && __CONFIGURE__="1" || unset __CONFIGURE__
 
@@ -27,7 +38,7 @@ then # GO LOOK FOR IT
 	then
 		APPMAIN="CONFIG"
 		__CONFIGURE__="1"
-		. "$BUILD/build-env.sh" "RUNTIME"
+		. "$BUILD/build-env.sh" "RUNTIME" "QUIETLY"
 	elif [ -z "$__RUNTIME__" ] ;
 	then
 		echo "Runtime not loaded... I'VE FAILED!"
@@ -47,17 +58,11 @@ fi
 # AND.... GO!
 unset _confirm
 
-identify_branches
-identify_figs
-check_configuration
+check_configuration QUIETLY
 if [ -n "$__INVALID_CONFIG__" ] ;
 then
 	__CONFIGURE__="1" ;
 	unset __INVALID_CONFIG__
-	load_static_defaults
-else
-	load_static_defaults
-	load_user_defaults
 fi ;
 
 color white - bold

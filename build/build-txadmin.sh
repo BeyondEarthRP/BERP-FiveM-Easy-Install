@@ -3,7 +3,7 @@ if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-	if [ -z "$SCRIPT_ROOT" ] || [ -z "$PRIVATE" ]; then
+	if [ -z "${SCRIPT_ROOT:?}" ] || [ -z "${PRIVATE:?}" ]; then
 		echo "ERROR: Exports not found.  I'VE FAILED!"
 		exit 1
 	fi
@@ -16,22 +16,22 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
         cd "$MAIN/txAdmin"
         npm i
 
-		if [ ! -d "$PRIVATE/txAdmin_data" ];
+		if [ ! -d "${TXADMIN_BACKUP:?}" ];
 		then
 			# Add admin
 			node src/scripts/admin-add.js
 
 			# Setup default server profile
 			node src/scripts/setup.js default
-		elif [ ! -f "$PRIVATE/txAdmin_data/admins.json" ];
+		elif [ ! -f "${TXADMIN_BACKUP:?}/admins.json" ];
 		then
-			cp -RfT "$PRIVATE/txAdmin_data" "$MAIN/txAdmin/data"
+			cp -RfT "${TXADMIN_BACKUP:?}" "$MAIN/txAdmin/data"
 
 			# Add admin
 			node src/scripts/admin-add.js
-		elif [ -d "$PRIVATE/txAdmin_data" ] && [ -f "$PRIVATE/txAdmin_data/admins.json" ];
+		elif [ -d "${TXADMIN_BACKUP:?}" ] && [ -f "${TXADMIN_BACKUP:?}/admins.json" ];
 		then
-			cp -RfT "$PRIVATE/txAdmin_data" "$MAIN/txAdmin/data"
+			cp -RfT "${TXADMIN_BACKUP:?}" "$MAIN/txAdmin/data"
 		else
 			###> NOT SURE WHAT HAPPENED HERE... YOU SHOULDN'T GET AN ELSE.
 			###> BUT IF YOU DO.... WELL I NEED TO JUST MAKE THE FILE, SORRY.

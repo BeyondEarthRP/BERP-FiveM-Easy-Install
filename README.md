@@ -10,7 +10,7 @@
 8 8888      88 8 8888         8 8888 `8b.     8 8888         
 8 8888    ,88' 8 8888         8 8888   `8b.   8 8888         
 8 888888888P   8 888888888888 8 8888     `88. 8 8888
-  Beyond         Earth          Role            Play
+8 Beyond       8 Earth        8 Role          8 Play
 ===[ B.E.R.P EASY (FOR YOU!) FIVEM DEPLOYMENT SCRIPT ]===
 ```
 The 15 Minute From-Scratch Deployment Script, created for Beyond Earth Roleplay (BERP). Join us on FiveM! Look us up in the directory... the server is free reign rp!

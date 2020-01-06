@@ -3,17 +3,32 @@
 #
 # JUST A BANNER
 ##
-if [ ! "$BUILD" ] ;
-then
-  THIS_SCRIPT_ROOT="$(dirname $(readlink -f $0))"
-  [[ -d "$THIS_SCRIPT_ROOT/build" ]] && _BUILD="$THIS_SCRIPT_ROOT/build"
-  [[ "$(echo $THIS_SCRIPT_ROOT | rev | cut -f1 -d/ | rev)" == "build" ]] && _BUILD="$THIS_SCRIPT_ROOT"
-  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && _BUILD="$(dirname $THIS_SCRIPT_ROOT)"
-  unset THIS_SCRIPT_ROOT
-fi
-. "$_BUILD/includes.sh"
 
-if [ "$1" == WELCOME ] ; 
+if [ -z "$__RUNTIME__" ] ;
+then # GO LOOK FOR IT
+        if [ -z "$_BUILD" ] ;
+        then
+                THIS_SCRIPT_ROOT=$(dirname $(readlink -f "$0")) ;
+                BUILDCHECK=()
+                BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../../build") ) || true
+                BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/../build") )    || true
+                BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}/build") )       || true
+                BUILDCHECK+=( $(readlink -f "${THIS_SCRIPT_ROOT:?}") )             || true
+                unset THIS_SCRIPT_ROOT ;
+                for cf in "${BUILDCHECK[@]}" ;
+                do
+                        if [ -d "$cf" ] && [ -f "${cf:?}/build-env.sh" ] ;
+                        then
+                                _BUILD="$cf"
+                        fi
+                done
+        fi
+        [[ -z "$_BUILD" ]] && echo "Build folder undefined. Failed." && exit 1
+        #-----------------------------------------------------------------
+	. "$_BUILD/includes.sh"
+fi
+
+if [ "$1" == WELCOME ] ;
 then
 	color lightYellow - bold
 	cat <<EOF

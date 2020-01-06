@@ -1967,11 +1967,11 @@ sleep() {
   ping -c "$count" 127.0.0.1 > /dev/null
 }
 
-#--[ WORKER FUNCTIONS ]--######################################################################
-###############################################################################################
-
+#--[ WORKER FUNCTIONS BY OTHER PEOPLE ]--######################################################
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#
-#--[ FUNCTIONS I DID NOT WRITE ]--------------------------------------------------------------#
+#--[ FUNCTIONS TYAT I DID NOT WRITE OR MAJORLY ALTER ]----------------------------------------#
+
+######
 #### THE DATABASE STUFF BELOW CAME FROM BERT VAN VRECKEM... TY! VERY GOOD WORK!!
 #### Author: Bert Van Vreckem <bert.vanvreckem@gmail.com>
 #### A non-interactive replacement for mysql_secure_installation
@@ -1998,3 +1998,4 @@ check_for_mysql() {
     exit 1
   fi
 }
+

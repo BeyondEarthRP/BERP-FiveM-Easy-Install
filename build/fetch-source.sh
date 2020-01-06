@@ -24,6 +24,16 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
         cd "{$SOURCE_ROOT:?}"
         git clone --recurse-submodules git@github.com:BeyondEarthRP/BERP-Repo.git "${SOURCE:?}"
+	cd "${SOURCE:?}"
+	git submodule sync --recursive
+	git submodule update --init --recursive
+	if [ -d "${$SOURCE:?}" ] && [ -f "${$SOURCE:?}/Belcher.sh" ] && [ -f "${$SOURCE:?}/belch.co2" ] ;
+	then
+		echo -e "\\n\\t\\e[92m\\e[1mSources have been fetched!\\e[0m"
+	else
+		echo -e "\\n\\t\\e[91m\\e[1mFailed to fetch sources... exiting\\e[0m"
+		exit 1
+	fi
 
     ## ---- Deploy Server Source ---- ##
 

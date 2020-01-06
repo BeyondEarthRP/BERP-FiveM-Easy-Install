@@ -114,8 +114,14 @@ if [ -z "$1" ]; then
 	#	exit 0
 	#fi
 
-	. "$BUILD/build-dependancies.sh" EXECUTE
+	. "$BUILD/build-dependencies.sh" EXECUTE
 	echo -e "DEPENDANCIES BUILT!\\n"
+
+	. "$BUILD/build-reqpacks.sh" EXECUTE
+	echo -e "OTHER REQUIRED PACKAGES INSTALLED!\\n"
+
+	. "$BUILD/build-dbserver.sh" EXECUTE
+	echo -e "DB SERVER BUILT!\\n"
 
 	####
 	# CHECK FOR MYSQL

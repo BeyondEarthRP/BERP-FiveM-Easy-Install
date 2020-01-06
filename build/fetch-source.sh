@@ -22,8 +22,8 @@ elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
     ## ---- Deploy Server Source ---- ##
 
-        cd "$SOURCE_ROOT"
-        git clone --recurse-submodules git@github.com:BeyondEarthRP/BERP-Repo.git "$SOURCE"
+        cd "{$SOURCE_ROOT:?}"
+        git clone --recurse-submodules git@github.com:BeyondEarthRP/BERP-Repo.git "${SOURCE:?}"
 
     ## ---- Deploy Server Source ---- ##
 

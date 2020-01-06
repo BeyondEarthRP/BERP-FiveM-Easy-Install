@@ -1,19 +1,19 @@
 #!/bin/bash
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-	if [ ! -z ${mysql_user} ] && [ ! -z ${mysql_password} ];
+	if [ ! -z "${MYSQL_USER}" ] && [ ! -z "${MYSQL_PASSWORD}" ];
 	then
 		## ---- mySQL Database ---- ##
 
 			mysql -e "CREATE DATABASE essentialmode;"
-			mysql -e "CREATE USER '${mysql_user}'@'localhost' IDENTIFIED BY '${mysql_password}';"
-			mysql -e "GRANT ALL PRIVILEGES ON essentialmode.* TO '${mysql_user}'@'localhost';"
+			mysql -e "CREATE USER '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';"
+			mysql -e "GRANT ALL PRIVILEGES ON essentialmode.* TO '${MYSQL_USER}'@'localhost';"
 
 		## ---- mySQL Database ---- ##
 	else
-		echo "Error: no exports found.  I'VE FAILED!"
+		echo "Error: required *figs not found.  I'VE FAILED!"
 	fi
 else
     echo "This script must be executed by the deployment script"

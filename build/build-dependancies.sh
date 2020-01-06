@@ -1,25 +1,19 @@
 #!/bin/bash
-if [ ! -z $1 ] && [ $1 == "TEST" ]; then
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
-elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
+    [[ -z "$DB_ROOT_PASSWORD" ]] \
+        && echo "Root password not yet entered.  This should have already been done. Failed!" \
+        && exit 1
 
-	while [ -z $DBPSWD ];
-	do
-		_return="";read -p "Enter root account password for MySQL: " _return
-		echo ""
-		_confirm="";read -p "are you sure? " _confirm
-		if [ "$_confirm"=="y" ] || [ "$_confirm"=="yes" ];
-		then
-			DBPSWD=$_return
-		fi
-	done
-	
+    [[ -z "$SOFTWARE_ROOT" ]] && echo "software folder location not defined." && exit 1
+    [[ -z "$TFIVEM" ]] && echo "tfivem folder location not defined." && exit 1
+    [[ -z "$TCCORE" ]] && echo "tccore folder location not defined." && exit 1
+
     # TEMP DIRECTORIES
-    mkdir $SOFTWARE
-    mkdir $TFIVEM
-    mkdir $TSESX
-    mkdir $TCCORE
-    mkdir $TESMOD
+    [[ ! -d "$SOFTWARE_ROOT" ]] && mkdir "$SOFTWARE_ROOT"
+    [[ ! -d "$TFIVEM" ]] && mkdir "$TFIVEM"
+    [[ ! -d "$TCCORE" ]] && mkdir "$TCCORE"
 
     # Dependancies
     ########################
@@ -60,7 +54,7 @@ elif [ ! -z $1 ] && [ $1 == "EXECUTE" ]; then
 	#### https://bertvv.github.io/notes-to-self/2015/11/16/automating-mysql_secure_installation/
 	##
 	mysql --user=root <<_EOF_
-UPDATE mysql.user SET Password=PASSWORD('${DBPSWD}') WHERE User='root';
+UPDATE mysql.user SET Password=PASSWORD('${DB_ROOT_PASSWORD}') WHERE User='root';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 DROP DATABASE IF EXISTS test;
@@ -83,14 +77,14 @@ _EOF_
 	# tar xvf phpMyAdmin-${VER}-all-languages.tar.gz
 	#
 	#' English Only Version:'
-	wget https://files.phpmyadmin.net/phpMyAdmin/${VER}/phpMyAdmin-${VER}-english.tar.gz
-	tar xvf phpMyAdmin-${VER}-english.tar.gz
+	wget "https://files.phpmyadmin.net/phpMyAdmin/${VER}/phpMyAdmin-${VER}-english.tar.gz"
+	tar xvf "phpMyAdmin-${VER}-english.tar.gz"
 
 	#- working
 	rm phpMyAdmin*.gz
 	sudo mv phpMyAdmin-* /usr/share/phpmyadmin
 	phpmyadmin_tmp=/var/lib/phpmyadmin/tmp
-	sudo mkdir -p $phpmyadmin_tmp
+	sudo mkdir -p "$phpmyadmin_tmp"
 	sudo chown -R www-data:www-data /var/lib/phpmyadmin
 	sudo mkdir /etc/phpmyadmin/
 
@@ -98,12 +92,12 @@ _EOF_
 	phpConfigSource=/usr/share/phpmyadmin/config.sample.inc.php
 	phpConfig=/usr/share/phpmyadmin/config.inc.php
 
-	blowfish_secret_placeholder="\\\$cfg\['blowfish_secret'\] = ''; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
-	blowfish_secret_actual="\\\$cfg\['blowfish_secret'\] = '${blowfish_secret}'; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
-	sed "s/${blowfish_secret_placeholder}/${blowfish_secret_actual}/" $phpConfigSource > $phpConfig
+	blowfish_secret_placeholder="\\\$cfg\['BLOWFISH_SECRET'\] = ''; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
+	blowfish_secret_actual="\\\$cfg\['BLOWFISH_SECRET'\] = '${BLOWFISH_SECRET}'; \/\* YOU MUST FILL IN THIS FOR COOKIE AUTH! \*\/"
+	sed "s/${blowfish_secret_placeholder}/${blowfish_secret_actual}/" "$phpConfigSource" > "$phpConfig"
 
-	echo "" >> $phpConfig
-	echo "\$cfg['TempDir'] = '$phpmyadmin_tmp';" >> $phpConfig
+	echo "" >> "$phpConfig"
+	echo "\$cfg['TempDir'] = '$phpmyadmin_tmp';" >> "$phpConfig"
 
 	echo ":: phpMyAdmin Apache Configuration"
 	apacheConfig=/etc/apache2/conf-enabled/phpmyadmin.conf

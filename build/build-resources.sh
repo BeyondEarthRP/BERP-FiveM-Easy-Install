@@ -18,7 +18,12 @@ fi
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
+	. "${BUILD:?}/fetch-fivemresources.sh" EXECUTE
+
 	echo "Creating base directory structure"
+        if [ ! -d "${GAME:?}/resources" ]; then
+                mkdir -p "${GAME:?}/resources"
+        fi
 	if [ ! -d "${RESOURCES:?}" ]; then
 		mkdir -p "${RESOURCES:?}"
 	fi

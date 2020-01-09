@@ -9,7 +9,7 @@ then
 	  [[ "$(echo $(dirname THIS_SCRIPT_ROOT) | rev | cut -f1 -d/ | rev)" == "build" ]] && BUILD="$(dirname $THIS_SCRIPT_ROOT)"
 	  unset THIS_SCRIPT_ROOT
 
-	  [[ -z "$BUILD" ]] && echo "Build folder not found.  cache-txadmin.sh has failed you!" && exit 1
+	  [[ -z "$BUILD" ]] && echo "Build folder not found.  I've failed you!" && exit 1
 	  . "$BUILD/build-env.sh" RUNTIME
 
 	  [[ -z "$SOURCE" ]] || [[ "$SOURCE" == "null" ]] && echo "Build folder not found. FAILED!" && exit 1

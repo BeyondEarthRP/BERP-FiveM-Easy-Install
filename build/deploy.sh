@@ -120,15 +120,18 @@ if [ -z "$1" ]; then
 	. "$BUILD/build-reqpacks.sh" EXECUTE
 	echo -e "OTHER REQUIRED PACKAGES INSTALLED!\\n"
 
-	. "$BUILD/build-dbserver.sh" EXECUTE
-	echo -e "DB SERVER BUILT!\\n"
+### ASK HERE IF THEY WANT DOCKER OR LOCAL
+
+	. "$BUILD/deploy-localserver.sh" EXECUTE
+	echo -e "LOCAL SERVER BUILT AND DEPLOYED!\\n"
 
 	####
 	# CHECK FOR MYSQL
 	check_for_mysql
 
-	. "$BUILD/build-fivem.sh" EXECUTE
-	echo -e "FIVEM BUILT!\\n"
+#### > now combined into deploy-localserver.sh
+#	. "$BUILD/build-fivem.sh" EXECUTE
+#	echo -e "FIVEM BUILT!\\n"
 
 	. "$BUILD/build-txadmin.sh" EXECUTE
 	echo -e "TXADMIN BUILT!\\n"

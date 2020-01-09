@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
+    echo "TEST WAS A SUCCESS!"
+elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
+
+####################################################################################################################################
 if [ -z "$__RUNTIME__" ] ;
 then
         if [ -z "$_BUILD" ] ;
@@ -22,7 +27,7 @@ then
         #-----------------------------------------------------------------------------------------------------------------------------------
         if [ -z "$APPMAIN" ] ;
         then
-          APPMAIN="BUILD_VMENU"
+          APPMAIN="BUILD_FIVEM_RESOURCES"
           . "$_BUILD/build-env.sh" EXECUTE
         elif [ -z "$__RUNTIME__" ] ;
         then
@@ -34,33 +39,14 @@ then
         [[ -n "$__INVALID_CONFIG__" ]] && echo "You'll need to run the quick configure before this will work..." && exit 1
 fi
 ####################################################################################################################################
-if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
-    echo "TEST WAS A SUCCESS!"
-elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-    [[ -z "$__RUNTIME__" ]] \
-      && printf "\nRuntime not loaded. This script requires Belch Runtime.\n$0...failed.\n\n" \
-      && exit 1
+    ## ---- FiveM ---- ##
 
-    VMENU_ROOT="${SOURCE:?}/vMenu"
-    VMENU_FILE="$(${VMENU_ROOT:?}/vmenu-version.sh)"
-    VMENU_PKG="vMenu-${VMENU_FILE:?}.zip"
-    VMENU="${VMENU_ROOT:?}/${VMENU_PKG:?}"
+    echo "FiveM - CitizenFX"
+        git clone https://github.com/BeyondEarthRP/cfx-server-data.git "${GAME:?}"
 
-    if [ -f "${VMENU:?}" ]; then
-        if [ -d "${RESOURCES:?}/vMenu" ]; then
-            rm -rf "${RESOURCES:?}/vMenu"
-        fi
-        if [ -f "$GAME/permissions.cfg" ]; then
-            rm -f "$GAME/permissions.cfg"
-        fi
-        unzip "$VMENU" -d "${RESOURCES:?}/vMenu"
-        cp -rfT "${VMENU_ROOT:?}/vmenu-permissions.cfg" "${GAME:?}/permissions.cfg"
-    else
-        echo "ERROR: Could not find the vmenu package."
-    fi
+    ## ---- FiveM ---- ##
+
 else
     echo "This script must be executed by the deployment script"
 fi
-
-

@@ -49,27 +49,25 @@ generate () {
 deploy () {
 	LOGO="SplatEarth.png"
 
-	cp -RfT "${SOURCE:?}/__[LOGOS]__/$LOGO" "${GAME:?}/BERP-Logo.png"
-	color gray
-	echo "Logo deployed."
+	cp -f "${SOURCE:?}/__[LOGOS]__/$LOGO" "${GAME:?}/BERP-Logo.png"
+
+	echo -e "\\e[92mLogo deployed.\\e[0m"
 
 	if [ -d "${SOURCE:?}/configs" ]; then
 		cp -RfT "${SOURCE:?}/configs" "${GAME:?}/configs"
 		local __sub_configs__=1
 	fi
 
-	cp -RfT "${SOURCE:?}/server.cfg" "${GAME:?}/server.cfg"
+	cp -f "${SOURCE:?}/server.cfg" "${GAME:?}/server.cfg"
 
 	if [ -f "${GAME:?}/server.cfg" ] && [ -z "$__sub_configs__" ] ;
 	then
-		color yellow - bold
-		echo -e "Config deployed. (no sub configs?)\\e[0m"
+		echo -e "\\e[93mConfig deployed. (no sub configs?)\\e[0m"
 		# only a single config... no subconfigs found (this is probably bad actually.  I use subconfigs.
 
 	elif [ -f "${GAME:?}/server.cfg" ] && [ -d "${GAME:?}/configs" ] ;
 	then
-		color green - bold
-		echo -e "Config and subconfigs have been deployed.\\e[0m"
+		echo -e "\\e[92mConfig and subconfigs have been deployed.\\e[0m"
 	else
 		color yellow red bold
 		echo "Well, this isn't good. Has belcher done it's thing yet? No configs... or I had a write failure.  Crap!.\\e[0m" && exit 1

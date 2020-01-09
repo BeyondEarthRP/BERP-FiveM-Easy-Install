@@ -56,6 +56,8 @@ load_static_defaults() {
 
 	_REVIEW_CONFIGS="false"
 
+	_MYSQL_SERVER="localhost"
+
 }
 
 identify_figs() {
@@ -64,7 +66,7 @@ identify_figs() {
                  BELCH_TITLE BELCH_VERSION LAST_BUILD_DATE SERVICE_ACCOUNT SERVICE_PASSWORD MYSQL_USER MYSQL_PASSWORD  	\
                  RCON_ENABLE RCON_PASSWORD STEAM_WEBAPIKEY SV_LICENSEKEY BLOWFISH_SECRET DB_ROOT_PASSWORD             	\
                  RCON_PASSWORD_GEN RCON_PASSWORD_LENGTH RCON_ASK_TO_CONFIRM SERVER_NAME ARTIFACT_BUILD REPO_NAME      	\
-                 SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES MAPS                           		\
+                 SOFTWARE_ROOT TFIVEM TCCORE MAIN GAME RESOURCES GAMEMODES MAPS MYSQL_SERVER                 		\
                  ESX ESEXT ESUI ESSENTIAL ESMOD VEHICLES TXADMIN_BACKUP_FOLDER TXADMIN_BACKUP                     	\
                  DB_BACKUP_FOLDER DB_BACKUPS CONFIG_TIMESTAMP REVIEW_CONFIGS SHOW_ADVANCED RCON_TIMESTAMP             	\
 	) ;
@@ -102,6 +104,7 @@ identify_branches() {
 	jq_SERVICE_PASSWORD=".sys.acct.password"
 
 	# .sys.mysql
+	jq_MYSQL_SERVER=".sys.mysql.server"
 	jq_MYSQL_USER=".sys.mysql.user"
 	jq_MYSQL_PASSWORD=".sys.mysql.password"
 	jq_DB_ROOT_PASSWORD=".sys.mysql.rootPassword"
@@ -650,6 +653,7 @@ harvest() {
         [[ "$__CONFIGURE__" ]] || [[ -z "$BELCH_VERSION" ]] && BELCH_VERSION="$_BELCH_VERSION" &&  _all_new_+=("BELCH_VERSION")
         [[ "$__CONFIGURE__" ]] || [[ -z "$LAST_BUILD_DATE" ]] && LAST_BUILD_DATE="$_LAST_BUILD_DATE" &&  _all_new_+=("LAST_BUILD_DATE")
         [[ "$__CONFIGURE__" ]] || [[ -z "$CONFIG_TIMESTAMP" ]] && CONFIG_TIMESTAMP="$_CONFIG_TIMESTAMP" &&  _all_new_+=("CONFIG_TIMESTAMP")
+        [[ "$__CONFIGURE__" ]] || [[ -z "$MYSQL_SERVER" ]] && MYSQL_SERVER="$_MYSQL_SERVER" &&  _all_new_+=("MYSQL_SERVER")
 #        [[ "$__CONFIGURE__" ]] || [[ -z "$SOURCE" ]] && _all_new_+=("SOURCE")
 #        [[ "$__CONFIGURE__" ]] || [[ -z "$SOURCE_ROOT" ]] &&  _all_new_+=("SOURCE_ROOT")
 
@@ -1177,6 +1181,7 @@ cook_figs() {
 			"DB_BACKUPS"
 			"TXADMIN_BACKUP"
 			"LAST_BUILD_DATE"
+			"MYSQL_SERVER"
 		)
 
 		[[ "$RCON_PASSWORD_GEN" == "true" ]] && _cfuggers+=("RCON_PASSWORD")
@@ -1503,6 +1508,10 @@ personalize() {
         	echo "Server configuration not found! Woopsie... FAILED!"
         	exit 1
         fi
+	local _server_cfg ; local _server_cfg_name
+	_server_cfg_name="${GAME:?}/server.cfg"
+	_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+	[[ -z "$_server_cfg" ]] && "\\e91mServer.cfg is empty! Build config failed.  Exiting.\\e[0m" && exit 1
 
 	# first, lets wipe down this table...  It looks like it could be dirty.
 	# Better safe than sorry.
@@ -1512,14 +1521,21 @@ personalize() {
 	rm -f "${GAME:?}/server.cfg.rconCfg" 2>/dev/null || true
 	rm -f "${GAME:?}/server.cfg.steamCfg" 2>/dev/null || true
 
-        mv "${GAME:?}/server.cfg" "${GAME:?}/server.cfg.orig" #--> Renaming file to be processed
+	_server_cfg_previous_name="${_server_cfg_name:?}"
+	_server_cfg_name="${GAME:?}/server.cfg.orig"
+        mv "${_server_cfg_previous_name:?}" "${_server_cfg_name:?}" #--> Renaming file to be processed
 
         #-Server Name Injection
         servername_placeholder="sv_hostname \"Beyond Earth RolePlay (BERP)\""
         servername_actual="sv_hostname \"${SERVER_NAME:?}\""
         echo "Accepting original configuration; Injecting server name configuration..."
-        sed "s/${servername_placeholder:?}/${servername_actual:?}/" "${GAME:?}/server.cfg.orig" > "${GAME:?}/server.cfg.srvnm"
-        rm -f "${GAME:?}/server.cfg.orig"  #--> cleaning up; handing off a .rconCfg
+	_server_cfg_previous_name="${_server_cfg_name:?}"
+	_server_cfg_name="${GAME:?}/server.cfg.srvnm"
+        sed "s/${servername_placeholder:?}/${servername_actual:?}/" "${_server_cfg_previous_name:?}" > "${_server_cfg_name:?}"
+	_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+	[[ -z "$_server_cfg" ]] && "\\e91m${_server_cfg_name:?} is empty! Failed. Exiting.\\e[0m" && exit 1
+	unset _server_cfg ; local _server_cfg
+        rm -f "${_server_cfg_previous_name:?}"  #--> cleaning up; handing off a .rconCfg
 
 	if [ "${RCON_ENABLE:?}" == "true" ] ;
 	then
@@ -1530,32 +1546,59 @@ personalize() {
 	        rcon_placeholder="#rcon_password changeme"
 	        rcon_actual="rcon_password \"${RCON_PASSWORD:?}\""
 	        echo "Accepting server name configuration; Injecting RCON configuration..."
-	        sed "s/${rcon_placeholder}/${rcon_actual:?}/" "${GAME:?}/server.cfg.srvnm" > "${GAME:?}/server.cfg.rconCfg"
-	        rm -f "${GAME:?}/server.cfg.srvnm"  #--> cleaning up; handing off a .rconCfg
+		_server_cfg_previous_name="${_server_cfg_name:?}"
+		_server_cfg_name="${GAME:?}/server.cfg.rconCfg"
+	        sed "s/${rcon_placeholder:?}/${rcon_actual:?}/" "${_server_cfg_previous_name:?}" > "${_server_cfg_name:?}"
+		_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+		[[ -z "$_server_cfg" ]] && "\\e91m${_server_cfg_name:?} is empty! Failed. Exiting.\\e[0m" && exit 1
+		unset _server_cfg ; local _server_cfg
+	        rm -f "${_server_cfg_previous_name:?}"  #--> cleaning up; handing off a .rconCfg
+	else
+		#-Skip RCON
+		mv -f "${GAME:?}/server.cfg.srvnm" "${GAME:?}/server.cfg.rconCfg"
+		echo "RCON is disabled... skipping."
 	fi
 
         #-mySql Configuration
         echo "Accepting RCON config handoff; Injecting MySQL Connection String..."
         db_conn_placeholder="set mysql_connection_string \"server=localhost;database=essentialmode;userid=username;password=YourPassword\""
-        db_conn_actual="set mysql_connection_string \"server=localhost;database=essentialmode;userid=${MYSQL_USER:?};password=${MYSQL_PASSWORD:?}\""
-        sed "s/${db_conn_placeholder:?}/${db_conn_actual:?}/" "${GAME:?}/server.cfg.rconCfg" > "${GAME:?}/server.cfg.dbCfg"
-        rm -f "${GAME:?}/server.cfg.rconCfg" #--> cleaning up; handing off a .dbCfg
+        db_conn_actual="set mysql_connection_string \"server=${MYSQL_SERVER};database=essentialmode;userid=${MYSQL_USER:?};password=${MYSQL_PASSWORD:?}\""
+	_server_cfg_previous_name="${_server_cfg_name:?}"
+	_server_cfg_name="${GAME:?}/server.cfg.dbCfg"
+        sed "s/${db_conn_placeholder:?}/${db_conn_actual:?}/" "${_server_cfg_previous_name:?}" > "${_server_cfg_name:?}"
+	_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+	[[ -z "$_server_cfg" ]] && "\\e91m${_server_cfg_name:?} is empty! Failed. Exiting.\\e[0m" && exit 1
+	unset _server_cfg ; local _server_cfg
+        rm -f "${_server_cfg_previous_name:?}" #--> cleaning up; handing off a .dbCfg
 
 	#-Steam Key Injection into Config
-	echo "Accepted MySql config handoff; Injecting Steam Key into config..."
+	echo "Accepting MySql config handoff; Injecting Steam Key into config..."
 	steamKey_placeholder="set steam_webApiKey \"SteamKeyGoesHere\""
 	steamKey_actual="steam_webApiKey  \"${STEAM_WEBAPIKEY:?}\""
-	sed "s/${steamKey_placeholder:?}/${steamKey_actual:?}/" "${GAME:?}/server.cfg.dbCfg" > "${GAME:?}/server.cfg.steamCfg"
-	rm -f "${GAME:?}/server.cfg.dbCfg" #--> cleaning up; handing off a .steamCfg
+        _server_cfg_previous_name="${_server_cfg_name:?}"
+        _server_cfg_name="${GAME:?}/server.cfg.steamCfg"
+	sed "s/${steamKey_placeholder:?}/${steamKey_actual:?}/" "${_server_cfg_previous_name:?}" > "${_server_cfg_name:?}"
+	_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+	[[ -z "$_server_cfg" ]] && "\\e91m${_server_cfg_name:?} is empty! Failed. Exiting.\\e[0m" && exit 1
+	unset _server_cfg ; local _server_cfg
+        rm -f "${_server_cfg_previous_name:?}" #--> cleaning up; handing off a .steamCfg
+
+
 
 	#-FiveM License Key Injection into Config
 	echo "Accepting Steam config handoff; Injecting FiveM License into config..."
 	sv_licenseKey_placeholder="sv_licenseKey LicenseKeyGoesHere"
 	sv_licenseKey_actual="sv_licenseKey ${SV_LICENSEKEY:?}"
-	sed "s/${sv_licenseKey_placeholder:?}/${sv_licenseKey_actual:?}/" "${GAME:?}/server.cfg.steamCfg" > "${GAME:?}/server.cfg"
-	rm -f "${GAME:?}/server.cfg.steamCfg" #--> cleaning up; handing off a server.cfg
+        _server_cfg_previous_name="${_server_cfg_name:?}"
+        _server_cfg_name="${GAME:?}/server.cfg"
+	sed "s/${sv_licenseKey_placeholder:?}/${sv_licenseKey_actual:?}/" "${_server_cfg_previous_name:?}" > "${_server_cfg_name:?}"
+	_server_cfg=$(cat "${_server_cfg_name:?}" 2>/dev/null)
+	[[ -z "$_server_cfg" ]] && "\\e91m${_server_cfg_name:?} is empty! Failed. Exiting.\\e[0m" && exit 1
+	unset _server_cfg ; local _server_cfg
+        rm -f "${_server_cfg_previous_name:?}" #--> cleaning up; handing off a (now personalized) server.cfg
 
-	if [ -f "${GAME:?}/server.cfg" ];
+
+	if [ -f "${_server_cfg_name:?}" ];
 	then
 		color green - bold
 		echo -e "\\nServer configuration file found.\\e[0m\\n"

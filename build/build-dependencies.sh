@@ -22,7 +22,7 @@ then
         #-----------------------------------------------------------------------------------------------------------------------------------
         if [ -z "$APPMAIN" ] ;
         then
-          APPMAIN="BUILD_VMENU"
+          APPMAIN="BUILD_DEPENDENCIES"
           . "$_BUILD/build-env.sh" EXECUTE
         elif [ -z "$__RUNTIME__" ] ;
         then
@@ -33,34 +33,38 @@ then
 
         [[ -n "$__INVALID_CONFIG__" ]] && echo "You'll need to run the quick configure before this will work..." && exit 1
 fi
-####################################################################################################################################
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
+    [[ -z "$DB_ROOT_PASSWORD" ]] \
+        && echo "Root password not yet entered.  This should have already been done. Failed!" \
+        && exit 1
 
-    [[ -z "$__RUNTIME__" ]] \
-      && printf "\nRuntime not loaded. This script requires Belch Runtime.\n$0...failed.\n\n" \
-      && exit 1
+    [[ -z "$SOFTWARE_ROOT" ]] && echo "software folder location not defined." && exit 1
+    [[ -z "$TFIVEM" ]] && echo "tfivem folder location not defined." && exit 1
+    [[ -z "$TCCORE" ]] && echo "tccore folder location not defined." && exit 1
 
-    VMENU_ROOT="${SOURCE:?}/vMenu"
-    VMENU_FILE="$(${VMENU_ROOT:?}/vmenu-version.sh)"
-    VMENU_PKG="vMenu-${VMENU_FILE:?}.zip"
-    VMENU="${VMENU_ROOT:?}/${VMENU_PKG:?}"
+    # TEMP DIRECTORIES
+    [[ ! -d "$SOFTWARE_ROOT" ]] && mkdir "$SOFTWARE_ROOT"
+    [[ ! -d "$TFIVEM" ]] && mkdir "$TFIVEM"
+    [[ ! -d "$TCCORE" ]] && mkdir "$TCCORE"
 
-    if [ -f "${VMENU:?}" ]; then
-        if [ -d "${RESOURCES:?}/vMenu" ]; then
-            rm -rf "${RESOURCES:?}/vMenu"
-        fi
-        if [ -f "$GAME/permissions.cfg" ]; then
-            rm -f "$GAME/permissions.cfg"
-        fi
-        unzip "$VMENU" -d "${RESOURCES:?}/vMenu"
-        cp -rfT "${VMENU_ROOT:?}/vmenu-permissions.cfg" "${GAME:?}/permissions.cfg"
-    else
-        echo "ERROR: Could not find the vmenu package."
-    fi
+    # Dependancies
+    ########################
+    echo "Linux Software & Configuration"
+	echo "--> Fetch Updates"
+	sudo apt update && sudo apt -y upgrade
+	echo ""
+
+	echo "--> INSTALLING: unzip, unrar, wget, git, screen"
+	sudo apt-get -y install unzip
+	sudo apt-get -y install unrar-free
+	sudo apt-get -y install git
+	sudo apt-get -y install wget
+	sudo apt-get -y install xz-utils
+	echo ""
+
 else
     echo "This script must be executed by the deployment script"
 fi
-
 

@@ -1,6 +1,7 @@
 #!/bin/bash
-if [ -z "$__RUNTIME__" ] ;
-then
+_YAPP="SHORT_DESCRIPTIVE"  #<---- SHORT NAME FOR YOUR APP... JUST DON'T USE MAIN OR APPMAIN (OR ANY THAT I AM USING HAHAHA)
+if [ -z "$__RUNTIME__" ] ;      # I USUALLY MAKE THEM THE NAMES OF MY SCRIPTS, UNDERSCORING... FOR INSTANCE BUILD_CONFIG IS ONE.
+then				# IT IS ONLY FOR CHANGING EXECUTION ORDER IN THE RUNTIME, SO JUST PUT SOMETHING/ANYTHING UNQUIE.
         if [ -z "$_BUILD" ] ;
         then
           THIS_SCRIPT_ROOT=$(dirname $(readlink -f "$0")) ;
@@ -22,7 +23,7 @@ then
         #-----------------------------------------------------------------------------------------------------------------------------------
         if [ -z "$APPMAIN" ] ;
         then
-          APPMAIN="BUILD_VMENU"
+          APPMAIN="${_YAPP:?}"
           . "$_BUILD/build-env.sh" EXECUTE
         elif [ -z "$__RUNTIME__" ] ;
         then
@@ -33,34 +34,17 @@ then
 
         [[ -n "$__INVALID_CONFIG__" ]] && echo "You'll need to run the quick configure before this will work..." && exit 1
 fi
-####################################################################################################################################
 if [ ! -z "$1" ] && [ "$1" == "TEST" ]; then
     echo "TEST WAS A SUCCESS!"
 elif [ ! -z "$1" ] && [ "$1" == "EXECUTE" ]; then
 
-    [[ -z "$__RUNTIME__" ]] \
-      && printf "\nRuntime not loaded. This script requires Belch Runtime.\n$0...failed.\n\n" \
-      && exit 1
+    ## ---- All code goes below ---- ##
 
-    VMENU_ROOT="${SOURCE:?}/vMenu"
-    VMENU_FILE="$(${VMENU_ROOT:?}/vmenu-version.sh)"
-    VMENU_PKG="vMenu-${VMENU_FILE:?}.zip"
-    VMENU="${VMENU_ROOT:?}/${VMENU_PKG:?}"
 
-    if [ -f "${VMENU:?}" ]; then
-        if [ -d "${RESOURCES:?}/vMenu" ]; then
-            rm -rf "${RESOURCES:?}/vMenu"
-        fi
-        if [ -f "$GAME/permissions.cfg" ]; then
-            rm -f "$GAME/permissions.cfg"
-        fi
-        unzip "$VMENU" -d "${RESOURCES:?}/vMenu"
-        cp -rfT "${VMENU_ROOT:?}/vmenu-permissions.cfg" "${GAME:?}/permissions.cfg"
-    else
-        echo "ERROR: Could not find the vmenu package."
-    fi
+
+    ## ---- Done with the code? ---- ##
+
 else
     echo "This script must be executed by the deployment script"
 fi
-
 

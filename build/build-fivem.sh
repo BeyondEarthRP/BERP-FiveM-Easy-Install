@@ -59,7 +59,7 @@ fi
         echo "Extract Package"
             tar -xf "$TFIVEM/fx.tar.xz" --directory "${MAIN:?}/"
 
-    . "${BUILD:?}/build-fivem-resources.sh" EXECUTE
+    . "${BUILD:?}/fetch-fivem-resources.sh" EXECUTE
 
     echo "CitizenFX Module Update"
         wget -P "${TCCORE:?}" https://d.fivem.dev/CitizenFX.Core.Server.zip
